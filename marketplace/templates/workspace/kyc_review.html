@@ -63,7 +63,7 @@
                 </h3>
                 <div class="flex items-center gap-4 text-xs text-slate-400 mt-1">
                   <span><strong>Phone:</strong> {{ profile.phone_number }}</span>
-                  <span><strong>Location:</strong> {{ profile.area.name|default:profile.state.name|default:"Nigeria" }}</span>
+                  <span><strong>Location:</strong> {% if profile.area %}{{ profile.area.name }}{% elif profile.state %}{{ profile.state.name }}{% else %}Nigeria{% endif %}</span>
                   <span><strong>Submitted:</strong> {{ profile.verification_submitted_at|date:"M d, Y H:i"|default:"Recently" }}</span>
                 </div>
               </div>
