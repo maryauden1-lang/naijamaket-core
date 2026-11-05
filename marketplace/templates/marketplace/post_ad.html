@@ -1,378 +1,424 @@
-import base64
-import uuid
-from decimal import Decimal
-from django import forms
-from django.core.files.base import ContentFile
-from django.contrib.auth.models import User
-from .models import Listing, SellerProfile, SellerReview, ReportedListing
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Post Free Listing - Naijamaket</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #F8FAFC;
+    }
+    input, select, textarea {
+      pointer-events: auto !important;
+      user-select: auto !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-6 sm:py-10 px-3 sm:px-6 flex flex-col justify-between">
 
+  <div class="max-w-3xl mx-auto w-full bg-white rounded-3xl p-5 sm:p-10 shadow-xl border border-slate-200">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-5 mb-6 sm:mb-8">
+      <div class="flex items-center gap-3">
+        <a href="{% url 'marketplace:home' %}" class="w-10 h-10 rounded-2xl bg-purple-700 text-white font-black text-xl flex items-center justify-center shadow-md">
+          N
+        </a>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black text-slate-900">Post Free Listing</h1>
+          <p class="text-xs text-slate-400">Reach verified buyers across Nigerian commercial hubs</p>
+        </div>
+      </div>
+      <a href="{% url 'marketplace:home' %}" class="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-3.5 py-2 rounded-xl transition-colors">
+        Cancel
+      </a>
+    </div>
 
-class UserRegisterForm(forms.ModelForm):
-    full_name = forms.CharField(
-        max_length=150,
-        required=True,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Full Name',
-            'class': 'w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all'
-        })
-    )
-    email = forms.EmailField(
-        required=True,
-        widget=forms.EmailInput(attrs={
-            'placeholder': 'Email',
-            'class': 'w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all'
-        })
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Password',
-            'id': 'regPassword',
-            'class': 'w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all pr-11'
-        })
-    )
-    confirm_password = forms.CharField(
-        widget=forms.PasswordInput(attrs={
-            'placeholder': 'Confirm password',
-            'id': 'regConfirmPassword',
-            'class': 'w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all pr-11'
-        })
-    )
-    phone_number = forms.CharField(
-        max_length=20,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Phone number (optional)',
-            'class': 'w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all'
-        })
-    )
+    <!-- Alert Messages -->
+    {% if messages %}
+      <div class="mb-6 space-y-2">
+        {% for message in messages %}
+          <div class="p-3.5 rounded-xl text-xs font-semibold {% if message.tags == 'success' %}bg-purple-50 text-purple-900 border border-purple-200{% else %}bg-rose-50 text-rose-800 border border-rose-200{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-    class Meta:
-        model = User
-        fields = ['full_name', 'email', 'password']
+    <!-- Listing Submission Form -->
+    <form method="POST" enctype="multipart/form-data" class="space-y-6" id="postAdForm">
+      {% csrf_token %}
+      
+      <!-- Multi-Photo Upload Area -->
+      <div>
+        <label class="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
+          Upload Product Photos / Company Banner (Up to 10 photos)
+        </label>
+        <p class="text-[11px] text-slate-400 mb-3">
+          Hold <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 font-bold text-[10px]">Ctrl</kbd> to select multiple photos. The first image will be your cover photo.
+        </p>
 
-    def clean_email(self):
-        email = self.cleaned_data.get('email').lower()
-        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
-            raise forms.ValidationError("An account with this email already exists.")
-        return email
+        <input 
+          type="file" 
+          name="images" 
+          id="id_images" 
+          multiple 
+          accept="image/*" 
+          required
+          class="block w-full text-xs text-slate-500 file:mr-4 file:py-3 file:px-5 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-dashed border-slate-300 rounded-2xl p-4 bg-slate-50"
+        >
+        
+        <!-- Live Preview Thumbnail Grid -->
+        <div id="imagePreviewContainer" class="hidden grid-cols-3 sm:grid-cols-6 gap-3 mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-200"></div>
+      </div>
 
-    def clean(self):
-        cleaned_data = super().clean()
-        pwd = cleaned_data.get("password")
-        pwd_confirm = cleaned_data.get("confirm_password")
+      <!-- Item Title -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5" id="titleLabel">Ad Title</label>
+        {{ form.title }}
+        {% if form.title.errors %}
+          <p class="text-rose-500 text-xs mt-1">{{ form.title.errors.0 }}</p>
+        {% endif %}
+      </div>
 
-        if pwd and pwd_confirm and pwd != pwd_confirm:
-            self.add_error('confirm_password', "Passwords do not match.")
-        return cleaned_data
+      <!-- Category & Dynamic Subcategory -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Category</label>
+          {{ form.category }}
+          {% if form.category.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.category.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Sub-Category</label>
+          {{ form.subcategory }}
+          {% if form.subcategory.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.subcategory.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
 
+      <!-- DYNAMIC SECTION 1: JOBS PANEL -->
+      <div id="jobDetailsPanel" style="display: none;" class="space-y-4 p-5 rounded-2xl bg-purple-50 border border-purple-200">
+        <div class="flex items-center gap-2 border-b border-purple-200 pb-2">
+          <i data-lucide="briefcase" class="w-4 h-4 text-purple-700"></i>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-purple-900">Job Opportunity Details</h3>
+        </div>
 
-class ProfileUpdateForm(forms.ModelForm):
-    avatar = forms.ImageField(
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer'
-        })
-    )
-    store_banner = forms.ImageField(
-        required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer'
-        })
-    )
-    selfie_base64 = forms.CharField(required=False, widget=forms.HiddenInput())
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Company / Employer Name</label>
+          {{ form.company_name }}
+          {% if form.company_name.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.company_name.errors.0 }}</p>
+          {% endif %}
+        </div>
 
-    class Meta:
-        model = SellerProfile
-        fields = [
-            'avatar',
-            'store_banner',
-            'phone_number',
-            'whatsapp_number',
-            'shop_address',
-            'state',
-            'area',
-            'instagram_handle',
-            'facebook_handle',
-            'tiktok_handle',
-            'bio',
-            'id_document',
-        ]
-        widgets = {
-            'phone_number': forms.TextInput(attrs={
-                'placeholder': '08012345678',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'whatsapp_number': forms.TextInput(attrs={
-                'placeholder': '2348012345678',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'shop_address': forms.TextInput(attrs={
-                'placeholder': 'e.g. Shop B12, Emab Plaza, Wuse 2, Abuja',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'state': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'area': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'instagram_handle': forms.TextInput(attrs={
-                'placeholder': '@yourstore',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'facebook_handle': forms.TextInput(attrs={
-                'placeholder': 'facebook.com/yourstore',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'tiktok_handle': forms.TextInput(attrs={
-                'placeholder': '@yourstore',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'bio': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Tell buyers about your shop, warranty, or delivery policies...',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'id_document': forms.ClearableFileInput(attrs={
-                'class': 'block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer'
-            }),
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Monthly Salary Range (₦ Naira)</label>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              {{ form.min_salary }}
+              {% if form.min_salary.errors %}
+                <p class="text-rose-500 text-xs mt-1">{{ form.min_salary.errors.0 }}</p>
+              {% endif %}
+            </div>
+            <div>
+              {{ form.max_salary }}
+              {% if form.max_salary.errors %}
+                <p class="text-rose-500 text-xs mt-1">{{ form.max_salary.errors.0 }}</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Job Type</label>
+            {{ form.job_type }}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Career Level</label>
+            {{ form.experience_level }}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Min Experience</label>
+            {{ form.minimum_experience }}
+          </div>
+        </div>
+      </div>
+
+      <!-- DYNAMIC SECTION 2: PROPERTY PANEL -->
+      <div id="propertyDetailsPanel" style="display: none;" class="space-y-4 p-5 rounded-2xl bg-purple-50 border border-purple-200">
+        <div class="flex items-center gap-2 border-b border-purple-200 pb-2">
+          <i data-lucide="home" class="w-4 h-4 text-purple-700"></i>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-purple-900">Property Details</h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Property Type</label>
+            {{ form.property_type }}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Furnishing</label>
+            {{ form.furnishing }}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Bedrooms</label>
+            {{ form.bedrooms }}
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1.5">Bathrooms</label>
+            {{ form.bathrooms }}
+          </div>
+        </div>
+      </div>
+
+      <!-- STANDARD PRICE & CONDITION -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div id="priceWrapper">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5" id="priceLabel">Asking Price (₦ Naira)</label>
+          {{ form.price }}
+          {% if form.price.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.price.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <div id="conditionWrapper">
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Condition</label>
+          {{ form.condition }}
+          {% if form.condition.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.condition.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- State & Dynamic Cascading Commercial Hub Area -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">State</label>
+          {{ form.state }}
+          {% if form.state.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.state.errors.0 }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Commercial Market / Area</label>
+          {{ form.area }}
+          {% if form.area.errors %}
+            <p class="text-rose-500 text-xs mt-1">{{ form.area.errors.0 }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">Description & Key Details</label>
+        {{ form.description }}
+        {% if form.description.errors %}
+          <p class="text-rose-500 text-xs mt-1">{{ form.description.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-4">
+        <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white text-sm font-extrabold py-4 rounded-2xl shadow-lg shadow-purple-700/30 transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer">
+          Publish Listing Across Nigeria
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    // 1. Live Image Preview
+    const fileInput = document.getElementById('id_images');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        previewContainer.innerHTML = '';
+        const files = Array.from(this.files);
+
+        if (files.length > 0) {
+          previewContainer.classList.remove('hidden');
+          previewContainer.classList.add('grid');
+
+          files.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative w-full h-20 rounded-xl overflow-hidden bg-slate-200 border border-slate-300';
+                wrapper.innerHTML = `
+                  <img src="${e.target.result}" class="w-full h-full object-cover">
+                  ${index === 0 ? '<span class="absolute bottom-1 left-1 bg-purple-700 text-[9px] text-white font-extrabold px-1.5 py-0.5 rounded-md shadow">Cover</span>' : ''}
+                `;
+                previewContainer.appendChild(wrapper);
+              }
+              reader.readAsDataURL(file);
+            }
+          });
+        } else {
+          previewContainer.classList.add('hidden');
+          previewContainer.classList.remove('grid');
+        }
+      });
+    }
+
+    // 2. Dynamic Category Fields & Dependent Dropdowns
+    document.addEventListener('DOMContentLoaded', function() {
+      const catSelect = document.getElementById('id_category');
+      const subCatSelect = document.getElementById('id_subcategory');
+      const stateSelect = document.getElementById('id_state');
+      const areaSelect = document.getElementById('id_area');
+
+      const jobPanel = document.getElementById('jobDetailsPanel');
+      const propPanel = document.getElementById('propertyDetailsPanel');
+      const priceWrapper = document.getElementById('priceWrapper');
+      const condWrapper = document.getElementById('conditionWrapper');
+
+      function syncCategoryPanels() {
+        if (!catSelect) return;
+        const selectedOption = catSelect.options[catSelect.selectedIndex];
+        const text = selectedOption ? selectedOption.text.toLowerCase() : '';
+
+        if (text.includes('job')) {
+          if (jobPanel) jobPanel.style.display = 'block';
+          if (propPanel) propPanel.style.display = 'none';
+          if (priceWrapper) priceWrapper.style.display = 'none';
+          if (condWrapper) condWrapper.style.display = 'none';
+        } else if (text.includes('prop') || text.includes('real estate') || text.includes('house') || text.includes('land')) {
+          if (jobPanel) jobPanel.style.display = 'none';
+          if (propPanel) propPanel.style.display = 'block';
+          if (priceWrapper) priceWrapper.style.display = 'block';
+          if (condWrapper) condWrapper.style.display = 'none';
+        } else {
+          if (jobPanel) jobPanel.style.display = 'none';
+          if (propPanel) propPanel.style.display = 'none';
+          if (priceWrapper) priceWrapper.style.display = 'block';
+          if (condWrapper) condWrapper.style.display = 'block';
+        }
+      }
+
+      // Sync subcategories on change
+      if (catSelect && subCatSelect) {
+        const initialSub = subCatSelect.value;
+
+        function loadSubcategories(catId, restoreVal) {
+          syncCategoryPanels();
+
+          if (!catId) {
+            subCatSelect.innerHTML = '<option value="">Select a category first</option>';
+            subCatSelect.disabled = true;
+            return;
+          }
+
+          subCatSelect.disabled = true;
+          subCatSelect.innerHTML = '<option value="">Loading subcategories...</option>';
+
+          fetch(`/api/get-subcategories/?category_id=${encodeURIComponent(catId)}`)
+            .then(res => res.json())
+            .then(data => {
+              subCatSelect.innerHTML = '<option value="">Select Sub-Category (Optional)</option>';
+              if (data.subcategories && data.subcategories.length > 0) {
+                data.subcategories.forEach(sub => {
+                  const opt = document.createElement('option');
+                  opt.value = sub.id;
+                  opt.textContent = sub.name;
+                  if (restoreVal && String(restoreVal) === String(sub.id)) {
+                    opt.selected = true;
+                  }
+                  subCatSelect.appendChild(opt);
+                });
+                subCatSelect.disabled = false;
+              } else {
+                subCatSelect.innerHTML = '<option value="">No subcategories available</option>';
+                subCatSelect.disabled = false;
+              }
+            })
+            .catch(() => {
+              subCatSelect.innerHTML = '<option value="">Error loading</option>';
+              subCatSelect.disabled = false;
+            });
         }
 
-    def save(self, commit=True):
-        profile = super().save(commit=False)
-        selfie_data = self.cleaned_data.get('selfie_base64')
-
-        if selfie_data and ';base64,' in selfie_data:
-            format_str, img_str = selfie_data.split(';base64,')
-            ext = format_str.split('/')[-1]
-            if ext == 'jpeg':
-                ext = 'jpg'
-            file_name = f"selfie_{profile.user.id}_{uuid.uuid4().hex[:8]}.{ext}"
-            profile.selfie_image.save(file_name, ContentFile(base64.b64decode(img_str)), save=False)
-
-        if commit:
-            profile.save()
-        return profile
-
-
-class ListingForm(forms.ModelForm):
-    # Job-specific fields
-    company_name = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'e.g. Paystack Nigeria Ltd',
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-        })
-    )
-    min_salary = forms.DecimalField(
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Min Salary (e.g. 50000)',
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-        })
-    )
-    max_salary = forms.DecimalField(
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Max Salary (e.g. 100000)',
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-        })
-    )
-    job_type = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('full_time', 'Full-time'),
-            ('part_time', 'Part-time'),
-            ('contract', 'Contract'),
-            ('internship', 'Internship'),
-            ('remote', 'Remote / Work From Home'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-        })
-    )
-    experience_level = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('entry', 'Entry Level / Fresher'),
-            ('mid', 'Mid-Level (2-5 Years)'),
-            ('senior', 'Senior / Executive (5+ Years)'),
-            ('intern', 'Student / Intern'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-        })
-    )
-    minimum_experience = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('0', 'No Experience Required'),
-            ('1', '1 Year'),
-            ('2', '2 Years'),
-            ('3_5', '3 - 5 Years'),
-            ('5_plus', 'More than 5 Years'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-        })
-    )
-
-    # Property-specific fields
-    property_type = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('flat_apartment', 'Flat / Apartment'),
-            ('self_contain', 'Self Contain / Mini Flat'),
-            ('duplex', 'Duplex / Semi-Detached'),
-            ('land', 'Land / Plot'),
-            ('commercial', 'Shop / Office Space'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-        })
-    )
-    bedrooms = forms.IntegerField(
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Bedrooms (e.g. 2)',
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-        })
-    )
-    bathrooms = forms.IntegerField(
-        required=False,
-        widget=forms.NumberInput(attrs={
-            'placeholder': 'Bathrooms (e.g. 2)',
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-        })
-    )
-    furnishing = forms.ChoiceField(
-        required=False,
-        choices=[
-            ('unfurnished', 'Unfurnished'),
-            ('semi_furnished', 'Semi-Furnished'),
-            ('furnished', 'Fully Furnished'),
-        ],
-        widget=forms.Select(attrs={
-            'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-        })
-    )
-
-    class Meta:
-        model = Listing
-        fields = ['title', 'category', 'subcategory', 'price', 'condition', 'state', 'area', 'description']
-        widgets = {
-            'title': forms.TextInput(attrs={
-                'placeholder': 'e.g. Senior Backend Developer (Django) or 2 Bedroom Flat',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'subcategory': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'price': forms.NumberInput(attrs={
-                'placeholder': 'Asking Price (₦)',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
-            'condition': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'state': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'area': forms.Select(attrs={
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white cursor-pointer'
-            }),
-            'description': forms.Textarea(attrs={
-                'rows': 4,
-                'placeholder': 'Describe duties, qualifications, work hours, or property specs thoroughly...',
-                'class': 'w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 text-sm bg-white'
-            }),
+        if (catSelect.value) {
+          loadSubcategories(catSelect.value, initialSub);
+        } else {
+          subCatSelect.innerHTML = '<option value="">Select a category first</option>';
+          subCatSelect.disabled = true;
+          syncCategoryPanels();
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Condition and price are explicitly optional so non-physical listings don't fail validation
-        self.fields['condition'].required = False
-        self.fields['price'].required = False
+        catSelect.addEventListener('change', function() {
+          loadSubcategories(this.value, null);
+        });
+      }
 
-    def clean(self):
-        cleaned_data = super().clean()
-        category = cleaned_data.get('category')
-        cat_name = category.name.lower() if category else ''
+      // Sync areas on state change
+      if (stateSelect && areaSelect) {
+        const initialArea = areaSelect.value;
 
-        price = cleaned_data.get('price')
-        min_sal = cleaned_data.get('min_salary')
+        function loadAreas(stateId, restoreVal) {
+          if (!stateId) {
+            areaSelect.innerHTML = '<option value="">Select a state first</option>';
+            areaSelect.disabled = true;
+            return;
+          }
 
-        if 'job' in cat_name:
-            if not min_sal and not price:
-                self.add_error('min_salary', "Please enter a minimum salary for this job.")
-        else:
-            if price is None:
-                self.add_error('price', "Please enter an asking price.")
+          areaSelect.disabled = true;
+          areaSelect.innerHTML = '<option value="">Loading locations...</option>';
 
-        return cleaned_data
-
-    def save(self, commit=True):
-        listing = super().save(commit=False)
-        category = self.cleaned_data.get('category')
-        cat_name = category.name.lower() if category else ''
-
-        extra = listing.extra_fields or {}
-
-        if 'job' in cat_name:
-            extra['company_name'] = self.cleaned_data.get('company_name', '')
-            extra['min_salary'] = str(self.cleaned_data.get('min_salary') or '')
-            extra['max_salary'] = str(self.cleaned_data.get('max_salary') or '')
-            extra['job_type'] = self.cleaned_data.get('job_type', 'full_time')
-            extra['experience_level'] = self.cleaned_data.get('experience_level', 'entry')
-            extra['minimum_experience'] = self.cleaned_data.get('minimum_experience', '0')
-            min_val = self.cleaned_data.get('min_salary')
-            listing.price = Decimal(str(min_val)) if min_val else Decimal('0.00')
-            listing.condition = None
-        elif 'prop' in cat_name or 'real estate' in cat_name:
-            extra['property_type'] = self.cleaned_data.get('property_type', 'flat_apartment')
-            extra['bedrooms'] = self.cleaned_data.get('bedrooms') or 0
-            extra['bathrooms'] = self.cleaned_data.get('bathrooms') or 0
-            extra['furnishing'] = self.cleaned_data.get('furnishing', 'unfurnished')
-            listing.condition = None
-
-        listing.extra_fields = extra
-
-        if commit:
-            listing.save()
-        return listing
-
-
-class ReportListingForm(forms.ModelForm):
-    class Meta:
-        model = ReportedListing
-        fields = ['reason', 'details']
-        widgets = {
-            'reason': forms.Select(attrs={
-                'class': 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-white cursor-pointer'
-            }),
-            'details': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Provide specific details for moderation review...',
-                'class': 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-white'
-            }),
+          fetch(`/api/get-areas/?state_id=${encodeURIComponent(stateId)}`)
+            .then(res => res.json())
+            .then(data => {
+              areaSelect.innerHTML = '<option value="">Select Area / Commercial Hub</option>';
+              if (data.areas && data.areas.length > 0) {
+                data.areas.forEach(area => {
+                  const opt = document.createElement('option');
+                  opt.value = area.id;
+                  opt.textContent = area.name;
+                  if (restoreVal && String(restoreVal) === String(area.id)) {
+                    opt.selected = true;
+                  }
+                  areaSelect.appendChild(opt);
+                });
+                areaSelect.disabled = false;
+              } else {
+                areaSelect.innerHTML = '<option value="">No areas listed</option>';
+                areaSelect.disabled = false;
+              }
+            })
+            .catch(() => {
+              areaSelect.innerHTML = '<option value="">Error loading</option>';
+              areaSelect.disabled = false;
+            });
         }
 
-
-class SellerReviewForm(forms.ModelForm):
-    class Meta:
-        model = SellerReview
-        fields = ['rating', 'comment']
-        widgets = {
-            'rating': forms.Select(
-                choices=[(5, '⭐⭐⭐⭐⭐ (5 Stars)'), (4, '⭐⭐⭐⭐ (4 Stars)'), (3, '⭐⭐⭐ (3 Stars)'), (2, '⭐⭐ (2 Stars)'), (1, '⭐ (1 Star)')],
-                attrs={'class': 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-white cursor-pointer'}
-            ),
-            'comment': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'Share your experience with this seller...',
-                'class': 'w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs bg-white'
-            }),
+        if (stateSelect.value) {
+          loadAreas(stateSelect.value, initialArea);
+        } else {
+          areaSelect.innerHTML = '<option value="">Select a state first</option>';
+          areaSelect.disabled = true;
         }
+
+        stateSelect.addEventListener('change', function() {
+          loadAreas(this.value, null);
+        });
+      }
+    });
+
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>
