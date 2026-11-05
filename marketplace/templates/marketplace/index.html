@@ -8,6 +8,7 @@
   <title>{{ settings.site_name|default:"Naijamaket" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
@@ -32,7 +33,7 @@
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-0 selection:bg-purple-600 selection:text-white">
 
   <!-- ========================================================= -->
-  <!-- 1. TOP WHITE HEADER BAR (LOGO, EN, AUTH, SELL)           -->
+  <!-- 1. TOP WHITE HEADER BAR (LOGO, EN, AUTH, SELL)            -->
   <!-- ========================================================= -->
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-50 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
@@ -185,10 +186,10 @@
             <div class="relative w-full h-full">
               <input 
                 type="text" 
-                id="liveSearchInput"
+                id="liveSearchInput" 
                 name="q" 
-                value="{{ search_query }}"
-                autocomplete="off"
+                value="{{ search_query }}" 
+                autocomplete="off" 
                 placeholder="I am looking for..." 
                 class="w-full bg-white text-slate-900 text-xs sm:text-base h-11 sm:h-14 pl-3.5 sm:pl-5 pr-10 sm:pr-12 rounded-xl sm:rounded-2xl shadow-md outline-hidden placeholder-slate-400 focus:ring-3 focus:ring-purple-400/40 transition-all"
               >
@@ -222,35 +223,60 @@
     </div>
   {% endif %}
 
-  <!-- MOBILE ONLY: Jiji Category Circles Slider (Top of Feed) -->
-  <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-3.5 px-3 shadow-2xs">
-    <div class="flex items-start gap-3 overflow-x-auto no-scrollbar py-1">
-      <a href="{% url 'marketplace:home' %}" class="flex flex-col items-center gap-1.5 shrink-0 w-16 text-center">
-        <div class="w-13 h-13 rounded-2xl flex items-center justify-center transition-all {% if not selected_category %}bg-purple-700 text-white shadow-md{% else %}bg-slate-100 text-slate-600{% endif %}">
-          <!-- Grid Icon SVG -->
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
-          </svg>
+  <!-- ========================================================= -->
+  <!-- MOBILE ONLY: JIJI-STYLE 4-COLUMN RESPONSIVE CATEGORY GRID -->
+  <!-- ========================================================= -->
+  <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-4 px-2.5 sm:px-4 shadow-2xs">
+    
+    <div class="flex items-center justify-between mb-3 px-1.5">
+      <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">
+        All Categories
+      </h2>
+      {% if selected_category %}
+        <a href="{% url 'marketplace:home' %}" class="text-[11px] font-bold text-purple-600 hover:underline">
+          View All
+        </a>
+      {% endif %}
+    </div>
+
+    <!-- 4 Columns on Mobile (Just like Jiji Nigeria) -->
+    <div class="grid grid-cols-4 gap-2 sm:gap-3">
+      
+      <!-- "All Feed" Tile -->
+      <a 
+        href="{% url 'marketplace:home' %}" 
+        class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group"
+      >
+        <div class="w-13 h-13 rounded-2xl flex items-center justify-center transition-all {% if not selected_category %}bg-purple-700 text-white shadow-md{% else %}bg-purple-50 text-purple-700 border border-purple-100{% endif %}">
+          <i data-lucide="layout-grid" class="w-6 h-6 stroke-[2]"></i>
         </div>
-        <span class="text-[10px] font-bold text-slate-700 truncate w-full">All Feed</span>
+        <span class="mt-1.5 text-[11px] font-bold {% if not selected_category %}text-purple-700{% else %}text-slate-700{% endif %} line-clamp-1 w-full leading-tight">
+          All Feed
+        </span>
       </a>
 
+      <!-- 16 Categories Loop -->
       {% for cat in categories %}
-      <a href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" class="flex flex-col items-center gap-1.5 shrink-0 w-16 text-center group">
-        <div class="w-13 h-13 rounded-2xl flex items-center justify-center p-2.5 overflow-hidden transition-all bg-slate-50 border border-slate-200 {% if selected_category == cat.slug %}border-2 border-purple-600 ring-2 ring-purple-500/20 bg-purple-50{% endif %}">
+      <a 
+        href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" 
+        class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group"
+      >
+        <div class="w-13 h-13 rounded-2xl flex items-center justify-center p-2.5 overflow-hidden transition-all {% if selected_category == cat.slug %}bg-purple-700 text-white shadow-md ring-2 ring-purple-600/30{% else %}bg-purple-50/70 border border-purple-100/80 group-hover:bg-purple-100 text-purple-700{% endif %}">
           {% if cat.icon %}
             <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" class="w-full h-full object-contain">
           {% else %}
-            <!-- Tag Icon SVG Fallback -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-500 group-hover:text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/>
-            </svg>
+            <i data-lucide="{{ cat.icon_name|default:'tag' }}" class="w-6 h-6 stroke-[1.8]"></i>
           {% endif %}
         </div>
-        <span class="text-[10px] font-bold text-slate-700 group-hover:text-purple-600 truncate w-full">{{ cat.name }}</span>
+        
+        <span class="mt-1.5 text-[10.5px] font-bold {% if selected_category == cat.slug %}text-purple-700{% else %}text-slate-700 group-hover:text-purple-700{% endif %} line-clamp-2 w-full leading-tight">
+          {{ cat.name }}
+        </span>
       </a>
       {% endfor %}
+
     </div>
+
   </section>
 
   <!-- ========================================================= -->
@@ -275,13 +301,11 @@
               class="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-purple-50/70 transition-all text-left {% if selected_category == cat.slug %}bg-purple-50 border border-purple-500/30{% endif %}"
             >
               <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden border border-slate-200 group-hover:border-purple-400">
+                <div class="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 overflow-hidden border border-purple-100 group-hover:border-purple-300 text-purple-700">
                   {% if cat.icon %}
                     <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" class="w-5 h-5 object-contain">
                   {% else %}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500 group-hover:text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><circle cx="7" cy="7" r=".5" fill="currentColor"/>
-                    </svg>
+                    <i data-lucide="{{ cat.icon_name|default:'tag' }}" class="w-4 h-4 stroke-[2]"></i>
                   {% endif %}
                 </div>
 
@@ -337,7 +361,7 @@
         <!-- Section Title Header -->
         <div class="flex items-center justify-between px-1">
           <div>
-            <h2 class="text-sm sm:text-lg font-black text-slate-900 tracking-tight">
+            <h2 class="text-sm sm:lg font-black text-slate-900 tracking-tight">
               {% if selected_state_obj %}
                 Ads in {{ selected_state_obj.name }}
               {% elif selected_subcategory %}
@@ -456,7 +480,7 @@
                 <a 
                   href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijamaket' }}." 
                   target="_blank" 
-                  rel="noopener noreferrer"
+                  rel="noopener noreferrer" 
                   class="p-1 sm:px-2 sm:py-0.5 rounded bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[9px] flex items-center gap-1"
                   title="WhatsApp"
                 >
@@ -704,8 +728,13 @@
     {% endif %}
   </nav>
 
-  <!-- Scripts: Language Switcher, Live Search, Dropdown Click-Out -->
+  <!-- Scripts: Lucide Icons, Language Switcher, Live Search, Dropdown Click-Out -->
   <script>
+    // Initialize Lucide SVG icons across the page
+    if (window.lucide) {
+      lucide.createIcons();
+    }
+
     const translations = {
       'EN': {
         title: "What are you looking for?",
