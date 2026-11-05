@@ -237,10 +237,13 @@ class Listing(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=300, unique=True, blank=True)
     description = models.TextField()
-    price = models.DecimalField(max_digits=12, decimal_places=2)  # In Naira
-    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, default="tokunbo")
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # In Naira
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES, blank=True, null=True, default="tokunbo")
     state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True)
     area = models.ForeignKey(Area, on_delete=models.SET_NULL, null=True)
+    
+    # Dynamic JSON Metadata for Category-Specific Attributes (Jobs, Property, Vehicles)
+    extra_fields = models.JSONField(default=dict, blank=True)
     
     # Status & Management
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
@@ -277,6 +280,31 @@ class Listing(models.Model):
         if self.locked_by and self.locked_at:
             return (timezone.now() - self.locked_at).total_seconds() < 600
         return False
+
+    @property
+    def is_job(self):
+        if not self.category:
+            return False
+        return "job" in self.category.slug.lower()
+
+    @property
+    def is_property(self):
+        if not self.category:
+            return False
+        return "prop" in self.category.slug.lower() or "real-estate" in self.category.slug.lower()
+
+    @property
+    def salary_display(self):
+        if self.is_job and self.extra_fields:
+            min_sal = self.extra_fields.get("min_salary")
+            max_sal = self.extra_fields.get("max_salary")
+            if min_sal and max_sal:
+                return f"₦{int(float(min_sal)):,} - ₦{int(float(max_sal)):,}"
+            elif min_sal:
+                return f"From ₦{int(float(min_sal)):,}"
+            elif max_sal:
+                return f"Up to ₦{int(float(max_sal)):,}"
+        return f"₦{self.price:,.2f}"
 
     def __str__(self):
         return f"{self.title} - ₦{self.price} ({self.get_status_display()})"

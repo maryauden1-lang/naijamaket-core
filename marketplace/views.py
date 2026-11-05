@@ -142,7 +142,7 @@ def listing_detail_view(request, slug):
     
     Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
     
-    # Smart Similar Ads Engine:
+    # Smart Similar Ads Engine
     similar_qs = Listing.objects.filter(
         status='active'
     ).exclude(id=listing.id).select_related(
@@ -336,7 +336,7 @@ def post_ad_view(request):
         files = request.FILES.getlist('images')
 
         if not files:
-            messages.error(request, "Please upload at least one image of your item.")
+            messages.error(request, "Please upload at least one image of your item or job opportunity.")
         elif form.is_valid():
             listing = form.save(commit=False)
             listing.seller = request.user
@@ -449,9 +449,7 @@ def profile_view(request):
     if request.method == 'POST':
         action_type = request.POST.get('action_type')
 
-        # ----------------------------------------------------
         # FORM 1: DEDICATED SEPARATE KYC SUBMISSION
-        # ----------------------------------------------------
         if action_type == 'submit_kyc':
             id_doc = request.FILES.get('id_document')
             selfie_b64 = request.POST.get('selfie_base64')
@@ -482,9 +480,7 @@ def profile_view(request):
             messages.info(request, "Your KYC documents and biometric selfie have been submitted for review!")
             return redirect('marketplace:profile')
 
-        # ----------------------------------------------------
-        # FORM 2: GENERAL STORE DETAILS (Shop address, bio, etc.)
-        # ----------------------------------------------------
+        # FORM 2: GENERAL STORE DETAILS
         else:
             form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
             if form.is_valid():
@@ -548,7 +544,11 @@ def get_areas_for_state_view(request):
 def get_subcategories_for_category_view(request):
     category_id = request.GET.get('category_id')
     subcategories = []
+    category_slug = ""
     if category_id:
+        cat_obj = Category.objects.filter(id=category_id).first()
+        if cat_obj:
+            category_slug = cat_obj.slug
         sub_objs = SubCategory.objects.filter(category_id=category_id).order_by('name')
         subcategories = [{'id': s.id, 'name': s.name} for s in sub_objs]
-    return JsonResponse({'subcategories': subcategories})
+    return JsonResponse({'subcategories': subcategories, 'category_slug': category_slug})
