@@ -86,7 +86,7 @@
         {% endif %}
       </div>
 
-      <!-- Category & Subcategory -->
+      <!-- Category & Dynamic Subcategory -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1.5">Category</label>
@@ -96,7 +96,7 @@
           {% endif %}
         </div>
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">Sub-Category (Optional)</label>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">Sub-Category</label>
           {{ form.subcategory }}
           {% if form.subcategory.errors %}
             <p class="text-rose-500 text-xs mt-1">{{ form.subcategory.errors.0 }}</p>
@@ -122,7 +122,7 @@
         </div>
       </div>
 
-      <!-- State & Dynamic Cascading Commercial Hub Area -->
+      <!-- State & Dynamic Commercial Hub Area -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1.5">State</label>
@@ -195,66 +195,119 @@
       });
     }
 
-    // 2. Chained Dynamic State -> Area Dropdown Filter
+    // 2. Chained Dynamic Dropdowns (Category -> SubCategory AND State -> Area)
     document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const catSelect = document.getElementById('id_category');
+      const subCatSelect = document.getElementById('id_subcategory');
       const stateSelect = document.getElementById('id_state');
       const areaSelect = document.getElementById('id_area');
 
-      if (!stateSelect || !areaSelect) return;
+      // --- A. CATEGORY -> SUBCATEGORY ---
+      if (catSelect && subCatSelect) {
+        const initialSubCat = subCatSelect.value;
 
-      // Remember pre-selected area value if form had validation errors
-      const initialAreaValue = areaSelect.value;
+        function loadSubCategories(categoryId, valueToRestore) {
+          if (!categoryId) {
+            subCatSelect.innerHTML = '<option value="">Select a category first</option>';
+            subCatSelect.disabled = true;
+            return;
+          }
 
-      function loadAreas(stateId, selectedValueToRestore) {
-        if (!stateId) {
-          areaSelect.innerHTML = '<option value="">Select a state first</option>';
-          areaSelect.disabled = true;
-          return;
+          subCatSelect.disabled = true;
+          subCatSelect.innerHTML = '<option value="">Loading subcategories...</option>';
+
+          fetch(`/api/get-subcategories/?category_id=${encodeURIComponent(categoryId)}`)
+            .then(res => res.json())
+            .then(data => {
+              subCatSelect.innerHTML = '<option value="">Select Sub-Category</option>';
+              if (data.subcategories && data.subcategories.length > 0) {
+                data.subcategories.forEach(sub => {
+                  const opt = document.createElement('option');
+                  opt.value = sub.id;
+                  opt.textContent = sub.name;
+                  if (valueToRestore && String(valueToRestore) === String(sub.id)) {
+                    opt.selected = true;
+                  }
+                  subCatSelect.appendChild(opt);
+                });
+                subCatSelect.disabled = false;
+              } else {
+                subCatSelect.innerHTML = '<option value="">No subcategories available</option>';
+                subCatSelect.disabled = false;
+              }
+            })
+            .catch(err => {
+              console.error('Error fetching subcategories:', err);
+              subCatSelect.innerHTML = '<option value="">Error loading subcategories</option>';
+              subCatSelect.disabled = false;
+            });
         }
 
-        areaSelect.disabled = true;
-        areaSelect.innerHTML = '<option value="">Loading locations...</option>';
+        if (catSelect.value) {
+          loadSubCategories(catSelect.value, initialSubCat);
+        } else {
+          subCatSelect.innerHTML = '<option value="">Select a category first</option>';
+          subCatSelect.disabled = true;
+        }
 
-        fetch(`/api/get-areas/?state_id=${encodeURIComponent(stateId)}`)
-          .then(res => res.json())
-          .then(data => {
-            areaSelect.innerHTML = '<option value="">Select Area / Commercial Hub</option>';
-            if (data.areas && data.areas.length > 0) {
-              data.areas.forEach(area => {
-                const opt = document.createElement('option');
-                opt.value = area.id;
-                opt.textContent = area.name;
-                if (selectedValueToRestore && String(selectedValueToRestore) === String(area.id)) {
-                  opt.selected = true;
-                }
-                areaSelect.appendChild(opt);
-              });
-              areaSelect.disabled = false;
-            } else {
-              areaSelect.innerHTML = '<option value="">No specific areas listed for this state</option>';
-              areaSelect.disabled = false;
-            }
-          })
-          .catch(err => {
-            console.error('Error fetching areas:', err);
-            areaSelect.innerHTML = '<option value="">Error loading areas</option>';
-            areaSelect.disabled = false;
-          });
+        catSelect.addEventListener('change', function() {
+          loadSubCategories(this.value, null);
+        });
       }
 
-      // Initialize state on page load:
-      // If no state is chosen yet, clear out the 342 pre-rendered options
-      if (stateSelect.value) {
-        loadAreas(stateSelect.value, initialAreaValue);
-      } else {
-        areaSelect.innerHTML = '<option value="">Select a state first</option>';
-        areaSelect.disabled = true;
-      }
+      // --- B. STATE -> AREA ---
+      if (stateSelect && areaSelect) {
+        const initialArea = areaSelect.value;
 
-      // Update areas whenever the seller changes the State dropdown
-      stateSelect.addEventListener('change', function() {
-        loadAreas(this.value, null);
-      });
+        function loadAreas(stateId, valueToRestore) {
+          if (!stateId) {
+            areaSelect.innerHTML = '<option value="">Select a state first</option>';
+            areaSelect.disabled = true;
+            return;
+          }
+
+          areaSelect.disabled = true;
+          areaSelect.innerHTML = '<option value="">Loading locations...</option>';
+
+          fetch(`/api/get-areas/?state_id=${encodeURIComponent(stateId)}`)
+            .then(res => res.json())
+            .then(data => {
+              areaSelect.innerHTML = '<option value="">Select Area / Commercial Hub</option>';
+              if (data.areas && data.areas.length > 0) {
+                data.areas.forEach(area => {
+                  const opt = document.createElement('option');
+                  opt.value = area.id;
+                  opt.textContent = area.name;
+                  if (valueToRestore && String(valueToRestore) === String(area.id)) {
+                    opt.selected = true;
+                  }
+                  areaSelect.appendChild(opt);
+                });
+                areaSelect.disabled = false;
+              } else {
+                areaSelect.innerHTML = '<option value="">No specific areas listed for this state</option>';
+                areaSelect.disabled = false;
+              }
+            })
+            .catch(err => {
+              console.error('Error fetching areas:', err);
+              areaSelect.innerHTML = '<option value="">Error loading areas</option>';
+              areaSelect.disabled = false;
+            });
+        }
+
+        if (stateSelect.value) {
+          loadAreas(stateSelect.value, initialArea);
+        } else {
+          areaSelect.innerHTML = '<option value="">Select a state first</option>';
+          areaSelect.disabled = true;
+        }
+
+        stateSelect.addEventListener('change', function() {
+          loadAreas(this.value, null);
+        });
+      }
     });
 
     if (window.lucide) {

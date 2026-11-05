@@ -543,3 +543,12 @@ def get_areas_for_state_view(request):
         area_objs = Area.objects.filter(state_id=state_id).order_by('name')
         areas = [{'id': a.id, 'name': a.name} for a in area_objs]
     return JsonResponse({'areas': areas})
+
+
+def get_subcategories_for_category_view(request):
+    category_id = request.GET.get('category_id')
+    subcategories = []
+    if category_id:
+        sub_objs = SubCategory.objects.filter(category_id=category_id).order_by('name')
+        subcategories = [{'id': s.id, 'name': s.name} for s in sub_objs]
+    return JsonResponse({'subcategories': subcategories})
