@@ -16,13 +16,6 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
       background: #F8F9FA;
     }
-    .ultra-glass {
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border: 1px solid rgba(226, 232, 240, 0.9);
-      box-shadow: 0 10px 30px -10px rgba(109, 40, 217, 0.05);
-    }
     .purple-gradient {
       background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
     }
@@ -41,7 +34,7 @@
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-16 selection:bg-purple-600 selection:text-white">
 
   <!-- ========================================================= -->
-  <!-- TOP WHITE HEADER BAR (MATCHES INDEX DESIGN)               -->
+  <!-- TOP WHITE HEADER BAR                                      -->
   <!-- ========================================================= -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
@@ -130,9 +123,11 @@
 
             <!-- Top Badges -->
             <div class="absolute top-3 left-3 flex gap-2">
-              <span class="bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full border border-white/10">
-                {{ listing.get_condition_display }}
-              </span>
+              {% if listing.condition %}
+                <span class="bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full border border-white/10">
+                  {{ listing.get_condition_display }}
+                </span>
+              {% endif %}
               {% if listing.status == 'sold' %}
                 <span class="bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-md">
                   SOLD
@@ -166,7 +161,7 @@
 
         </div>
 
-        <!-- RICH ITEM SPECIFICATIONS & ATTRIBUTES -->
+        <!-- SPECIFICATIONS & ATTRIBUTES -->
         <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200">
           <h2 class="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
             <i data-lucide="cpu" class="w-5 h-5 text-purple-600"></i>
@@ -174,10 +169,13 @@
           </h2>
 
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Condition</span>
-              <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.get_condition_display }}</span>
-            </div>
+            
+            {% if listing.condition %}
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Condition</span>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.get_condition_display }}</span>
+              </div>
+            {% endif %}
 
             <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Category</span>
@@ -189,15 +187,43 @@
               <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.subcategory.name|default:"General" }}</span>
             </div>
 
+            <!-- Safe Location Resolution (No more crashes on None) -->
             <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Location / Market</span>
-              <span class="text-xs sm:text-sm font-extrabold text-purple-700 mt-0.5 block truncate">{{ listing.area.name|default:listing.state.name }}</span>
+              <span class="text-xs sm:text-sm font-extrabold text-purple-700 mt-0.5 block truncate">
+                {% if listing.area %}{{ listing.area.name }}{% elif listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}
+              </span>
             </div>
 
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Inspection Available</span>
-              <span class="text-xs sm:text-sm font-extrabold text-emerald-600 mt-0.5 block">Yes (In-Person)</span>
-            </div>
+            <!-- Custom Category Fields (Job specifics) -->
+            {% if listing.extra_fields.company_name %}
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Company</span>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">{{ listing.extra_fields.company_name }}</span>
+              </div>
+            {% endif %}
+
+            {% if listing.extra_fields.job_type %}
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Job Type</span>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block capitalize">{{ listing.extra_fields.job_type|title }}</span>
+              </div>
+            {% endif %}
+
+            <!-- Custom Category Fields (Property specifics) -->
+            {% if listing.extra_fields.property_type %}
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Property Type</span>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block capitalize">{{ listing.extra_fields.property_type|title }}</span>
+              </div>
+            {% endif %}
+
+            {% if listing.extra_fields.bedrooms %}
+              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Bedrooms</span>
+                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.extra_fields.bedrooms }} Bedroom{{ listing.extra_fields.bedrooms|pluralize }}</span>
+              </div>
+            {% endif %}
 
             <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
               <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Seller Verified</span>
@@ -205,6 +231,7 @@
                 {% if listing.seller.seller_profile.is_nin_verified %}NIN Verified{% else %}Standard Merchant{% endif %}
               </span>
             </div>
+
           </div>
         </div>
 
@@ -212,7 +239,7 @@
         <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200">
           <h2 class="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
             <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
-            Full Product Description
+            Full Description
           </h2>
           <div class="text-slate-700 text-sm leading-relaxed whitespace-pre-line">
             {{ listing.description }}
@@ -220,7 +247,7 @@
         </div>
 
         <!-- ======================================================== -->
-        <!-- REPORT THIS AD & SAFETY CONTROLS (JIJI STYLE)            -->
+        <!-- REPORT THIS AD & SAFETY CONTROLS                         -->
         <!-- ======================================================== -->
         <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-3">
@@ -255,18 +282,35 @@
 
       </div>
 
-      <!-- Right Column: Price & Verified Merchant Controls (1 Col) -->
+      <!-- Right Column: Price & Merchant Controls (1 Col) -->
       <div class="space-y-6">
         
         <!-- Price & Action Card -->
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Asking Price</p>
-          <p class="text-3xl sm:text-4xl font-black text-slate-900 mb-4">₦{{ listing.price|intcomma }}</p>
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+            {% if listing.is_job %}Salary{% else %}Asking Price{% endif %}
+          </p>
+
+          <!-- Render Smart Salary Range or Standard Price -->
+          <p class="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
+            {% if listing.is_job and listing.extra_fields.min_salary %}
+              {% if listing.extra_fields.max_salary %}
+                ₦{{ listing.extra_fields.min_salary|intcomma }} - ₦{{ listing.extra_fields.max_salary|intcomma }}
+              {% else %}
+                From ₦{{ listing.extra_fields.min_salary|intcomma }}
+              {% endif %}
+            {% else %}
+              ₦{{ listing.price|intcomma }}
+            {% endif %}
+          </p>
 
           <div class="space-y-2.5 pb-5 border-b border-slate-100 text-xs font-semibold text-slate-600">
+            <!-- Safe Location Lookup -->
             <div class="flex items-center gap-2">
               <i data-lucide="map-pin" class="w-4 h-4 text-purple-600"></i>
-              <span>{{ listing.area.name|default:listing.state.name }}, {{ listing.state.name }}</span>
+              <span>
+                {% if listing.area %}{{ listing.area.name }}, {% endif %}{% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}
+              </span>
             </div>
             <div class="flex items-center gap-2">
               <i data-lucide="clock" class="w-4 h-4 text-purple-600"></i>
@@ -311,7 +355,7 @@
           </div>
         </div>
 
-        <!-- Merchant Profile Card With Verified Badge, Shop Address & Social Links -->
+        <!-- Merchant Profile Card -->
         <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-5">
           <div class="flex items-center gap-4">
             
@@ -363,8 +407,6 @@
               Connect Directly with Seller
             </span>
             <div class="flex items-center gap-2">
-              
-              <!-- WhatsApp -->
               <a 
                 href="https://wa.me/{{ listing.seller.seller_profile.whatsapp_number|default:listing.seller.seller_profile.phone_number }}" 
                 target="_blank" 
@@ -374,7 +416,6 @@
                 <i data-lucide="message-circle" class="w-5 h-5"></i>
               </a>
 
-              <!-- Instagram -->
               {% if listing.seller.seller_profile.instagram_handle %}
                 <a 
                   href="https://instagram.com/{{ listing.seller.seller_profile.instagram_handle }}" 
@@ -386,7 +427,6 @@
                 </a>
               {% endif %}
 
-              <!-- Facebook -->
               {% if listing.seller.seller_profile.facebook_handle %}
                 <a 
                   href="https://facebook.com/{{ listing.seller.seller_profile.facebook_handle }}" 
@@ -398,7 +438,6 @@
                 </a>
               {% endif %}
 
-              <!-- TikTok -->
               {% if listing.seller.seller_profile.tiktok_handle %}
                 <a 
                   href="https://tiktok.com/@{{ listing.seller.seller_profile.tiktok_handle }}" 
@@ -410,7 +449,6 @@
                 </a>
               {% endif %}
 
-              <!-- Call Phone -->
               <a 
                 href="tel:{{ listing.seller.seller_profile.phone_number }}" 
                 class="w-10 h-10 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
@@ -418,7 +456,6 @@
               >
                 <i data-lucide="phone-call" class="w-5 h-5"></i>
               </a>
-
             </div>
           </div>
 
@@ -440,7 +477,7 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- SIMILAR & RELATED ADS SECTION                           -->
+    <!-- SIMILAR & RELATED ADS SECTION                            -->
     <!-- ======================================================== -->
     <div class="pt-10 border-t border-slate-200">
       <div class="flex items-center justify-between mb-6">
@@ -449,7 +486,7 @@
             <i data-lucide="sparkles" class="w-5 h-5 text-purple-600"></i>
             Similar Items You May Like
           </h3>
-          <p class="text-xs text-slate-400">Discover comparable active listings across {{ listing.state.name }} and Nigeria.</p>
+          <p class="text-xs text-slate-400">Discover comparable active listings across {% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}.</p>
         </div>
         <a href="{% url 'marketplace:home' %}?category={{ listing.category.slug }}" class="text-xs font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1">
           <span>See More in {{ listing.category.name }}</span>
@@ -472,9 +509,11 @@
                   </div>
                 {% endif %}
                 
-                <span class="absolute top-2 left-2 bg-slate-950/70 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
-                  {{ item.get_condition_display }}
-                </span>
+                {% if item.condition %}
+                  <span class="absolute top-2 left-2 bg-slate-950/70 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                    {{ item.get_condition_display }}
+                  </span>
+                {% endif %}
 
                 {% if item.seller.seller_profile.is_nin_verified %}
                   <span class="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-xs" title="Verified Seller">
@@ -492,9 +531,12 @@
                   <p class="text-sm font-black text-slate-900 mt-1">₦{{ item.price|intcomma }}</p>
                 </div>
                 
+                <!-- Safe Location Lookup for Similar Ads -->
                 <div class="flex items-center gap-1 text-[10px] text-slate-400 mt-2 truncate">
                   <i data-lucide="map-pin" class="w-3 h-3 text-slate-400 shrink-0"></i>
-                  <span class="truncate">{{ item.area.name|default:item.state.name }}</span>
+                  <span class="truncate">
+                    {% if item.area %}{{ item.area.name }}{% elif item.state %}{{ item.state.name }}{% else %}Nigeria{% endif %}
+                  </span>
                 </div>
               </div>
 
@@ -605,7 +647,6 @@
       modal.classList.add('hidden');
     }
 
-    // Close on backdrop click
     document.getElementById('reportModal').addEventListener('click', function(e) {
       if (e.target === this) {
         closeReportModal();
