@@ -7,14 +7,11 @@
   <meta name="theme-color" content="#6D28D9">
   <title>{{ settings.site_name|default:"Naijamaket" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
-  <!-- CRISP HIGH-CONTRAST DYNAMIC BROWSER FAVICON -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%236D28D9'/><path d='M30 72 V28 L56 58 V28 H70 V72 L44 42 V72 Z' fill='%23FFFFFF'/><circle cx='70' cy='32' r='7' fill='%23FF8A00'/></svg>">
-  
-  <!-- APPLE TOUCH & HOME SCREEN ICONS (Uses your uploaded logo if present) -->
+  <!-- FAVICON & APP ICONS (DIRECT FROM YOUR UPLOADED LOGO) -->
   {% if settings.logo %}
+    <link rel="icon" href="{{ settings.logo.url }}">
+    <link rel="shortcut icon" href="{{ settings.logo.url }}">
     <link rel="apple-touch-icon" href="{{ settings.logo.url }}">
-  {% else %}
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%236D28D9'/><path d='M30 72 V28 L56 58 V28 H70 V72 L44 42 V72 Z' fill='%23FFFFFF'/></svg>">
   {% endif %}
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -52,22 +49,23 @@
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-24 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
 
   <!-- ========================================================= -->
-  <!-- ADD TO HOME SCREEN MODAL (CENTERED & ABOVE BOTTOM NAV)    -->
+  <!-- ADD TO HOME SCREEN MODAL (CENTERED & PROMINENT LOGO)      -->
   <!-- ========================================================= -->
   <div id="pwaExitModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 transition-all">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-center relative mx-auto my-auto animate-in fade-in zoom-in duration-200">
       
-      <!-- Close Button Top Corner -->
       <button type="button" onclick="closePwaExitModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <!-- App Icon Box -->
-      <div class="w-16 h-16 rounded-2xl mx-auto mb-3.5 bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center border border-purple-400 shadow-md overflow-hidden">
+      <!-- Prominent Enlarged Badge Display -->
+      <div class="w-20 h-20 rounded-2xl mx-auto mb-3.5 flex items-center justify-center overflow-hidden drop-shadow-md">
         {% if settings.logo %}
-          <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="w-12 h-12 object-contain">
+          <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="w-full h-full object-contain">
         {% else %}
-          <span class="text-white font-black text-2xl tracking-tighter">N</span>
+          <div class="w-16 h-16 rounded-2xl bg-purple-700 text-white font-black text-2xl flex items-center justify-center shadow-md">
+            {{ settings.site_name|slice:":1"|upper|default:"N" }}
+          </div>
         {% endif %}
       </div>
 
@@ -86,7 +84,6 @@
         </button>
       </div>
 
-      <!-- iOS Safari Instructions -->
       <p id="iosInstructions" class="hidden text-[11px] text-slate-500 mt-4 pt-3 border-t border-slate-100 leading-normal text-left bg-slate-50 p-2.5 rounded-xl">
         To install on iPhone: Tap the <strong>Share</strong> button <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline text-blue-600 mx-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of Safari, then choose <strong>Add to Home Screen</strong>.
       </p>
@@ -111,18 +108,18 @@
 
   <!-- 1. TOP WHITE HEADER BAR -->
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between gap-3 sm:gap-6">
       
-      <!-- Brand Logo -->
-      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5 group shrink-0 py-1">
+      <!-- Brand Logo (Enlarged with proper clearance) -->
+      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-3 group shrink-0 py-1">
         {% if settings.logo %}
           <img 
             src="{{ settings.logo.url }}" 
             alt="{{ settings.site_name }}" 
-            class="h-12 sm:h-16 w-auto max-w-[180px] sm:max-w-[260px] object-contain group-hover:scale-102 transition-transform duration-200"
+            class="h-14 sm:h-18 w-auto max-w-[200px] sm:max-w-[300px] object-contain group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
           >
         {% else %}
-          <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-md group-hover:scale-105 transition-transform">
+          <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-md group-hover:scale-105 transition-transform">
             {{ settings.site_name|slice:":1"|upper|default:"N" }}
           </div>
           <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
@@ -134,7 +131,7 @@
       <!-- Right Controls -->
       <div class="flex items-center gap-2.5 sm:gap-6">
         
-        <!-- Language Selector Dropdown -->
+        <!-- Language Selector -->
         <div class="relative">
           <button 
             type="button" 
@@ -235,6 +232,7 @@
             </svg>
           </button>
 
+          <!-- Dropdown List of States -->
           <div id="stateDropdownMenu" class="hidden absolute left-0 top-[calc(100%+6px)] w-64 sm:w-72 bg-white text-slate-800 rounded-2xl p-2 shadow-2xl border border-slate-100 z-50 max-h-72 sm:max-h-80 overflow-y-auto text-left">
             <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}" class="flex items-center justify-between px-3 py-2 text-xs font-extrabold text-purple-700 hover:bg-purple-50 rounded-xl">
               <span>All Nigeria (Entire Feed)</span>
@@ -506,7 +504,6 @@
             <!-- Details -->
             <div class="p-2.5 sm:p-3.5 flex flex-col flex-1 justify-between min-w-0">
               <div>
-                <!-- Location Pin -->
                 <p class="text-[11px] sm:text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-1 truncate">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
@@ -629,7 +626,7 @@
           <div class="col-span-2 space-y-3.5">
             <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5">
               {% if settings.logo %}
-                <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="h-10 w-auto object-contain">
+                <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="h-12 w-auto object-contain">
               {% else %}
                 <div class="w-9 h-9 rounded-xl bg-white text-purple-900 font-black text-xl flex items-center justify-center shadow-md">
                   {{ settings.site_name|slice:":1"|upper|default:"N" }}
