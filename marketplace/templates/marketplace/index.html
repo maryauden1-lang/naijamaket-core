@@ -3,15 +3,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- maximum-scale=1.0 and user-scalable=no prevents mobile browser viewport zooming -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6D28D9">
   <title>{{ settings.site_name|default:"Naijamaket" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
-  <!-- FAVICON & WEB APP ICONS -->
+  <!-- CRISP HIGH-CONTRAST DYNAMIC BROWSER FAVICON -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%236D28D9'/><path d='M30 72 V28 L56 58 V28 H70 V72 L44 42 V72 Z' fill='%23FFFFFF'/><circle cx='70' cy='32' r='7' fill='%23FF8A00'/></svg>">
+  
+  <!-- APPLE TOUCH & HOME SCREEN ICONS (Uses your uploaded logo if present) -->
   {% if settings.logo %}
-    <link rel="icon" type="image/png" href="{{ settings.logo.url }}">
     <link rel="apple-touch-icon" href="{{ settings.logo.url }}">
+  {% else %}
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='28' fill='%236D28D9'/><path d='M30 72 V28 L56 58 V28 H70 V72 L44 42 V72 Z' fill='%23FFFFFF'/></svg>">
   {% endif %}
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -27,7 +30,6 @@
       background: #F8F9FA; 
       touch-action: pan-y;
     }
-    /* Strictly enforce 16px on inputs on mobile to kill the iOS auto-zoom bug */
     @media screen and (max-width: 768px) {
       input, select, textarea {
         font-size: 16px !important;
@@ -47,47 +49,52 @@
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
+<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-24 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
 
   <!-- ========================================================= -->
-  <!-- ADD TO HOME SCREEN EXIT POPUP (PWA PROMPT)               -->
+  <!-- ADD TO HOME SCREEN MODAL (CENTERED & ABOVE BOTTOM NAV)    -->
   <!-- ========================================================= -->
-  <div id="pwaExitModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-end sm:items-center justify-center p-4 transition-opacity">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all text-center">
-      <div class="w-16 h-16 rounded-2xl mx-auto mb-3.5 bg-purple-50 flex items-center justify-center border border-purple-100 overflow-hidden shadow-xs">
+  <div id="pwaExitModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 transition-all">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-center relative mx-auto my-auto animate-in fade-in zoom-in duration-200">
+      
+      <!-- Close Button Top Corner -->
+      <button type="button" onclick="closePwaExitModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- App Icon Box -->
+      <div class="w-16 h-16 rounded-2xl mx-auto mb-3.5 bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center border border-purple-400 shadow-md overflow-hidden">
         {% if settings.logo %}
           <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="w-12 h-12 object-contain">
         {% else %}
-          <div class="w-10 h-10 rounded-xl bg-purple-700 text-white font-black text-xl flex items-center justify-center">
-            {{ settings.site_name|slice:":1"|upper|default:"N" }}
-          </div>
+          <span class="text-white font-black text-2xl tracking-tighter">N</span>
         {% endif %}
       </div>
 
       <h3 class="text-base font-black text-slate-900 mb-1">Add {{ settings.site_name|default:"Naijamaket" }} to Home Screen</h3>
       <p class="text-xs text-slate-500 mb-5 leading-relaxed">
-        Install for faster browsing, instant offer alerts, and full one-tap access directly on your phone.
+        Install the web app for instant access, real-time message chimes, and smooth marketplace browsing.
       </p>
 
-      <div class="space-y-2">
-        <button type="button" id="pwaInstallBtn" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
-          <i data-lucide="download" class="w-4 h-4"></i>
+      <div class="space-y-2.5">
+        <button type="button" id="pwaInstallBtn" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-black text-xs py-3.5 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
           <span>Add to Home Screen</span>
         </button>
-        <button type="button" onclick="closePwaExitModal()" class="w-full text-slate-400 hover:text-slate-600 font-bold text-xs py-2 transition">
+        <button type="button" onclick="closePwaExitModal()" class="w-full text-slate-400 hover:text-slate-700 font-bold text-xs py-2 transition">
           Maybe Later
         </button>
       </div>
 
-      <!-- Instruction note for Safari iOS users -->
-      <p id="iosInstructions" class="hidden text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100 leading-tight">
-        Tap the <strong>Share</strong> button <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of Safari, then choose <strong>Add to Home Screen</strong>.
+      <!-- iOS Safari Instructions -->
+      <p id="iosInstructions" class="hidden text-[11px] text-slate-500 mt-4 pt-3 border-t border-slate-100 leading-normal text-left bg-slate-50 p-2.5 rounded-xl">
+        To install on iPhone: Tap the <strong>Share</strong> button <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline text-blue-600 mx-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of Safari, then choose <strong>Add to Home Screen</strong>.
       </p>
     </div>
   </div>
 
   <!-- FLOATING GLOBAL TOAST ALERT -->
-  <div id="globalToast" class="fixed top-5 right-5 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+  <div id="globalToast" class="fixed top-5 right-5 z-[80] transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
     <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
@@ -127,7 +134,7 @@
       <!-- Right Controls -->
       <div class="flex items-center gap-2.5 sm:gap-6">
         
-        <!-- Language Selector -->
+        <!-- Language Selector Dropdown -->
         <div class="relative">
           <button 
             type="button" 
@@ -203,7 +210,7 @@
     </div>
   </header>
 
-  <!-- 2. PURPLE HERO CANVAS (SEARCH BAR) -->
+  <!-- 2. PURPLE HERO CANVAS -->
   <section class="jiji-purple-canvas text-white py-7 sm:py-12 shadow-inner">
     <div class="max-w-4xl mx-auto px-3 sm:px-6 text-center">
       
@@ -228,7 +235,6 @@
             </svg>
           </button>
 
-          <!-- Dropdown List of States -->
           <div id="stateDropdownMenu" class="hidden absolute left-0 top-[calc(100%+6px)] w-64 sm:w-72 bg-white text-slate-800 rounded-2xl p-2 shadow-2xl border border-slate-100 z-50 max-h-72 sm:max-h-80 overflow-y-auto text-left">
             <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}" class="flex items-center justify-between px-3 py-2 text-xs font-extrabold text-purple-700 hover:bg-purple-50 rounded-xl">
               <span>All Nigeria (Entire Feed)</span>
@@ -258,7 +264,6 @@
             {% endif %}
 
             <div class="relative w-full h-full">
-              <!-- text-base prevents auto-zoom on mobile iOS & Android -->
               <input 
                 type="text" 
                 id="liveSearchInput" 
@@ -441,7 +446,7 @@
           {% endif %}
         </div>
 
-        <!-- 2 COLUMNS ON MOBILE (grid-cols-2) & 3 ON DESKTOP -->
+        <!-- 2 COLUMNS ON MOBILE & 3 ON DESKTOP -->
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 w-full">
           {% for item in listings %}
           <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group border border-slate-200 relative">
@@ -635,23 +640,6 @@
             <p class="text-xs text-purple-200/80 leading-relaxed max-w-sm">
               Nigeria's verified digital trading marketplace. Connect directly with authentic local sellers across Lagos, Abuja, Ogun, Port Harcourt, and Kano for phones, vehicles, electronics, and commercial goods.
             </p>
-            <div class="flex items-center gap-3 pt-2">
-              {% if settings.facebook_url %}
-              <a href="{{ settings.facebook_url }}" target="_blank" rel="noopener noreferrer" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" title="Facebook">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              </a>
-              {% endif %}
-              {% if settings.twitter_url %}
-              <a href="{{ settings.twitter_url }}" target="_blank" rel="noopener noreferrer" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" title="X (Twitter)">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-              {% endif %}
-              {% if settings.instagram_url %}
-              <a href="{{ settings.instagram_url }}" target="_blank" rel="noopener noreferrer" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" title="Instagram">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
-              </a>
-              {% endif %}
-            </div>
           </div>
 
           <div class="space-y-3">
@@ -660,9 +648,6 @@
               <li><a href="{% url 'marketplace:static_page' 'about-us' %}" class="hover:text-white transition-colors">About Naijamaket</a></li>
               <li><a href="{% url 'marketplace:static_page' 'terms-of-service' %}" class="hover:text-white transition-colors">Terms of Service</a></li>
               <li><a href="{% url 'marketplace:static_page' 'privacy-policy' %}" class="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'billing-refund-policy' %}" class="hover:text-white transition-colors">Billing & Refund Policy</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'cookie-policy' %}" class="hover:text-white transition-colors">Cookie Policy</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'nin-verification' %}" class="hover:text-white transition-colors">NIN Verification Rules</a></li>
             </ul>
           </div>
 
@@ -671,9 +656,6 @@
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
               <li><a href="{% url 'marketplace:static_page' 'safety-tips' %}" class="hover:text-white transition-colors">Safety Tips for Buyers</a></li>
               <li><a href="{% url 'marketplace:static_page' 'seller-verification' %}" class="hover:text-white transition-colors">Seller Verification Process</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'anti-scam-fraud' %}" class="hover:text-white transition-colors">Anti-Scam & Fraud Center</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'prohibited-items' %}" class="hover:text-white transition-colors">Prohibited & Restricted Items</a></li>
-              <li><a href="{% url 'marketplace:static_page' 'community-guidelines' %}" class="hover:text-white transition-colors">Community Guidelines</a></li>
             </ul>
           </div>
 
@@ -682,34 +664,19 @@
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
               <li><a href="mailto:{{ settings.support_email }}" class="hover:text-white transition-colors">Email: {{ settings.support_email }}</a></li>
               <li><a href="tel:{{ settings.support_phone }}" class="hover:text-white transition-colors">Hotline: {{ settings.support_phone }}</a></li>
-              <li><a href="https://wa.me/{{ settings.support_whatsapp }}" target="_blank" class="hover:text-white transition-colors">WhatsApp Support Desk</a></li>
-              <li class="pt-1 text-[11px] text-purple-300">Office: {{ settings.office_address }}</li>
             </ul>
           </div>
         </div>
 
-        <div class="py-6 border-b border-purple-400/20 text-[11px] text-purple-200/70 space-y-2">
-          <span class="font-extrabold text-white uppercase text-[10px] tracking-wider block">Popular Commercial Regions:</span>
-          <div class="flex flex-wrap gap-2 text-xs">
-            <a href="?state=lagos" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Lagos (Computer Village, Ikeja, Lekki, Alaba)</a>
-            <a href="?state=abuja" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Abuja FCT (Wuse 2, Garki, Emab Plaza)</a>
-            <a href="?state=rivers" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Port Harcourt (Garrison, GRA)</a>
-            <a href="?state=oyo" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Ibadan (Dugbe, Bodija)</a>
-            <a href="?state=kano" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Kano (Kano Municipal, Sabon Gari)</a>
-            <a href="?state=ogun" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Ogun (Abeokuta, Ogba Border)</a>
-            <a href="?state=anambra" class="hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors">Onitsha (Main Market)</a>
-          </div>
-        </div>
-
         <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-purple-200/60 font-medium">
-          <p>&copy; 2026 {{ settings.site_name|default:"Naijamaket" }}. All rights reserved. Registered Nigerian Marketplace.</p>
+          <p>&copy; 2026 {{ settings.site_name|default:"Naijamaket" }}. All rights reserved.</p>
         </div>
 
       </div>
     </div>
   </footer>
 
-  <!-- 4. MOBILE BOTTOM NAV -->
+  <!-- 4. STICKY MOBILE BOTTOM NAVIGATION BAR -->
   <nav aria-label="Mobile Navigation" class="fixed bottom-0 left-0 right-0 sm:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 px-4 py-2 flex items-center justify-between shadow-2xl">
     <a href="{% url 'marketplace:home' %}" class="flex flex-col items-center gap-1 text-purple-700">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -887,19 +854,17 @@
       });
     }
 
-    // Trigger exit intent when visitor moves cursor to leave (Desktop) or after browsing (Mobile)
     document.addEventListener('mouseleave', (e) => {
       if (e.clientY <= 0) {
         showPwaExitModal();
       }
     });
 
-    // Mobile: Show after 25 seconds of active browsing if not dismissed
     setTimeout(() => {
       if (window.innerWidth < 768) {
         showPwaExitModal();
       }
-    }, 25000);
+    }, 20000);
 
     // =========================================================
     // GLOBAL SOUND & UNREAD BADGE POLLING ENGINE
