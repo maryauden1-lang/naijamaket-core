@@ -12,6 +12,7 @@ from django.db.models import Q, F, Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
+from django.core.cache import cache
 
 from .models import (
     SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing, 
@@ -61,7 +62,6 @@ def index_view(request):
     if selected_condition:
         listings_queryset = listings_queryset.filter(condition=selected_condition)
 
-    # 20 items per page pagination
     paginator = Paginator(listings_queryset, 20)
     page_number = request.GET.get('page', 1)
 
@@ -72,7 +72,6 @@ def index_view(request):
     except EmptyPage:
         listings = paginator.page(paginator.num_pages)
 
-    # Categories with live ad counts
     try:
         categories = Category.objects.annotate(
             total_ads=Count('listings', filter=Q(listings__status='active'))
@@ -83,7 +82,6 @@ def index_view(request):
             total_ads=Count('listing', filter=Q(listing__status='active'))
         ).prefetch_related('subcategories').order_by('order', 'name')
 
-    # States with live ad counts
     try:
         states_with_counts = State.objects.filter(is_active=True).annotate(
             total_ads=Count('listing', filter=Q(listing__status='active'))
@@ -98,7 +96,6 @@ def index_view(request):
     user_saved_ids = []
     unread_messages_count = 0
     if request.user.is_authenticated:
-        # Prevent staff from having an auto-created SellerProfile
         if not (request.user.is_staff or request.user.is_superuser):
             current_profile, _ = SellerProfile.objects.get_or_create(
                 user=request.user,
@@ -144,7 +141,6 @@ def listing_detail_view(request, slug):
     
     Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
     
-    # Smart Similar Ads Engine
     similar_qs = Listing.objects.filter(
         status='active'
     ).exclude(id=listing.id).select_related(
@@ -274,10 +270,87 @@ def start_chat_view(request, listing_id):
 
 @login_required(login_url='marketplace:login')
 def inbox_view(request):
-    conversations = Conversation.objects.filter(
+    raw_conversations = Conversation.objects.filter(
         Q(buyer=request.user) | Q(seller=request.user)
-    ).select_related('listing', 'buyer', 'seller').prefetch_related('messages')
-    return render(request, 'marketplace/inbox.html', {'conversations': conversations})
+    ).select_related(
+        'listing', 'buyer', 'seller', 
+        'buyer__seller_profile', 'seller__seller_profile'
+    ).prefetch_related('messages').order_by('-updated_at')
+
+    conversations_data = []
+    for conv in raw_conversations:
+        other_user = conv.seller if request.user == conv.buyer else conv.buyer
+        other_profile = getattr(other_user, 'seller_profile', None)
+        last_message = conv.messages.order_by('-created_at').first()
+        unread_for_this = conv.messages.filter(is_read=False).exclude(sender=request.user).count()
+
+        conversations_data.append({
+            'conversation': conv,
+            'other_user': other_user,
+            'other_profile': other_profile,
+            'last_message': last_message,
+            'unread_count': unread_for_this,
+        })
+
+    return render(request, 'marketplace/inbox.html', {
+        'conversations_data': conversations_data,
+    })
+
+
+@login_required(login_url='marketplace:login')
+def delete_conversation_view(request, conversation_id):
+    """Allows user to remove a conversation thread from their inbox."""
+    conv = get_object_or_404(
+        Conversation,
+        Q(buyer=request.user) | Q(seller=request.user),
+        id=conversation_id
+    )
+    if request.method == 'POST':
+        conv.delete()
+        messages.info(request, "Conversation deleted successfully.")
+        return redirect('marketplace:inbox')
+    return redirect('marketplace:chat_detail', conversation_id=conv.id)
+
+
+@login_required(login_url='marketplace:login')
+def delete_message_view(request, message_id):
+    """Allows sender to delete their own message."""
+    message = get_object_or_404(Message, id=message_id, sender=request.user)
+    conversation_id = message.conversation_id
+    message.delete()
+    
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success', 'message_id': message_id})
+    
+    return redirect('marketplace:chat_detail', conversation_id=conversation_id)
+
+
+@login_required(login_url='marketplace:login')
+def typing_status_api_view(request, conversation_id):
+    """Tracks and returns typing activity using cache."""
+    conv = get_object_or_404(
+        Conversation,
+        Q(buyer=request.user) | Q(seller=request.user),
+        id=conversation_id
+    )
+    other_user = conv.seller if request.user == conv.buyer else conv.buyer
+
+    if request.method == 'POST':
+        is_typing = request.POST.get('typing') == 'true'
+        cache_key = f"chat_typing_{conv.id}_{request.user.id}"
+        if is_typing:
+            cache.set(cache_key, True, timeout=4)
+        else:
+            cache.delete(cache_key)
+        return JsonResponse({'status': 'ok'})
+
+    other_typing_key = f"chat_typing_{conv.id}_{other_user.id}"
+    is_other_typing = bool(cache.get(other_typing_key, False))
+    return JsonResponse({
+        'is_typing': is_other_typing,
+        'other_username': other_user.username,
+        'other_name': other_user.first_name or other_user.username
+    })
 
 
 @login_required(login_url='marketplace:login')
@@ -294,14 +367,15 @@ def chat_detail_view(request, conversation_id):
         messages.error(request, "You do not have access to this conversation.")
         return redirect('marketplace:inbox')
 
-    # Mark incoming messages as read
     conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    other_user = conversation.seller if request.user == conversation.buyer else conversation.buyer
+    other_profile = getattr(other_user, 'seller_profile', None)
 
     if request.method == 'POST':
         action = request.POST.get('action', 'send_message')
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('is_ajax') == 'true'
 
-        # Action 1: Make a Formal Price Offer
         if action == 'make_offer':
             offer_raw = request.POST.get('offer_amount', '').strip().replace(',', '')
             note = request.POST.get('note', '').strip()
@@ -325,7 +399,7 @@ def chat_detail_view(request, conversation_id):
                 offer_amount=offer_amount,
                 offer_status='pending'
             )
-            conversation.save()  # triggers updated_at
+            conversation.save()
 
             if is_ajax:
                 return JsonResponse({
@@ -342,7 +416,6 @@ def chat_detail_view(request, conversation_id):
             messages.success(request, f"Offer of ₦{offer_amount:,.2f} sent!")
             return redirect('marketplace:chat_detail', conversation_id=conversation.id)
 
-        # Action 2: Standard Text Message
         else:
             message_text = request.POST.get('message', '').strip()
             if message_text:
@@ -374,6 +447,8 @@ def chat_detail_view(request, conversation_id):
 
     return render(request, 'marketplace/chat_detail.html', {
         'conversation': conversation,
+        'other_user': other_user,
+        'other_profile': other_profile,
         'chat_messages': chat_messages,
         'last_offer': last_offer,
     })
@@ -381,7 +456,6 @@ def chat_detail_view(request, conversation_id):
 
 @login_required(login_url='marketplace:login')
 def chat_api_messages_view(request, conversation_id):
-    """Async polling endpoint: fetches all new messages since the last received message ID."""
     conversation = get_object_or_404(Conversation, id=conversation_id)
 
     if request.user not in [conversation.buyer, conversation.seller]:
@@ -394,8 +468,6 @@ def chat_api_messages_view(request, conversation_id):
         last_id = 0
 
     new_messages = conversation.messages.filter(id__gt=last_id).select_related('sender').order_by('created_at')
-
-    # Automatically mark other user's new incoming messages as read
     new_messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
     data = []
@@ -416,7 +488,6 @@ def chat_api_messages_view(request, conversation_id):
 
 @login_required(login_url='marketplace:login')
 def respond_offer_view(request, message_id):
-    """Allows seller to accept or decline a price offer message."""
     message = get_object_or_404(Message.objects.select_related('conversation', 'conversation__seller'), id=message_id)
     conversation = message.conversation
 
@@ -427,11 +498,10 @@ def respond_offer_view(request, message_id):
         return redirect('marketplace:chat_detail', conversation_id=conversation.id)
 
     if request.method == 'POST':
-        action = request.POST.get('response')  # 'accept' or 'decline'
+        action = request.POST.get('response')
         if action == 'accept':
             message.offer_status = 'accepted'
             message.save()
-            # Post a confirmation notification in the conversation
             Message.objects.create(
                 conversation=conversation,
                 sender=request.user,
@@ -602,7 +672,6 @@ def profile_view(request):
     if request.method == 'POST':
         action_type = request.POST.get('action_type')
 
-        # FORM 1: DEDICATED SEPARATE KYC SUBMISSION
         if action_type == 'submit_kyc':
             id_doc = request.FILES.get('id_document')
             selfie_b64 = request.POST.get('selfie_base64')
@@ -633,7 +702,6 @@ def profile_view(request):
             messages.info(request, "Your KYC documents and biometric selfie have been submitted for review!")
             return redirect('marketplace:profile')
 
-        # FORM 2: GENERAL STORE DETAILS
         else:
             form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
             if form.is_valid():

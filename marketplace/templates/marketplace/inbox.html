@@ -4,74 +4,171 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Messages - Naijamaket</title>
+  <title>Messages & Offers - Naijamaket</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.9);
+    .glass-surface {
+      background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.85);
+      border: 1px solid rgba(226, 232, 240, 0.9);
     }
   </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col">
+<body class="text-slate-900 min-h-screen flex flex-col antialiased">
 
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-xs">
     <div class="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
-      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5">
-        <div class="w-10 h-10 rounded-2xl bg-emerald-600 flex items-center justify-center text-white font-black text-xl">N</div>
-        <span class="text-xl font-black">Naijamaket<span class="text-emerald-600">.</span></span>
-      </a>
+      <div class="flex items-center gap-3">
+        <a href="{% url 'marketplace:home' %}" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+          <h1 class="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+            Messages & Offers
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          </h1>
+          <p class="text-xs text-slate-400 font-semibold">Real-time negotiations and buyer chats</p>
+        </div>
+      </div>
 
-      <a href="{% url 'marketplace:home' %}" class="text-xs font-bold text-slate-600 hover:text-slate-900">
-        ← Marketplace Feed
+      <a href="{% url 'marketplace:home' %}" class="text-xs font-extrabold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3.5 py-2 rounded-xl transition-all">
+        Browse Marketplace
       </a>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-8 flex-1 w-full">
-    <h1 class="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
-      <i data-lucide="inbox" class="w-5 h-5 text-emerald-600"></i>
-      <span>Conversations</span>
-    </h1>
-
-    <div class="glass-card rounded-3xl p-4 sm:p-6 shadow-sm space-y-3">
-      {% for conv in conversations %}
-        <a href="{% url 'marketplace:chat_detail' conv.id %}" class="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 border border-slate-100 transition-colors">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-              {% if conv.listing.images.first %}
-                <img src="{{ conv.listing.images.first.image.url }}" alt="{{ conv.listing.title }}" class="w-full h-full object-cover">
-              {% else %}
-                <div class="w-full h-full flex items-center justify-center text-slate-400"><i data-lucide="image" class="w-5 h-5"></i></div>
-              {% endif %}
-            </div>
-
-            <div>
-              <h2 class="text-xs font-extrabold text-slate-900">{{ conv.listing.title }}</h2>
-              <p class="text-[11px] text-slate-500 mt-0.5">
-                {% if conv.seller == user %}
-                  Buyer: <strong>{{ conv.buyer.username }}</strong>
-                {% else %}
-                  Seller: <strong>{{ conv.seller.username }}</strong>
-                {% endif %}
-              </p>
-            </div>
-          </div>
-
-          <span class="text-[10px] font-semibold text-slate-400">{{ conv.updated_at|naturaltime }}</span>
-        </a>
-      {% empty %}
-        <p class="text-xs text-slate-400 italic py-8 text-center">You have no active message threads yet.</p>
+  <!-- Alerts -->
+  {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 mt-4 w-full">
+      {% for message in messages %}
+        <div class="p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-900{% else %}bg-purple-50 border-purple-200 text-purple-900{% endif %}">
+          <span>{{ message }}</span>
+          <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700">✕</button>
+        </div>
       {% endfor %}
     </div>
+  {% endif %}
+
+  <!-- Main Inbox Basin -->
+  <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full">
+    
+    <div class="glass-surface rounded-3xl shadow-xs overflow-hidden">
+      
+      <!-- Top Bar within Card -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-white/60">
+        <span class="text-xs font-black text-slate-800 uppercase tracking-wider">Active Conversations</span>
+        <span class="text-[11px] font-bold text-slate-400">
+          {{ conversations_data|length }} Chat{{ conversations_data|length|pluralize }}
+        </span>
+      </div>
+
+      <!-- Conversations Feed -->
+      <div class="divide-y divide-slate-100">
+        {% for item in conversations_data %}
+          <div class="group relative flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/80 transition-all duration-200">
+            
+            <!-- Clickable Link directly to Chat -->
+            <a href="{% url 'marketplace:chat_detail' item.conversation.id %}" class="absolute inset-0 z-10" aria-label="Open chat with {{ item.other_user.username }}"></a>
+
+            <div class="flex items-center gap-3.5 sm:gap-4 min-w-0 flex-1 pr-3">
+              
+              <!-- Avatar with Verified Indicator -->
+              <div class="relative shrink-0">
+                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-purple-100 text-purple-700 font-black text-base flex items-center justify-center border border-purple-200 shadow-xs">
+                  {% if item.other_profile.avatar %}
+                    <img src="{{ item.other_profile.avatar.url }}" alt="{{ item.other_user.username }}" class="w-full h-full object-cover">
+                  {% else %}
+                    {{ item.other_user.first_name|default:item.other_user.username|slice:":1"|upper }}
+                  {% endif %}
+                </div>
+                
+                {% if item.other_profile.is_nin_verified %}
+                  <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-xs" title="Verified Seller">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M7.06383 0.985077C7.33981 0.772642 7.66986 0.666667 7.99984 0.666748C8.32981 0.666667 8.65986 0.772642 8.93585 0.985077L9.71826 1.58584L10.6988 1.45682C11.3888 1.36588 12.0527 1.75039 12.3189 2.39207L12.6956 3.30452L13.6066 3.68068L13.6079 3.68122C14.2496 3.94745 14.634 4.61164 14.5431 5.30164L14.4142 6.28134L15.0153 7.06426C15.1741 7.27109 15.2735 7.50843 15.3133 7.7534C15.3423 7.93203 15.3396 8.11472 15.3051 8.29262C15.2608 8.5213 15.1642 8.742 15.0153 8.93591L14.4142 9.71883L14.5431 10.6985C14.634 11.3885 14.2496 12.0527 13.6079 12.3189L13.6066 12.3195L12.6956 12.6956L12.3189 13.6081C12.0527 14.2498 11.3888 14.6343 10.6988 14.5433L9.71826 14.4143L8.93585 15.0151C8.65986 15.2275 8.32981 15.3335 7.99984 15.3334C7.66986 15.3335 7.33981 15.2275 7.06383 15.0151L6.28141 14.4143L5.30087 14.5433C4.61083 14.6343 3.94699 14.2498 3.6808 13.6081L3.30412 12.6956L2.39303 12.3195L2.39173 12.3189C1.75005 12.0527 1.36565 11.3885 1.45657 10.6985L1.58547 9.71883L0.984385 8.93591C0.811485 8.71075 0.709028 8.44947 0.677232 8.18153C0.631114 7.79303 0.733722 7.39067 0.984385 7.06426L1.58547 6.28134L1.45657 5.30164C1.36565 4.61164 1.75005 3.94745 2.39173 3.68122L2.39303 3.68068L3.30412 3.30452L3.6808 2.39207C3.94699 1.75039 4.61083 1.36588 5.30087 1.45682L6.28141 1.58584L7.06383 0.985077ZM10.8046 6.80482C11.0649 6.54447 11.0649 6.12236 10.8046 5.86201C10.5442 5.60166 10.1221 5.60166 9.86177 5.86201L7.33317 8.39061L6.47124 7.52868C6.21089 7.26833 5.78878 7.26833 5.52843 7.52868C5.26808 7.78903 5.26808 8.21114 5.52843 8.47149L6.86177 9.80482C7.12212 10.0652 7.54423 10.0652 7.80458 9.80482L10.8046 6.80482Z" fill="#1B65FF"/>
+                      <path d="M6 7.99992L7.33333 9.33325L10.3333 6.33325" stroke="white" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                {% endif %}
+              </div>
+
+              <!-- Message Information -->
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <h3 class="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
+                    {{ item.other_user.first_name|default:item.other_user.username }}
+                  </h3>
+                  <span class="text-[10px] text-slate-400 font-semibold truncate">• {{ item.conversation.listing.title }}</span>
+                </div>
+
+                <p class="text-xs {% if item.unread_count > 0 %}font-bold text-slate-900{% else %}text-slate-500{% endif %} truncate">
+                  {% if item.last_message %}
+                    {% if item.last_message.msg_type == 'offer' %}
+                      <span class="text-emerald-600 font-bold">₦{{ item.last_message.offer_amount|intcomma }} Offer</span>: {{ item.last_message.text }}
+                    {% else %}
+                      {{ item.last_message.text }}
+                    {% endif %}
+                  {% else %}
+                    <span class="italic text-slate-400">No messages yet</span>
+                  {% endif %}
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Right Controls: Timestamp, Unread Badge, and Modern Trash Action -->
+            <div class="flex items-center gap-3 shrink-0 relative z-20">
+              
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 font-medium block">
+                  {{ item.conversation.updated_at|date:"h:i A" }}
+                </span>
+                
+                <!-- Individual Unread Message Badge -->
+                {% if item.unread_count > 0 %}
+                  <span class="inline-flex items-center justify-center bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full mt-1 shadow-xs">
+                    {{ item.unread_count }} new
+                  </span>
+                {% endif %}
+              </div>
+
+              <!-- Modern Delete Conversation Button with Confirmation -->
+              <form method="POST" action="{% url 'marketplace:delete_conversation' item.conversation.id %}" onsubmit="return confirm('Delete this entire chat conversation? This cannot be undone.')">
+                {% csrf_token %}
+                <button type="submit" class="w-8 h-8 rounded-xl text-slate-300 hover:text-rose-600 hover:bg-rose-50 flex items-center justify-center transition-all duration-150" title="Delete conversation">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </form>
+
+            </div>
+
+          </div>
+        {% empty %}
+          <div class="p-16 text-center">
+            <div class="w-16 h-16 bg-purple-50 rounded-3xl flex items-center justify-center mx-auto mb-3 text-purple-600 border border-purple-100">
+              <i data-lucide="message-square" class="w-8 h-8 stroke-[1.8]"></i>
+            </div>
+            <h3 class="text-base font-extrabold text-slate-900 mb-1">Your Inbox is Empty</h3>
+            <p class="text-xs text-slate-400 max-w-xs mx-auto mb-5">Start chatting with sellers and making price offers on items you love.</p>
+            <a href="{% url 'marketplace:home' %}" class="inline-flex items-center gap-2 bg-purple-700 hover:bg-purple-800 text-white text-xs font-extrabold px-5 py-2.5 rounded-xl shadow-md transition-all">
+              Start Exploring
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+
   </main>
 
-  <script>lucide.createIcons();</script>
+  <script>
+    lucide.createIcons();
+  </script>
 </body>
 </html>

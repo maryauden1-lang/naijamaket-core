@@ -15,7 +15,10 @@ urlpatterns = [
     path('chat/start/<int:listing_id>/', views.start_chat_view, name='start_chat'),
     path('inbox/', views.inbox_view, name='inbox'),
     path('chat/<int:conversation_id>/', views.chat_detail_view, name='chat_detail'),
+    path('chat/<int:conversation_id>/delete/', views.delete_conversation_view, name='delete_conversation'),
+    path('chat/message/<int:message_id>/delete/', views.delete_message_view, name='delete_message'),
     path('api/chat/<int:conversation_id>/messages/', views.chat_api_messages_view, name='chat_api_messages'),
+    path('api/chat/<int:conversation_id>/typing/', views.typing_status_api_view, name='typing_status_api'),
     path('chat/offer/<int:message_id>/respond/', views.respond_offer_view, name='respond_offer'),
     path('report/<int:listing_id>/', views.report_ad_view, name='report_ad'),
     path('register/', views.register_view, name='register'),
@@ -24,7 +27,7 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('post-ad/', views.post_ad_view, name='post_ad'),
     
-    # Static Policy Pages (Privacy Policy, Terms, etc.)
+    # Static Policy Pages
     path('page/<slug:slug>/', views.static_page_view, name='static_page'),
     
     # AJAX Endpoints

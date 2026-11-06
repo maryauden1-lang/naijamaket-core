@@ -4,81 +4,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="chatPageTitle">Chat about {{ conversation.listing.title }} - Naijamaket</title>
+  <title id="chatPageTitle">Chat with {{ other_user.first_name|default:other_user.username }} - Naijamaket</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; }
-    .glass-card {
-      background: rgba(255, 255, 255, 0.95);
+    .glass-surface {
+      background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(226, 232, 240, 0.85);
+      border: 1px solid rgba(226, 232, 240, 0.9);
     }
+    /* Smooth 3-dot typing wave animation */
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-4px); }
+    }
+    .typing-dot {
+      animation: typingBounce 1.3s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
   </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col relative">
-
-  <!-- Floating Toast Notification -->
-  <div id="toastNotification" class="fixed top-5 right-5 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700">
-    <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-      <i data-lucide="bell" class="w-4 h-4"></i>
-    </div>
-    <div class="flex-1 truncate">
-      <p id="toastSender" class="text-xs font-bold text-emerald-400">New Message</p>
-      <p id="toastText" class="text-xs text-slate-200 truncate mt-0.5"></p>
-    </div>
-  </div>
+<body class="text-slate-900 min-h-screen flex flex-col relative antialiased">
 
   <!-- Chat Top Bar -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+  <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
     <div class="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <a href="{% url 'marketplace:inbox' %}" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
-          ← Inbox
+      
+      <!-- Left: Back Button & User Info -->
+      <div class="flex items-center gap-3 min-w-0">
+        <a href="{% url 'marketplace:inbox' %}" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors shrink-0">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
-        <div class="w-px h-6 bg-slate-200"></div>
-        <div>
-          <h1 class="text-sm font-extrabold text-slate-900 truncate max-w-[200px] sm:max-w-md">
-            {{ conversation.listing.title }}
+        
+        <div class="relative shrink-0">
+          <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 font-extrabold flex items-center justify-center border border-purple-200 shadow-xs">
+            {% if other_profile.avatar %}
+              <img src="{{ other_profile.avatar.url }}" alt="{{ other_user.username }}" class="w-full h-full object-cover rounded-2xl">
+            {% else %}
+              {{ other_user.first_name|default:other_user.username|slice:":1"|upper }}
+            {% endif %}
+          </div>
+          {% if other_profile.is_nin_verified %}
+            <span class="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5" title="Verified">
+              <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
+            </span>
+          {% endif %}
+        </div>
+
+        <div class="min-w-0">
+          <h1 class="text-sm font-black text-slate-900 truncate">
+            {{ other_user.first_name|default:other_user.username }}
           </h1>
-          <p class="text-[11px] font-bold text-emerald-600">Asking Price: ₦{{ conversation.listing.price|intcomma }}</p>
+          <p class="text-[11px] font-bold text-emerald-600 truncate">
+            {{ conversation.listing.title }} • ₦{{ conversation.listing.price|intcomma }}
+          </p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <!-- Right: Action Buttons -->
+      <div class="flex items-center gap-2 shrink-0">
         {% if user == conversation.buyer %}
         <button 
           type="button" 
           onclick="openOfferModal()" 
-          class="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
+          class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
         >
           <i data-lucide="tag" class="w-3.5 h-3.5"></i>
           Make Offer
         </button>
         {% endif %}
 
-        <a href="{% url 'marketplace:listing_detail' conversation.listing.slug %}" class="text-xs font-bold text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
-          View Listing
+        <a href="{% url 'marketplace:listing_detail' conversation.listing.slug %}" class="text-xs font-bold text-slate-600 hover:text-purple-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
+          View Ad
         </a>
       </div>
+
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full flex flex-col justify-between">
+  <!-- Messages Stage -->
+  <main class="max-w-4xl mx-auto px-4 py-4 sm:py-6 flex-1 w-full flex flex-col justify-between">
     
-    <!-- Sticky Fraud Warning -->
-    <div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-4 text-xs text-amber-900 flex items-center gap-2 shrink-0">
+    <!-- Safety Reminder -->
+    <div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-3 text-xs text-amber-900 flex items-center gap-2 shrink-0">
       <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0"></i>
-      <span><strong>Safety Reminder:</strong> Never pay advance commitment or delivery fees before inspecting items physically in public.</span>
+      <span><strong>Safety Reminder:</strong> Meet in public spaces and never pay advance commitment fees before physical inspection.</span>
     </div>
 
-    <!-- Messages Stage -->
-    <div id="messagesContainer" class="glass-card rounded-3xl p-4 sm:p-6 shadow-sm flex-1 overflow-y-auto space-y-4 min-h-[380px] max-h-[520px]">
+    <!-- Messages Container -->
+    <div id="messagesContainer" class="glass-surface rounded-3xl p-4 sm:p-6 shadow-xs flex-1 overflow-y-auto space-y-3.5 min-h-[380px] max-h-[520px]">
       {% for msg in chat_messages %}
-        <div class="message-row flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %}" data-id="{{ msg.id }}">
+        <div class="message-row flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %} group" data-id="{{ msg.id }}">
           
           {% if msg.msg_type == 'offer' %}
             <!-- Price Offer Card -->
@@ -102,7 +123,6 @@
               </div>
               <p class="text-slate-600 mb-3">{{ msg.text }}</p>
 
-              <!-- Actions for the Seller -->
               {% if user == conversation.seller and msg.offer_status == 'pending' %}
                 <div class="flex items-center gap-2 pt-2 border-t border-slate-200/80">
                   <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
@@ -123,24 +143,43 @@
               {% endif %}
             </div>
           {% else %}
-            <!-- Standard Message Bubble -->
-            <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed {% if msg.sender == user %}bg-emerald-600 text-white rounded-br-none{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
-              {{ msg.text }}
+            <!-- Standard Message Bubble with Modern Delete Action -->
+            <div class="flex items-center gap-1.5 {% if msg.sender == user %}flex-row-reverse{% else %}flex-row{% endif %}">
+              <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed {% if msg.sender == user %}bg-purple-700 text-white rounded-br-none shadow-xs{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
+                {{ msg.text }}
+              </div>
+
+              {% if msg.sender == user %}
+                <button type="button" onclick="deleteMessage({{ msg.id }})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity" title="Delete message">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              {% endif %}
             </div>
           {% endif %}
 
-          <span class="text-[10px] text-slate-400 mt-1 px-1">{{ msg.created_at|date:"h:i A" }}</span>
+          <span class="text-[9.5px] text-slate-400 mt-1 px-1">{{ msg.created_at|date:"h:i A" }}</span>
         </div>
       {% empty %}
         <div id="emptyPlaceholder" class="text-center py-16 text-slate-400 text-xs">
           <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-          Say hello! Ask the seller about availability and inspection location.
+          Say hello! Ask {{ other_user.first_name|default:other_user.username }} about availability and inspection location.
         </div>
       {% endfor %}
+
+      <!-- Animated 3-Dot Typing Indicator -->
+      <div id="typingIndicator" class="hidden items-center gap-2 text-slate-400 text-xs pt-1">
+        <div class="bg-slate-100 px-3.5 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5 shadow-2xs">
+          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+        </div>
+        <span class="text-[10px] font-semibold text-slate-400" id="typingText">{{ other_user.first_name|default:other_user.username }} is typing...</span>
+      </div>
+
     </div>
 
     <!-- Message Input Bar -->
-    <form id="messageForm" method="POST" class="mt-4 flex gap-2">
+    <form id="messageForm" method="POST" class="mt-3 flex gap-2">
       {% csrf_token %}
       <input 
         type="text" 
@@ -149,9 +188,9 @@
         required 
         placeholder="Type your message here..." 
         autocomplete="off"
-        class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+        class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:outline-hidden shadow-2xs"
       >
-      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center">
+      <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center">
         Send
       </button>
     </form>
@@ -160,7 +199,7 @@
 
   <!-- Make Offer Modal -->
   <div id="offerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
       <div class="flex items-center justify-between mb-4">
         <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
           <i data-lucide="tag" class="w-4 h-4 text-emerald-600"></i>
@@ -185,7 +224,7 @@
             min="100" 
             placeholder="e.g. 45000" 
             required
-            class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+            class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
           >
         </div>
 
@@ -194,14 +233,14 @@
           name="note" 
           rows="2" 
           placeholder="e.g. Ready for instant pickup in Ikeja..." 
-          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 mb-4 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
         ></textarea>
 
         <div class="flex gap-2">
           <button type="button" onclick="closeOfferModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
             Cancel
           </button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition">
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-extrabold shadow-sm transition">
             Send Offer
           </button>
         </div>
@@ -212,81 +251,19 @@
   <script>
     lucide.createIcons();
 
-    const originalTitle = document.title;
-    let unreadCount = 0;
-
-    // Reset page title when user switches back to this tab
-    window.addEventListener('focus', () => {
-      unreadCount = 0;
-      document.title = originalTitle;
-    });
-
-    // Native Browser Audio Chime (Zero External Files Needed)
-    function playNotificationSound() {
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-
-        // High gentle chime (Sine wave)
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'sine';
-        // Elegant 2-tone melodic chime
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12); // A5
-
-        gain.gain.setValueAtTime(0.18, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-      } catch (err) {
-        // Fallback for strict browser autoplay policies
-      }
-    }
-
-    // Pop-up Toast Alert
-    function showNotificationToast(senderName, messageText) {
-      const toast = document.getElementById('toastNotification');
-      const toastSender = document.getElementById('toastSender');
-      const toastText = document.getElementById('toastText');
-
-      toastSender.textContent = `New message from ${senderName}`;
-      toastText.textContent = messageText;
-
-      // Slide in from top
-      toast.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
-      toast.classList.add('translate-y-0', 'opacity-100');
-
-      // Auto dismiss after 4.5 seconds
-      setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
-      }, 4500);
-    }
-
-    function openOfferModal() {
-      document.getElementById('offerModal').classList.remove('hidden');
-    }
-    function closeOfferModal() {
-      document.getElementById('offerModal').classList.add('hidden');
-    }
+    function openOfferModal() { document.getElementById('offerModal').classList.remove('hidden'); }
+    function closeOfferModal() { document.getElementById('offerModal').classList.add('hidden'); }
 
     const messagesContainer = document.getElementById('messagesContainer');
-    const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
+    const typingIndicator = document.getElementById('typingIndicator');
 
     function scrollToBottom() {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
     scrollToBottom();
 
-    // Async Polling Engine
+    // Async Polling for New Messages
     let lastMsgId = 0;
     const existingRows = document.querySelectorAll('.message-row');
     if (existingRows.length > 0) {
@@ -303,23 +280,12 @@
           const emptyPlaceholder = document.getElementById('emptyPlaceholder');
           if (emptyPlaceholder) emptyPlaceholder.remove();
 
-          let shouldAlert = false;
-          let latestIncomingMsg = null;
-
           data.messages.forEach(msg => {
             if (msg.id > lastMsgId) lastMsgId = msg.id;
-            
-            // Check if already rendered
             if (document.querySelector(`[data-id="${msg.id}"]`)) return;
 
-            // If the incoming message is NOT from me, trigger alert
-            if (!msg.is_me) {
-              shouldAlert = true;
-              latestIncomingMsg = msg;
-            }
-
             const row = document.createElement('div');
-            row.className = `message-row flex flex-col ${msg.is_me ? 'items-end' : 'items-start'}`;
+            row.className = `message-row flex flex-col ${msg.is_me ? 'items-end' : 'items-start'} group`;
             row.setAttribute('data-id', msg.id);
 
             if (msg.msg_type === 'offer') {
@@ -332,45 +298,97 @@
                   <div class="text-base font-extrabold text-emerald-700 mb-1">₦${msg.offer_amount}</div>
                   <p class="text-slate-600 mb-1">${msg.text}</p>
                 </div>
-                <span class="text-[10px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
+                <span class="text-[9.5px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
               `;
             } else {
               row.innerHTML = `
-                <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed ${msg.is_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
-                  ${msg.text}
+                <div class="flex items-center gap-1.5 ${msg.is_me ? 'flex-row-reverse' : 'flex-row'}">
+                  <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${msg.is_me ? 'bg-purple-700 text-white rounded-br-none shadow-xs' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
+                    ${msg.text}
+                  </div>
+                  ${msg.is_me ? `
+                    <button type="button" onclick="deleteMessage(${msg.id})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity" title="Delete message">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  ` : ''}
                 </div>
-                <span class="text-[10px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
+                <span class="text-[9.5px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
               `;
             }
 
-            messagesContainer.appendChild(row);
+            messagesContainer.insertBefore(row, typingIndicator);
           });
-
-          // Trigger sound and pop notification if there are incoming messages
-          if (shouldAlert && latestIncomingMsg) {
-            playNotificationSound();
-            showNotificationToast(
-              latestIncomingMsg.sender, 
-              latestIncomingMsg.msg_type === 'offer' ? `New price offer: ₦${latestIncomingMsg.offer_amount}` : latestIncomingMsg.text
-            );
-
-            // If user has switched to another tab, update document title
-            if (document.hidden) {
-              unreadCount += 1;
-              document.title = `(${unreadCount}) New Message! • Naijamaket`;
-            }
-          }
-
           scrollToBottom();
           lucide.createIcons();
         }
-      } catch (e) {
-        // Silent fail
-      }
+      } catch (e) {}
     }
 
-    // Poll every 3 seconds
+    // Delete Individual Message Function
+    async function deleteMessage(msgId) {
+      if (!confirm('Delete this message?')) return;
+      try {
+        const res = await fetch(`/chat/message/${msgId}/delete/`, {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+          const row = document.querySelector(`[data-id="${msgId}"]`);
+          if (row) row.remove();
+        }
+      } catch (e) {}
+    }
+
+    // Typing Status Broadcast & Poller
+    let typingTimer = null;
+    messageInput.addEventListener('input', () => {
+      // Send typing = true
+      fetch("{% url 'marketplace:typing_status_api' conversation.id %}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: 'typing=true'
+      });
+
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        // Send typing = false after 2.5 seconds of silence
+        fetch("{% url 'marketplace:typing_status_api' conversation.id %}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: 'typing=false'
+        });
+      }, 2500);
+    });
+
+    async function checkTyping() {
+      try {
+        const res = await fetch("{% url 'marketplace:typing_status_api' conversation.id %}");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.is_typing) {
+          typingIndicator.classList.remove('hidden');
+          typingIndicator.classList.add('flex');
+          scrollToBottom();
+        } else {
+          typingIndicator.classList.add('hidden');
+          typingIndicator.classList.remove('flex');
+        }
+      } catch(e) {}
+    }
+
+    // Intervals
     setInterval(pollNewMessages, 3000);
+    setInterval(checkTyping, 2000);
   </script>
 </body>
 </html>
