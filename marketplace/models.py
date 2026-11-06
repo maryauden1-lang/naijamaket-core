@@ -339,7 +339,7 @@ class Favorite(models.Model):
 
 
 # ==========================================
-# 7. IN-APP MESSAGING SYSTEM (REAL-TIME CHAT)
+# 7. IN-APP MESSAGING SYSTEM (REAL-TIME CHAT & OFFERS)
 # ==========================================
 class Conversation(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="conversations")
@@ -357,11 +357,26 @@ class Conversation(models.Model):
 
 
 class Message(models.Model):
+    MESSAGE_TYPES = (
+        ("text", "Standard Message"),
+        ("offer", "Price Offer"),
+    )
+    OFFER_STATUS = (
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+    )
+
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
     text = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Offer negotiation additions
+    msg_type = models.CharField(max_length=10, choices=MESSAGE_TYPES, default="text")
+    offer_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    offer_status = models.CharField(max_length=10, choices=OFFER_STATUS, default="pending")
 
     class Meta:
         ordering = ["created_at"]

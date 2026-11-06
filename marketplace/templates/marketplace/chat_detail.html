@@ -25,43 +25,103 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
     <div class="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <a href="{% url 'marketplace:inbox' %}" class="text-xs font-bold text-slate-500 hover:text-slate-800">
+        <a href="{% url 'marketplace:inbox' %}" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors">
           ← Inbox
         </a>
         <div class="w-px h-6 bg-slate-200"></div>
         <div>
-          <h1 class="text-sm font-extrabold text-slate-900 truncate max-w-[220px] sm:max-w-md">
+          <h1 class="text-sm font-extrabold text-slate-900 truncate max-w-[200px] sm:max-w-md">
             {{ conversation.listing.title }}
           </h1>
-          <p class="text-[11px] font-bold text-emerald-600">₦{{ conversation.listing.price|intcomma }}</p>
+          <p class="text-[11px] font-bold text-emerald-600">Asking Price: ₦{{ conversation.listing.price|intcomma }}</p>
         </div>
       </div>
 
-      <a href="{% url 'marketplace:listing_detail' conversation.listing.slug %}" class="text-xs font-bold text-slate-600 hover:text-emerald-600 bg-slate-100 px-3 py-1.5 rounded-xl">
-        View Listing
-      </a>
+      <div class="flex items-center gap-2">
+        {% if user == conversation.buyer %}
+        <button 
+          type="button" 
+          onclick="openOfferModal()" 
+          class="text-xs font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
+        >
+          <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+          Make Offer
+        </button>
+        {% endif %}
+
+        <a href="{% url 'marketplace:listing_detail' conversation.listing.slug %}" class="text-xs font-bold text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
+          View Listing
+        </a>
+      </div>
     </div>
   </header>
 
   <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full flex flex-col justify-between">
     
     <!-- Sticky Fraud Warning -->
-    <div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-4 text-xs text-amber-900 flex items-center gap-2">
+    <div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-4 text-xs text-amber-900 flex items-center gap-2 shrink-0">
       <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0"></i>
-      <span><strong>Safety Reminder:</strong> Never pay advance commitment or delivery fees before inspecting items in person.</span>
+      <span><strong>Safety Reminder:</strong> Never pay advance commitment or delivery fees before inspecting items physically in public.</span>
     </div>
 
     <!-- Messages Stage -->
-    <div class="glass-card rounded-3xl p-4 sm:p-6 shadow-sm flex-1 overflow-y-auto space-y-4 min-h-[380px] max-h-[520px]">
+    <div id="messagesContainer" class="glass-card rounded-3xl p-4 sm:p-6 shadow-sm flex-1 overflow-y-auto space-y-4 min-h-[380px] max-h-[520px]">
       {% for msg in chat_messages %}
-        <div class="flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %}">
-          <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed {% if msg.sender == user %}bg-emerald-600 text-white rounded-br-none{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
-            {{ msg.text }}
-          </div>
+        <div class="message-row flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %}" data-id="{{ msg.id }}">
+          
+          {% if msg.msg_type == 'offer' %}
+            <!-- Price Offer Card -->
+            <div class="max-w-sm sm:max-w-md w-full border rounded-2xl p-4 text-xs shadow-xs transition-all {% if msg.sender == user %}bg-emerald-50/70 border-emerald-200 rounded-br-none{% else %}bg-slate-50 border-slate-200 rounded-bl-none{% endif %}">
+              <div class="flex items-center justify-between mb-2">
+                <span class="inline-flex items-center gap-1 font-bold text-slate-700">
+                  <i data-lucide="banknote" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  Price Offer
+                </span>
+                {% if msg.offer_status == 'pending' %}
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pending</span>
+                {% elif msg.offer_status == 'accepted' %}
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 font-extrabold">✓ Accepted</span>
+                {% elif msg.offer_status == 'declined' %}
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Declined</span>
+                {% endif %}
+              </div>
+
+              <div class="text-base font-extrabold text-emerald-700 mb-1">
+                ₦{{ msg.offer_amount|intcomma }}
+              </div>
+              <p class="text-slate-600 mb-3">{{ msg.text }}</p>
+
+              <!-- Actions for the Seller -->
+              {% if user == conversation.seller and msg.offer_status == 'pending' %}
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200/80">
+                  <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="response" value="accept">
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl transition text-[11px] shadow-xs">
+                      Accept Offer
+                    </button>
+                  </form>
+                  <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
+                    {% csrf_token %}
+                    <input type="hidden" name="response" value="decline">
+                    <button type="submit" class="w-full bg-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold py-1.5 px-3 rounded-xl transition text-[11px]">
+                      Decline
+                    </button>
+                  </form>
+                </div>
+              {% endif %}
+            </div>
+          {% else %}
+            <!-- Standard Message Bubble -->
+            <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed {% if msg.sender == user %}bg-emerald-600 text-white rounded-br-none{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
+              {{ msg.text }}
+            </div>
+          {% endif %}
+
           <span class="text-[10px] text-slate-400 mt-1 px-1">{{ msg.created_at|date:"h:i A" }}</span>
         </div>
       {% empty %}
-        <div class="text-center py-16 text-slate-400 text-xs">
+        <div id="emptyPlaceholder" class="text-center py-16 text-slate-400 text-xs">
           <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
           Say hello! Ask the seller about availability and inspection location.
         </div>
@@ -69,22 +129,154 @@
     </div>
 
     <!-- Message Input Bar -->
-    <form method="POST" class="mt-4 flex gap-2">
+    <form id="messageForm" method="POST" class="mt-4 flex gap-2">
       {% csrf_token %}
       <input 
         type="text" 
         name="message" 
+        id="messageInput"
         required 
         placeholder="Type your message here..." 
+        autocomplete="off"
         class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
       >
-      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all">
+      <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center">
         Send
       </button>
     </form>
 
   </main>
 
-  <script>lucide.createIcons();</script>
+  <!-- Make Offer Modal -->
+  <div id="offerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+          <i data-lucide="tag" class="w-4 h-4 text-emerald-600"></i>
+          Make a Price Offer
+        </h3>
+        <button type="button" onclick="closeOfferModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form method="POST" action="{% url 'marketplace:chat_detail' conversation.id %}" id="offerForm">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="make_offer">
+
+        <label class="block text-[11px] font-bold text-slate-600 mb-1">Your Offer Price (₦)</label>
+        <div class="relative mb-3">
+          <span class="absolute left-3.5 top-3 text-slate-400 font-bold text-xs">₦</span>
+          <input 
+            type="number" 
+            name="offer_amount" 
+            step="1" 
+            min="100" 
+            placeholder="e.g. 45000" 
+            required
+            class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+          >
+        </div>
+
+        <label class="block text-[11px] font-bold text-slate-600 mb-1">Optional Note</label>
+        <textarea 
+          name="note" 
+          rows="2" 
+          placeholder="e.g. Ready for instant pickup in Ikeja..." 
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 mb-4 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden"
+        ></textarea>
+
+        <div class="flex gap-2">
+          <button type="button" onclick="closeOfferModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-sm transition">
+            Send Offer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function openOfferModal() {
+      document.getElementById('offerModal').classList.remove('hidden');
+    }
+    function closeOfferModal() {
+      document.getElementById('offerModal').classList.add('hidden');
+    }
+
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
+
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    scrollToBottom();
+
+    // Async Polling Engine
+    let lastMsgId = 0;
+    const existingRows = document.querySelectorAll('.message-row');
+    if (existingRows.length > 0) {
+      lastMsgId = parseInt(existingRows[existingRows.length - 1].getAttribute('data-id') || 0);
+    }
+
+    async function pollNewMessages() {
+      try {
+        const response = await fetch("{% url 'marketplace:chat_api_messages' conversation.id %}?last_id=" + lastMsgId);
+        if (!response.ok) return;
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+          const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+          if (emptyPlaceholder) emptyPlaceholder.remove();
+
+          data.messages.forEach(msg => {
+            if (msg.id > lastMsgId) lastMsgId = msg.id;
+            
+            // Check if already rendered to prevent duplicates
+            if (document.querySelector(`[data-id="${msg.id}"]`)) return;
+
+            const row = document.createElement('div');
+            row.className = `message-row flex flex-col ${msg.is_me ? 'items-end' : 'items-start'}`;
+            row.setAttribute('data-id', msg.id);
+
+            if (msg.msg_type === 'offer') {
+              row.innerHTML = `
+                <div class="max-w-sm sm:max-w-md w-full border rounded-2xl p-4 text-xs shadow-xs ${msg.is_me ? 'bg-emerald-50/70 border-emerald-200 rounded-br-none' : 'bg-slate-50 border-slate-200 rounded-bl-none'}">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="inline-flex items-center gap-1 font-bold text-slate-700">Price Offer</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">${msg.offer_status}</span>
+                  </div>
+                  <div class="text-base font-extrabold text-emerald-700 mb-1">₦${msg.offer_amount}</div>
+                  <p class="text-slate-600 mb-1">${msg.text}</p>
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
+              `;
+            } else {
+              row.innerHTML = `
+                <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-3 text-xs leading-relaxed ${msg.is_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
+                  ${msg.text}
+                </div>
+                <span class="text-[10px] text-slate-400 mt-1 px-1">${msg.created_at}</span>
+              `;
+            }
+
+            messagesContainer.appendChild(row);
+          });
+          scrollToBottom();
+          lucide.createIcons();
+        }
+      } catch (e) {
+        // Silent fail on network drop
+      }
+    }
+
+    // Poll every 3 seconds
+    setInterval(pollNewMessages, 3000);
+  </script>
 </body>
 </html>

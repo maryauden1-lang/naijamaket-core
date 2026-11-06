@@ -1,5 +1,7 @@
 import base64
 import uuid
+from decimal import Decimal, InvalidOperation
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
@@ -8,7 +10,7 @@ from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.db.models import Q, F, Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
 
 from .models import (
@@ -281,7 +283,10 @@ def inbox_view(request):
 @login_required(login_url='marketplace:login')
 def chat_detail_view(request, conversation_id):
     conversation = get_object_or_404(
-        Conversation.objects.select_related('listing', 'buyer', 'seller', 'seller__seller_profile', 'buyer__seller_profile'),
+        Conversation.objects.select_related(
+            'listing', 'buyer', 'seller', 
+            'seller__seller_profile', 'buyer__seller_profile'
+        ),
         id=conversation_id
     )
 
@@ -289,24 +294,172 @@ def chat_detail_view(request, conversation_id):
         messages.error(request, "You do not have access to this conversation.")
         return redirect('marketplace:inbox')
 
+    # Mark incoming messages as read
     conversation.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
 
     if request.method == 'POST':
-        message_text = request.POST.get('message', '').strip()
-        if message_text:
-            Message.objects.create(
+        action = request.POST.get('action', 'send_message')
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('is_ajax') == 'true'
+
+        # Action 1: Make a Formal Price Offer
+        if action == 'make_offer':
+            offer_raw = request.POST.get('offer_amount', '').strip().replace(',', '')
+            note = request.POST.get('note', '').strip()
+            
+            try:
+                offer_amount = Decimal(offer_raw)
+                if offer_amount <= 0:
+                    raise InvalidOperation
+            except (InvalidOperation, ValueError):
+                if is_ajax:
+                    return JsonResponse({'status': 'error', 'message': 'Please enter a valid offer amount.'}, status=400)
+                messages.error(request, "Please enter a valid offer amount in Naira.")
+                return redirect('marketplace:chat_detail', conversation_id=conversation.id)
+
+            offer_text = note if note else f"Offered ₦{offer_amount:,.2f} for this item."
+            new_msg = Message.objects.create(
                 conversation=conversation,
                 sender=request.user,
-                text=message_text
+                text=offer_text,
+                msg_type='offer',
+                offer_amount=offer_amount,
+                offer_status='pending'
             )
-            conversation.save()
+            conversation.save()  # triggers updated_at
+
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'success',
+                    'message_id': new_msg.id,
+                    'text': new_msg.text,
+                    'msg_type': new_msg.msg_type,
+                    'offer_amount': str(new_msg.offer_amount),
+                    'offer_status': new_msg.offer_status,
+                    'sender': new_msg.sender.username,
+                    'is_me': True,
+                    'created_at': new_msg.created_at.strftime('%H:%M'),
+                })
+            messages.success(request, f"Offer of ₦{offer_amount:,.2f} sent!")
+            return redirect('marketplace:chat_detail', conversation_id=conversation.id)
+
+        # Action 2: Standard Text Message
+        else:
+            message_text = request.POST.get('message', '').strip()
+            if message_text:
+                new_msg = Message.objects.create(
+                    conversation=conversation,
+                    sender=request.user,
+                    text=message_text,
+                    msg_type='text'
+                )
+                conversation.save()
+
+                if is_ajax:
+                    return JsonResponse({
+                        'status': 'success',
+                        'message_id': new_msg.id,
+                        'text': new_msg.text,
+                        'msg_type': new_msg.msg_type,
+                        'sender': new_msg.sender.username,
+                        'is_me': True,
+                        'created_at': new_msg.created_at.strftime('%H:%M'),
+                    })
+            elif is_ajax:
+                return JsonResponse({'status': 'error', 'message': 'Message cannot be empty.'}, status=400)
+
             return redirect('marketplace:chat_detail', conversation_id=conversation.id)
 
     chat_messages = conversation.messages.all().select_related('sender')
+    last_offer = conversation.messages.filter(msg_type='offer').order_by('-created_at').first()
+
     return render(request, 'marketplace/chat_detail.html', {
         'conversation': conversation,
         'chat_messages': chat_messages,
+        'last_offer': last_offer,
     })
+
+
+@login_required(login_url='marketplace:login')
+def chat_api_messages_view(request, conversation_id):
+    """Async polling endpoint: fetches all new messages since the last received message ID."""
+    conversation = get_object_or_404(Conversation, id=conversation_id)
+
+    if request.user not in [conversation.buyer, conversation.seller]:
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    last_id = request.GET.get('last_id', 0)
+    try:
+        last_id = int(last_id)
+    except ValueError:
+        last_id = 0
+
+    new_messages = conversation.messages.filter(id__gt=last_id).select_related('sender').order_by('created_at')
+
+    # Automatically mark other user's new incoming messages as read
+    new_messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+
+    data = []
+    for msg in new_messages:
+        data.append({
+            'id': msg.id,
+            'sender': msg.sender.username,
+            'is_me': (msg.sender == request.user),
+            'text': msg.text,
+            'msg_type': msg.msg_type,
+            'offer_amount': f"{msg.offer_amount:,.2f}" if msg.offer_amount else None,
+            'offer_status': msg.offer_status,
+            'created_at': msg.created_at.strftime('%H:%M'),
+        })
+
+    return JsonResponse({'messages': data})
+
+
+@login_required(login_url='marketplace:login')
+def respond_offer_view(request, message_id):
+    """Allows seller to accept or decline a price offer message."""
+    message = get_object_or_404(Message.objects.select_related('conversation', 'conversation__seller'), id=message_id)
+    conversation = message.conversation
+
+    if request.user != conversation.seller:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Only the seller can accept or decline offers.'}, status=403)
+        messages.error(request, "Only the seller can respond to price offers.")
+        return redirect('marketplace:chat_detail', conversation_id=conversation.id)
+
+    if request.method == 'POST':
+        action = request.POST.get('response')  # 'accept' or 'decline'
+        if action == 'accept':
+            message.offer_status = 'accepted'
+            message.save()
+            # Post a confirmation notification in the conversation
+            Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                text=f"🤝 Offer of ₦{message.offer_amount:,.2f} ACCEPTED by seller!",
+                msg_type='text'
+            )
+            conversation.save()
+            msg_response = f"You accepted the offer of ₦{message.offer_amount:,.2f}."
+        elif action == 'decline':
+            message.offer_status = 'declined'
+            message.save()
+            Message.objects.create(
+                conversation=conversation,
+                sender=request.user,
+                text=f"❌ Offer of ₦{message.offer_amount:,.2f} declined by seller.",
+                msg_type='text'
+            )
+            conversation.save()
+            msg_response = f"You declined the offer of ₦{message.offer_amount:,.2f}."
+        else:
+            return HttpResponseBadRequest("Invalid action.")
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'success', 'offer_status': message.offer_status, 'message': msg_response})
+
+        messages.info(request, msg_response)
+
+    return redirect('marketplace:chat_detail', conversation_id=conversation.id)
 
 
 @login_required(login_url='marketplace:login')
@@ -351,7 +504,7 @@ def post_ad_view(request):
                 )
 
             messages.info(
-                request,
+                request, 
                 "Your ad has been submitted successfully and is currently under review. "
                 "Our moderation team will verify the details and activate it shortly to ensure platform quality and buyer safety."
             )
