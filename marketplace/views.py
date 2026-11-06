@@ -139,7 +139,13 @@ def listing_detail_view(request, slug):
         slug=slug
     )
     
-    Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
+    # Unique 24-hour view counter per session (Prevents refresh inflation)
+    session_key = f'viewed_ad_{listing.id}'
+    if not request.session.get(session_key, False):
+        Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
+        listing.refresh_from_db(fields=['views_count'])
+        request.session[session_key] = True
+        request.session.set_expiry(86400)
     
     similar_qs = Listing.objects.filter(
         status='active'
