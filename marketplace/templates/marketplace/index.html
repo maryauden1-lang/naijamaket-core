@@ -3,10 +3,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- maximum-scale=1.0 and user-scalable=no prevents mobile browser viewport zooming -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6D28D9">
   <title>{{ settings.site_name|default:"Naijamaket" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
+  <!-- FAVICON & WEB APP ICONS -->
+  {% if settings.logo %}
+    <link rel="icon" type="image/png" href="{{ settings.logo.url }}">
+    <link rel="apple-touch-icon" href="{{ settings.logo.url }}">
+  {% endif %}
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="{{ settings.site_name|default:'Naijamaket' }}">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -15,6 +25,13 @@
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
       background: #F8F9FA; 
+      touch-action: pan-y;
+    }
+    /* Strictly enforce 16px on inputs on mobile to kill the iOS auto-zoom bug */
+    @media screen and (max-width: 768px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
     }
     .jiji-purple-canvas { 
       background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%); 
@@ -33,8 +50,43 @@
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
 
   <!-- ========================================================= -->
-  <!-- FLOATING GLOBAL TOAST ALERT                               -->
+  <!-- ADD TO HOME SCREEN EXIT POPUP (PWA PROMPT)               -->
   <!-- ========================================================= -->
+  <div id="pwaExitModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-end sm:items-center justify-center p-4 transition-opacity">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 transform transition-all text-center">
+      <div class="w-16 h-16 rounded-2xl mx-auto mb-3.5 bg-purple-50 flex items-center justify-center border border-purple-100 overflow-hidden shadow-xs">
+        {% if settings.logo %}
+          <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="w-12 h-12 object-contain">
+        {% else %}
+          <div class="w-10 h-10 rounded-xl bg-purple-700 text-white font-black text-xl flex items-center justify-center">
+            {{ settings.site_name|slice:":1"|upper|default:"N" }}
+          </div>
+        {% endif %}
+      </div>
+
+      <h3 class="text-base font-black text-slate-900 mb-1">Add {{ settings.site_name|default:"Naijamaket" }} to Home Screen</h3>
+      <p class="text-xs text-slate-500 mb-5 leading-relaxed">
+        Install for faster browsing, instant offer alerts, and full one-tap access directly on your phone.
+      </p>
+
+      <div class="space-y-2">
+        <button type="button" id="pwaInstallBtn" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs py-3 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Add to Home Screen</span>
+        </button>
+        <button type="button" onclick="closePwaExitModal()" class="w-full text-slate-400 hover:text-slate-600 font-bold text-xs py-2 transition">
+          Maybe Later
+        </button>
+      </div>
+
+      <!-- Instruction note for Safari iOS users -->
+      <p id="iosInstructions" class="hidden text-[10px] text-slate-400 mt-3 pt-3 border-t border-slate-100 leading-tight">
+        Tap the <strong>Share</strong> button <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 inline text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> at the bottom of Safari, then choose <strong>Add to Home Screen</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- FLOATING GLOBAL TOAST ALERT -->
   <div id="globalToast" class="fixed top-5 right-5 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
     <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -50,9 +102,7 @@
     </a>
   </div>
 
-  <!-- ========================================================= -->
-  <!-- 1. TOP WHITE HEADER BAR (LOGO, EN, INBOX, AUTH, SELL)     -->
-  <!-- ========================================================= -->
+  <!-- 1. TOP WHITE HEADER BAR -->
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
       
@@ -74,10 +124,10 @@
         {% endif %}
       </a>
 
-      <!-- Right Controls: Language Selector, Desktop Inbox, Auth Links, Orange SELL Button -->
+      <!-- Right Controls -->
       <div class="flex items-center gap-2.5 sm:gap-6">
         
-        <!-- Language Selector Dropdown -->
+        <!-- Language Selector -->
         <div class="relative">
           <button 
             type="button" 
@@ -114,7 +164,7 @@
         </div>
 
         {% if user.is_authenticated %}
-          <!-- Desktop Inbox Icon Link with Live Badge -->
+          <!-- Desktop Inbox Icon Link -->
           <a href="{% url 'marketplace:inbox' %}" class="hidden sm:flex items-center gap-1.5 text-slate-700 hover:text-purple-700 py-1.5 px-2.5 rounded-xl hover:bg-slate-100 transition relative" title="Messages">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -141,7 +191,7 @@
           </div>
         {% endif %}
 
-        <!-- Jiji Orange SELL Button -->
+        <!-- Orange SELL Button -->
         <a 
           href="{% url 'marketplace:post_ad' %}" 
           class="sell-btn-orange text-white text-xs sm:text-sm font-black px-4 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
@@ -153,9 +203,7 @@
     </div>
   </header>
 
-  <!-- ========================================================= -->
-  <!-- 2. PURPLE HERO CANVAS (SEARCH BAR & LOCATION SELECTOR)   -->
-  <!-- ========================================================= -->
+  <!-- 2. PURPLE HERO CANVAS (SEARCH BAR) -->
   <section class="jiji-purple-canvas text-white py-7 sm:py-12 shadow-inner">
     <div class="max-w-4xl mx-auto px-3 sm:px-6 text-center">
       
@@ -163,10 +211,10 @@
         What are you looking for?
       </h2>
 
-      <!-- Side-by-Side Unified Search Row -->
+      <!-- Search Row -->
       <div class="flex flex-row items-stretch gap-1.5 sm:gap-3 max-w-3xl mx-auto relative">
         
-        <!-- Left: Compact "All Nigeria" Dropdown Button -->
+        <!-- Left: States Dropdown -->
         <div class="relative shrink-0 w-[122px] sm:w-48">
           <button 
             type="button" 
@@ -199,7 +247,7 @@
           </div>
         </div>
 
-        <!-- Right: Live Search Input with Search Icon -->
+        <!-- Right: Non-Zooming Mobile Search Input -->
         <div class="flex-1 relative min-w-0">
           <form action="{% url 'marketplace:home' %}" method="GET" class="w-full h-full">
             {% if selected_state %}
@@ -210,6 +258,7 @@
             {% endif %}
 
             <div class="relative w-full h-full">
+              <!-- text-base prevents auto-zoom on mobile iOS & Android -->
               <input 
                 type="text" 
                 id="liveSearchInput" 
@@ -217,7 +266,7 @@
                 value="{{ search_query }}" 
                 autocomplete="off" 
                 placeholder="I am looking for..." 
-                class="w-full bg-white text-slate-900 text-xs sm:text-base h-11 sm:h-14 pl-3.5 sm:pl-5 pr-10 sm:pr-12 rounded-xl sm:rounded-2xl shadow-md outline-hidden placeholder-slate-400 focus:ring-3 focus:ring-purple-400/40 transition-all"
+                class="w-full bg-white text-slate-900 text-base h-11 sm:h-14 pl-3.5 sm:pl-5 pr-10 sm:pr-12 rounded-xl sm:rounded-2xl shadow-md outline-hidden placeholder-slate-400 focus:ring-3 focus:ring-purple-400/40 transition-all"
               >
               <button type="submit" class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-700 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 hover:text-purple-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -247,11 +296,8 @@
     </div>
   {% endif %}
 
-  <!-- ========================================================= -->
-  <!-- MOBILE ONLY: 4-COLUMN RESPONSIVE CATEGORY GRID            -->
-  <!-- ========================================================= -->
+  <!-- MOBILE ONLY: CATEGORY GRID -->
   <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-4 px-2.5 sm:px-4 shadow-2xs">
-    
     <div class="flex items-center justify-between mb-3 px-1.5">
       <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">
         All Categories
@@ -264,8 +310,6 @@
     </div>
 
     <div class="grid grid-cols-4 gap-2 sm:gap-3">
-      
-      <!-- "All Feed" Tile -->
       <a 
         href="{% url 'marketplace:home' %}" 
         class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group"
@@ -278,7 +322,6 @@
         </span>
       </a>
 
-      <!-- Categories Loop -->
       {% for cat in categories %}
       <a 
         href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" 
@@ -291,25 +334,19 @@
             <i data-lucide="{{ cat.icon_name|default:'tag' }}" class="w-6 h-6 stroke-[1.8]"></i>
           {% endif %}
         </div>
-        
         <span class="mt-1.5 text-[10.5px] font-bold {% if selected_category == cat.slug %}text-purple-700{% else %}text-slate-700 group-hover:text-purple-700{% endif %} line-clamp-2 w-full leading-tight">
           {{ cat.name }}
         </span>
       </a>
       {% endfor %}
-
     </div>
-
   </section>
 
-  <!-- ========================================================= -->
-  <!-- MAIN LAYOUT: Desktop Sidebar (Left) + Grid (Right)        -->
-  <!-- ========================================================= -->
+  <!-- MAIN LAYOUT: Sidebar (Left) + Grid (Right) -->
   <main class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full">
-    
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8 items-start">
       
-      <!-- DESKTOP LEFT SIDEBAR: Categories with Flyouts -->
+      <!-- DESKTOP LEFT SIDEBAR -->
       <aside aria-label="Market Categories" class="hidden lg:block lg:col-span-1 bg-white rounded-3xl p-3.5 shadow-sm border border-slate-200/80 relative z-30">
         <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
           <span class="text-xs font-black text-slate-800 uppercase tracking-wider">All Categories</span>
@@ -347,7 +384,6 @@
               </svg>
             </a>
 
-            <!-- Subcategories Flyout Drawer -->
             {% if cat.subcategories.all %}
             <div class="hidden lg:group-hover:flex flex-col absolute left-[calc(100%+8px)] top-0 w-80 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 z-50">
               <div class="pb-2.5 mb-2 border-b border-slate-100 flex items-center justify-between">
@@ -377,10 +413,9 @@
         </nav>
       </aside>
 
-      <!-- RIGHT COLUMN: 2-Column Mobile & 3-Column Desktop Feed -->
+      <!-- RIGHT COLUMN: Grid of Listings -->
       <div class="lg:col-span-3 space-y-4 sm:space-y-6 min-w-0 w-full">
         
-        <!-- Section Title Header -->
         <div class="flex items-center justify-between px-1">
           <div>
             <h2 class="text-sm sm:lg font-black text-slate-900 tracking-tight">
@@ -406,7 +441,7 @@
           {% endif %}
         </div>
 
-        <!-- 2 COLUMNS ON MOBILE (grid-cols-2) & 3 COLUMNS ON DESKTOP -->
+        <!-- 2 COLUMNS ON MOBILE (grid-cols-2) & 3 ON DESKTOP -->
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 w-full">
           {% for item in listings %}
           <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group border border-slate-200 relative">
@@ -430,7 +465,7 @@
                 </div>
               {% endif %}
 
-              <!-- EXPANDED VERIFIED BADGE ON MOBILE -->
+              <!-- VERIFIED BADGE -->
               {% if item.seller.seller_profile.is_nin_verified %}
                 <div class="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full shadow-md border border-blue-200">
                   <span class="text-[10px] sm:text-[11px] font-black text-blue-700 tracking-tight leading-none">Verified</span>
@@ -466,8 +501,7 @@
             <!-- Details -->
             <div class="p-2.5 sm:p-3.5 flex flex-col flex-1 justify-between min-w-0">
               <div>
-                
-                <!-- EXPANDED LOCATION PIN AND LARGER TEXT -->
+                <!-- Location Pin -->
                 <p class="text-[11px] sm:text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-1 truncate">
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
@@ -486,7 +520,7 @@
                 </p>
               </div>
 
-              <!-- SELLER ROW: SHOWS REAL NAME (e.g. Blessing) INSTEAD OF GMAIL -->
+              <!-- Seller Row -->
               <div class="pt-2 border-t border-slate-100 mt-2.5 flex items-center justify-between relative z-20">
                 <div class="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1">
                   <div class="relative w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
@@ -572,9 +606,7 @@
 
   </main>
 
-  <!-- ========================================================= -->
-  <!-- 3. FOOTER                                                 -->
-  <!-- ========================================================= -->
+  <!-- 3. FOOTER -->
   <footer class="mt-14 relative w-full overflow-hidden">
     <div class="w-full leading-none -mb-1">
       <svg viewBox="0 0 1440 220" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto block" preserveAspectRatio="none">
@@ -622,7 +654,6 @@
             </div>
           </div>
 
-          <!-- About & Legal -->
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">About & Legal</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
@@ -635,7 +666,6 @@
             </ul>
           </div>
 
-          <!-- Trust & Safety -->
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">Trust & Safety</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
@@ -647,7 +677,6 @@
             </ul>
           </div>
 
-          <!-- Support & Contacts -->
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">Support Desk</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
@@ -657,10 +686,8 @@
               <li class="pt-1 text-[11px] text-purple-300">Office: {{ settings.office_address }}</li>
             </ul>
           </div>
-
         </div>
 
-        <!-- Regional Directory -->
         <div class="py-6 border-b border-purple-400/20 text-[11px] text-purple-200/70 space-y-2">
           <span class="font-extrabold text-white uppercase text-[10px] tracking-wider block">Popular Commercial Regions:</span>
           <div class="flex flex-wrap gap-2 text-xs">
@@ -674,24 +701,16 @@
           </div>
         </div>
 
-        <!-- Copyright -->
         <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-purple-200/60 font-medium">
           <p>&copy; 2026 {{ settings.site_name|default:"Naijamaket" }}. All rights reserved. Registered Nigerian Marketplace.</p>
-          <p class="text-[11px] text-purple-300/70 text-center md:text-right max-w-xl">
-            Naijamaket connects verified buyers and sellers in Nigeria. Always inspect items in-person in secure public locations. Never send advance payment fees.
-          </p>
         </div>
 
       </div>
     </div>
   </footer>
 
-  <!-- ========================================================= -->
-  <!-- 4. STICKY MOBILE BOTTOM NAVIGATION BAR                    -->
-  <!-- ========================================================= -->
+  <!-- 4. MOBILE BOTTOM NAV -->
   <nav aria-label="Mobile Navigation" class="fixed bottom-0 left-0 right-0 sm:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 px-4 py-2 flex items-center justify-between shadow-2xl">
-    
-    <!-- Home -->
     <a href="{% url 'marketplace:home' %}" class="flex flex-col items-center gap-1 text-purple-700">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -699,7 +718,6 @@
       <span class="text-[10px] font-bold">Home</span>
     </a>
 
-    <!-- Saved -->
     <a href="{% url 'marketplace:saved_items' %}" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
@@ -707,7 +725,6 @@
       <span class="text-[10px] font-bold">Saved</span>
     </a>
 
-    <!-- Post Ad -->
     <a href="{% url 'marketplace:post_ad' %}" class="flex flex-col items-center -mt-6">
       <div class="w-12 h-12 rounded-full sell-btn-orange text-white flex items-center justify-center shadow-lg">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -717,7 +734,6 @@
       <span class="text-[10px] font-extrabold text-slate-700 mt-1">Post</span>
     </a>
 
-    <!-- Chats with Live Mobile Badge -->
     <a href="{% url 'marketplace:inbox' %}" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 relative">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -728,7 +744,6 @@
       </span>
     </a>
 
-    <!-- Account / Login -->
     {% if user.is_authenticated %}
       <a href="{% url 'marketplace:dashboard' %}" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -746,7 +761,6 @@
     {% endif %}
   </nav>
 
-  <!-- Scripts: Icons, Language Switcher, Search, and Live Audio/Badge Poller -->
   <script>
     if (window.lucide) {
       lucide.createIcons();
@@ -832,6 +846,62 @@
     }
 
     // =========================================================
+    // ADD TO HOME SCREEN / EXIT PROMPT LOGIC
+    // =========================================================
+    let deferredPrompt = null;
+    const pwaModal = document.getElementById('pwaExitModal');
+    const pwaBtn = document.getElementById('pwaInstallBtn');
+    const iosInstructions = document.getElementById('iosInstructions');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    function showPwaExitModal() {
+      if (!sessionStorage.getItem('pwaModalDismissed')) {
+        pwaModal.classList.remove('hidden');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          iosInstructions.classList.remove('hidden');
+          pwaBtn.classList.add('hidden');
+        }
+      }
+    }
+
+    function closePwaExitModal() {
+      pwaModal.classList.add('hidden');
+      sessionStorage.setItem('pwaModalDismissed', 'true');
+    }
+
+    if (pwaBtn) {
+      pwaBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          closePwaExitModal();
+        } else {
+          closePwaExitModal();
+        }
+      });
+    }
+
+    // Trigger exit intent when visitor moves cursor to leave (Desktop) or after browsing (Mobile)
+    document.addEventListener('mouseleave', (e) => {
+      if (e.clientY <= 0) {
+        showPwaExitModal();
+      }
+    });
+
+    // Mobile: Show after 25 seconds of active browsing if not dismissed
+    setTimeout(() => {
+      if (window.innerWidth < 768) {
+        showPwaExitModal();
+      }
+    }, 25000);
+
+    // =========================================================
     // GLOBAL SOUND & UNREAD BADGE POLLING ENGINE
     // =========================================================
     {% if user.is_authenticated %}
@@ -879,7 +949,6 @@
         const data = await res.json();
         const count = data.unread_count;
 
-        // If new unread message arrived, play chime and pop toast
         if (count > previousUnread) {
           playGlobalChime();
           showGlobalToast();
@@ -887,7 +956,6 @@
 
         previousUnread = count;
 
-        // Update Desktop Badge
         const desktopBadge = document.getElementById('desktopUnreadBadge');
         if (desktopBadge) {
           if (count > 0) {
@@ -898,7 +966,6 @@
           }
         }
 
-        // Update Mobile Badge
         const mobileBadge = document.getElementById('mobileUnreadBadge');
         if (mobileBadge) {
           if (count > 0) {
@@ -911,7 +978,6 @@
       } catch(e) {}
     }
 
-    // Check every 5 seconds site-wide
     setInterval(pollGlobalUnread, 5000);
     {% endif %}
   </script>

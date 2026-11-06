@@ -3,21 +3,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="chatPageTitle">Chat with {{ other_user.first_name|default:other_user.username }} - Naijamaket</title>
+  <!-- Viewport settings to completely lock auto-zoom on mobile keyboards -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="chatPageTitle">Chat with {{ other_user.first_name|default:other_user.username }} - {{ settings.site_name|default:"Naijamaket" }}</title>
   
+  <!-- FAVICON & APP ICONS -->
+  {% if settings.logo %}
+    <link rel="icon" type="image/png" href="{{ settings.logo.url }}">
+    <link rel="apple-touch-icon" href="{{ settings.logo.url }}">
+  {% endif %}
+  <meta name="theme-color" content="#6D28D9">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background: #F8FAFC; 
+      touch-action: pan-y;
+    }
     .glass-surface {
       background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(226, 232, 240, 0.9);
     }
-    /* Smooth 3-dot typing wave animation */
+    /* Strictly enforce 16px font size on inputs to stop mobile browsers from zooming */
+    @media screen and (max-width: 768px) {
+      input, textarea {
+        font-size: 16px !important;
+      }
+    }
+    /* 3-dot typing wave animation */
     @keyframes typingBounce {
       0%, 60%, 100% { transform: translateY(0); }
       30% { transform: translateY(-4px); }
@@ -35,7 +53,7 @@
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
     <div class="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
       
-      <!-- Left: Back Button & User Info -->
+      <!-- Left: Back Button & User Profile -->
       <div class="flex items-center gap-3 min-w-0">
         <a href="{% url 'marketplace:inbox' %}" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors shrink-0">
           <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -166,7 +184,7 @@
         </div>
       {% endfor %}
 
-      <!-- Animated 3-Dot Typing Indicator -->
+      <!-- Animated 3-Dot Typing Wave Indicator -->
       <div id="typingIndicator" class="hidden items-center gap-2 text-slate-400 text-xs pt-1">
         <div class="bg-slate-100 px-3.5 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5 shadow-2xs">
           <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
@@ -178,7 +196,7 @@
 
     </div>
 
-    <!-- Message Input Bar -->
+    <!-- Message Input Bar (text-base stops keyboard auto-zoom) -->
     <form id="messageForm" method="POST" class="mt-3 flex gap-2">
       {% csrf_token %}
       <input 
@@ -188,9 +206,9 @@
         required 
         placeholder="Type your message here..." 
         autocomplete="off"
-        class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-xs sm:text-sm focus:ring-2 focus:ring-purple-500 focus:outline-hidden shadow-2xs"
+        class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-base focus:ring-2 focus:ring-purple-500 focus:outline-hidden shadow-2xs"
       >
-      <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center">
+      <button type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center shrink-0">
         Send
       </button>
     </form>
@@ -216,7 +234,7 @@
 
         <label class="block text-[11px] font-bold text-slate-600 mb-1">Your Offer Price (₦)</label>
         <div class="relative mb-3">
-          <span class="absolute left-3.5 top-3 text-slate-400 font-bold text-xs">₦</span>
+          <span class="absolute left-3.5 top-3 text-slate-400 font-bold text-sm">₦</span>
           <input 
             type="number" 
             name="offer_amount" 
@@ -224,7 +242,7 @@
             min="100" 
             placeholder="e.g. 45000" 
             required
-            class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+            class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 text-base font-bold text-slate-900 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
           >
         </div>
 
@@ -233,7 +251,7 @@
           name="note" 
           rows="2" 
           placeholder="e.g. Ready for instant pickup in Ikeja..." 
-          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-base text-slate-800 mb-4 focus:ring-2 focus:ring-purple-500 focus:outline-hidden"
         ></textarea>
 
         <div class="flex gap-2">
@@ -346,7 +364,6 @@
     // Typing Status Broadcast & Poller
     let typingTimer = null;
     messageInput.addEventListener('input', () => {
-      // Send typing = true
       fetch("{% url 'marketplace:typing_status_api' conversation.id %}", {
         method: 'POST',
         headers: {
@@ -358,7 +375,6 @@
 
       clearTimeout(typingTimer);
       typingTimer = setTimeout(() => {
-        // Send typing = false after 2.5 seconds of silence
         fetch("{% url 'marketplace:typing_status_api' conversation.id %}", {
           method: 'POST',
           headers: {
