@@ -705,3 +705,13 @@ def get_subcategories_for_category_view(request):
         sub_objs = SubCategory.objects.filter(category_id=category_id).order_by('name')
         subcategories = [{'id': s.id, 'name': s.name} for s in sub_objs]
     return JsonResponse({'subcategories': subcategories, 'category_slug': category_slug})
+
+
+@login_required(login_url='marketplace:login')
+def unread_count_api_view(request):
+    """Returns the total number of unread messages for the logged-in user."""
+    count = Message.objects.filter(
+        Q(conversation__buyer=request.user) | Q(conversation__seller=request.user),
+        is_read=False
+    ).exclude(sender=request.user).count()
+    return JsonResponse({'unread_count': count})

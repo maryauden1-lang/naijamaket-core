@@ -31,4 +31,5 @@ urlpatterns = [
     path('api/search/', views.ajax_search_view, name='ajax_search'),
     path('api/get-areas/', views.get_areas_for_state_view, name='get_areas'),
     path('api/get-subcategories/', views.get_subcategories_for_category_view, name='get_subcategories'),
+    path('api/unread-count/', views.unread_count_api_view, name='unread_count_api'),
 ]

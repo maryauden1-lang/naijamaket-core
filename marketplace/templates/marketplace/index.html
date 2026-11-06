@@ -13,29 +13,47 @@
   
   <style>
     body { 
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #F8F9FA;
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      background: #F8F9FA; 
     }
-    .jiji-purple-canvas {
-      background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    .jiji-purple-canvas { 
+      background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%); 
     }
-    .sell-btn-orange {
-      background-color: #FF8A00;
-      box-shadow: 0 4px 14px rgba(255, 138, 0, 0.35);
+    .sell-btn-orange { 
+      background-color: #FF8A00; 
+      box-shadow: 0 4px 14px rgba(255, 138, 0, 0.35); 
     }
-    .sell-btn-orange:hover {
-      background-color: #EA7A00;
+    .sell-btn-orange:hover { 
+      background-color: #EA7A00; 
     }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-0 selection:bg-purple-600 selection:text-white">
+<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
 
   <!-- ========================================================= -->
-  <!-- 1. TOP WHITE HEADER BAR (LOGO, EN, AUTH, SELL)            -->
+  <!-- FLOATING GLOBAL TOAST ALERT                               -->
   <!-- ========================================================= -->
-  <header class="bg-white border-b border-slate-200/90 sticky top-0 z-50 shadow-xs">
+  <div id="globalToast" class="fixed top-5 right-5 z-50 transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+    <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+      </svg>
+    </div>
+    <div class="flex-1 truncate">
+      <p class="text-xs font-bold text-emerald-400">New Message Received</p>
+      <p class="text-xs text-slate-300 truncate mt-0.5">You have unread messages in your inbox.</p>
+    </div>
+    <a href="{% url 'marketplace:inbox' %}" class="text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl transition pointer-events-auto">
+      View
+    </a>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 1. TOP WHITE HEADER BAR (LOGO, EN, INBOX, AUTH, SELL)     -->
+  <!-- ========================================================= -->
+  <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
       
       <!-- Brand Logo -->
@@ -56,7 +74,7 @@
         {% endif %}
       </a>
 
-      <!-- Right Controls: Language Selector, Auth Links, Orange SELL Button -->
+      <!-- Right Controls: Language Selector, Desktop Inbox, Auth Links, Orange SELL Button -->
       <div class="flex items-center gap-2.5 sm:gap-6">
         
         <!-- Language Selector Dropdown -->
@@ -97,8 +115,19 @@
           </div>
         </div>
 
-        <!-- Auth Links: Sign in | Registration (or Username | Logout) -->
         {% if user.is_authenticated %}
+          <!-- Desktop Inbox Icon Link with Live Badge -->
+          <a href="{% url 'marketplace:inbox' %}" class="hidden sm:flex items-center gap-1.5 text-slate-700 hover:text-purple-700 py-1.5 px-2.5 rounded-xl hover:bg-slate-100 transition relative" title="Messages">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span class="text-xs font-extrabold">Inbox</span>
+            <span id="desktopUnreadBadge" class="{% if unread_messages_count == 0 %}hidden{% endif %} absolute -top-1 -right-1 bg-purple-600 text-white text-[9px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
+              {{ unread_messages_count }}
+            </span>
+          </a>
+
+          <!-- User Profile & Logout -->
           <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-800">
             <a href="{% url 'marketplace:dashboard' %}" class="hover:text-purple-700 flex items-center gap-1.5 max-w-[85px] sm:max-w-[140px] truncate">
               <span class="truncate">{{ user.first_name|default:user.username }}</span>
@@ -148,7 +177,6 @@
             class="w-full bg-white text-slate-800 font-bold text-[11px] sm:text-sm h-11 sm:h-14 px-2 sm:px-4 rounded-xl sm:rounded-2xl flex items-center justify-between shadow-md hover:bg-slate-50 transition-colors"
           >
             <span class="truncate">{{ selected_state_obj.name|default:"All Nigeria" }}</span>
-            <!-- Chevron Down SVG -->
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 shrink-0 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m6 9 6 6 6-6"/>
             </svg>
@@ -173,7 +201,7 @@
           </div>
         </div>
 
-        <!-- Right: "I am looking for..." Live Search Input with Search Icon -->
+        <!-- Right: Live Search Input with Search Icon -->
         <div class="flex-1 relative min-w-0">
           <form action="{% url 'marketplace:home' %}" method="GET" class="w-full h-full">
             {% if selected_state %}
@@ -194,7 +222,6 @@
                 class="w-full bg-white text-slate-900 text-xs sm:text-base h-11 sm:h-14 pl-3.5 sm:pl-5 pr-10 sm:pr-12 rounded-xl sm:rounded-2xl shadow-md outline-hidden placeholder-slate-400 focus:ring-3 focus:ring-purple-400/40 transition-all"
               >
               <button type="submit" class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-purple-700 transition-colors">
-                <!-- Search SVG -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 hover:text-purple-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                 </svg>
@@ -224,7 +251,7 @@
   {% endif %}
 
   <!-- ========================================================= -->
-  <!-- MOBILE ONLY: JIJI-STYLE 4-COLUMN RESPONSIVE CATEGORY GRID -->
+  <!-- MOBILE ONLY: 4-COLUMN RESPONSIVE CATEGORY GRID            -->
   <!-- ========================================================= -->
   <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-4 px-2.5 sm:px-4 shadow-2xs">
     
@@ -239,7 +266,6 @@
       {% endif %}
     </div>
 
-    <!-- 4 Columns on Mobile (Just like Jiji Nigeria) -->
     <div class="grid grid-cols-4 gap-2 sm:gap-3">
       
       <!-- "All Feed" Tile -->
@@ -255,7 +281,7 @@
         </span>
       </a>
 
-      <!-- 16 Categories Loop -->
+      <!-- Categories Loop -->
       {% for cat in categories %}
       <a 
         href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" 
@@ -280,7 +306,7 @@
   </section>
 
   <!-- ========================================================= -->
-  <!-- MAIN LAYOUT: Desktop Sidebar (Left) + 2-Column Grid (Right) -->
+  <!-- MAIN LAYOUT: Desktop Sidebar (Left) + Grid (Right)        -->
   <!-- ========================================================= -->
   <main class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full">
     
@@ -319,7 +345,6 @@
                 </div>
               </div>
 
-              <!-- Chevron Right SVG -->
               <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-300 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m9 18 6-6-6-6"/>
               </svg>
@@ -384,7 +409,7 @@
           {% endif %}
         </div>
 
-        <!-- STRICT 2 COLUMNS ON MOBILE (grid-cols-2) & 3 COLUMNS ON DESKTOP -->
+        <!-- 2 COLUMNS ON MOBILE (grid-cols-2) & 3 COLUMNS ON DESKTOP -->
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 w-full">
           {% for item in listings %}
           <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group border border-slate-200 relative">
@@ -423,7 +448,7 @@
                 </span>
               {% endif %}
 
-              <!-- HEART ICON (INLINE SVG) -->
+              <!-- Favorite Button -->
               <a href="{% url 'marketplace:toggle_favorite' item.id %}" class="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xs hover:scale-110 transition-transform">
                 {% if item.id in user_saved_ids %}
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-600 fill-rose-600" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -549,11 +574,10 @@
   </main>
 
   <!-- ========================================================= -->
-  <!-- 3. CURVED PURPLE SWOOP FOOTER (CONNECTED TO ADMIN PAGES)   -->
+  <!-- 3. CURVED PURPLE SWOOP FOOTER                             -->
   <!-- ========================================================= -->
   <footer class="mt-14 relative w-full overflow-hidden">
     
-    <!-- Layered SVG Wave Transition -->
     <div class="w-full leading-none -mb-1">
       <svg viewBox="0 0 1440 220" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto block" preserveAspectRatio="none">
         <path d="M0,80 C360,220 1080,220 1440,80 L1440,220 L0,220 Z" fill="#4C1D95" />
@@ -563,11 +587,9 @@
       </svg>
     </div>
 
-    <!-- Solid Deep Purple Content Basin -->
     <div class="bg-[#4C1D95] text-white pt-8 pb-16 sm:pb-12 border-t border-purple-600/30">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Grid: 4 Column Clean Directory -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-purple-400/20">
           
           <!-- Brand Column -->
@@ -604,7 +626,7 @@
             </div>
           </div>
 
-          <!-- About & Legal (Dynamic Routes from Admin) -->
+          <!-- About & Legal -->
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">About & Legal</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
@@ -617,7 +639,7 @@
             </ul>
           </div>
 
-          <!-- Trust & Safety (Dynamic Routes from Admin) -->
+          <!-- Trust & Safety -->
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">Trust & Safety</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
@@ -669,7 +691,7 @@
   </footer>
 
   <!-- ========================================================= -->
-  <!-- 4. STICKY MOBILE BOTTOM NAVIGATION BAR                     -->
+  <!-- 4. STICKY MOBILE BOTTOM NAVIGATION BAR                    -->
   <!-- ========================================================= -->
   <nav aria-label="Mobile Navigation" class="fixed bottom-0 left-0 right-0 sm:hidden bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 px-4 py-2 flex items-center justify-between shadow-2xl">
     
@@ -699,17 +721,15 @@
       <span class="text-[10px] font-extrabold text-slate-700 mt-1">Post</span>
     </a>
 
-    <!-- Chats -->
+    <!-- Chats with Live Mobile Badge -->
     <a href="{% url 'marketplace:inbox' %}" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-900 relative">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
       <span class="text-[10px] font-bold">Chats</span>
-      {% if unread_messages_count > 0 %}
-        <span class="absolute -top-1 right-2 bg-purple-600 text-white text-[8px] font-black rounded-full w-4 h-4 flex items-center justify-center">
-          {{ unread_messages_count }}
-        </span>
-      {% endif %}
+      <span id="mobileUnreadBadge" class="{% if unread_messages_count == 0 %}hidden{% endif %} absolute -top-1 right-2 bg-purple-600 text-white text-[8px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
+        {{ unread_messages_count }}
+      </span>
     </a>
 
     <!-- Account / Login -->
@@ -730,36 +750,22 @@
     {% endif %}
   </nav>
 
-  <!-- Scripts: Lucide Icons, Language Switcher, Live Search, Dropdown Click-Out -->
+  <!-- Scripts: Icons, Language Switcher, Search, and Live Audio/Badge Poller -->
   <script>
-    // Initialize Lucide SVG icons across the page
     if (window.lucide) {
       lucide.createIcons();
     }
 
     const translations = {
-      'EN': {
-        title: "What are you looking for?",
-        placeholder: "I am looking for..."
-      },
-      'YOR': {
-        title: "Kí lo fẹ́ ra lónìí?",
-        placeholder: "Mo n wa..."
-      },
-      'IGB': {
-        title: "Kedu ihe ị na-achọ?",
-        placeholder: "Ana m achọ..."
-      },
-      'HAU': {
-        title: "Me kake nema yau?",
-        placeholder: "Ina neman..."
-      }
+      'EN': { title: "What are you looking for?", placeholder: "I am looking for..." },
+      'YOR': { title: "Kí lo fẹ́ ra lónìí?", placeholder: "Mo n wa..." },
+      'IGB': { title: "Kedu ihe ị na-achọ?", placeholder: "Ana m achọ..." },
+      'HAU': { title: "Me kake nema yau?", placeholder: "Ina neman..." }
     };
 
     function changeLanguage(langCode) {
       document.getElementById('currentLangLabel').innerText = langCode;
       document.getElementById('langDropdown').classList.add('hidden');
-      
       const item = translations[langCode];
       if (item) {
         document.getElementById('heroQuestionTitle').innerText = item.title;
@@ -828,6 +834,90 @@
         }
       });
     }
+
+    // =========================================================
+    // GLOBAL SOUND & UNREAD BADGE POLLING ENGINE
+    // =========================================================
+    {% if user.is_authenticated %}
+    function playGlobalChime() {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
+
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } catch(e) {}
+    }
+
+    function showGlobalToast() {
+      const toast = document.getElementById('globalToast');
+      if (!toast) return;
+      toast.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+      }, 5000);
+    }
+
+    let previousUnread = {{ unread_messages_count|default:0 }};
+
+    async function pollGlobalUnread() {
+      try {
+        const res = await fetch("{% url 'marketplace:unread_count_api' %}");
+        if (!res.ok) return;
+        const data = await res.json();
+        const count = data.unread_count;
+
+        // If new unread message arrived, play chime and pop toast
+        if (count > previousUnread) {
+          playGlobalChime();
+          showGlobalToast();
+        }
+
+        previousUnread = count;
+
+        // Update Desktop Badge
+        const desktopBadge = document.getElementById('desktopUnreadBadge');
+        if (desktopBadge) {
+          if (count > 0) {
+            desktopBadge.textContent = count;
+            desktopBadge.classList.remove('hidden');
+          } else {
+            desktopBadge.classList.add('hidden');
+          }
+        }
+
+        // Update Mobile Badge
+        const mobileBadge = document.getElementById('mobileUnreadBadge');
+        if (mobileBadge) {
+          if (count > 0) {
+            mobileBadge.textContent = count;
+            mobileBadge.classList.remove('hidden');
+          } else {
+            mobileBadge.classList.add('hidden');
+          }
+        }
+      } catch(e) {}
+    }
+
+    // Check every 5 seconds site-wide
+    setInterval(pollGlobalUnread, 5000);
+    {% endif %}
   </script>
 </body>
 </html>
