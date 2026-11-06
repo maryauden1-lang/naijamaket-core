@@ -84,12 +84,10 @@
             onclick="document.getElementById('langDropdown').classList.toggle('hidden')"
             class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 hover:text-purple-700 transition-colors py-1.5 px-2 rounded-xl hover:bg-slate-100"
           >
-            <!-- Globe SVG -->
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
             </svg>
             <span id="currentLangLabel">EN</span>
-            <!-- Chevron Down SVG -->
             <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m6 9 6 6 6-6"/>
             </svg>
@@ -229,7 +227,6 @@
             </div>
           </form>
 
-          <!-- Instant AJAX Popup -->
           <div id="liveSearchResults" class="hidden absolute left-0 right-0 top-[calc(100%+6px)] bg-white rounded-2xl p-2 shadow-2xl border border-slate-100 z-50 max-h-80 overflow-y-auto text-left text-slate-800"></div>
         </div>
 
@@ -410,7 +407,7 @@
         </div>
 
         <!-- 2 COLUMNS ON MOBILE (grid-cols-2) & 3 COLUMNS ON DESKTOP -->
-        <div class="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 w-full">
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 w-full">
           {% for item in listings %}
           <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group border border-slate-200 relative">
             
@@ -433,44 +430,46 @@
                 </div>
               {% endif %}
 
-              <!-- Verified Seller Badge at Top of Card -->
+              <!-- EXPANDED VERIFIED BADGE ON MOBILE -->
               {% if item.seller.seller_profile.is_nin_verified %}
-                <div class="absolute top-1.5 left-1.5 z-20 flex items-center gap-1 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-full shadow-xs border border-blue-200">
-                  <span class="text-[8px] font-black text-blue-700 tracking-tight">Verified</span>
-                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <div class="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full shadow-md border border-blue-200">
+                  <span class="text-[10px] sm:text-[11px] font-black text-blue-700 tracking-tight leading-none">Verified</span>
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="shrink-0">
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M7.06383 0.985077C7.33981 0.772642 7.66986 0.666667 7.99984 0.666748C8.32981 0.666667 8.65986 0.772642 8.93585 0.985077L9.71826 1.58584L10.6988 1.45682C11.3888 1.36588 12.0527 1.75039 12.3189 2.39207L12.6956 3.30452L13.6066 3.68068L13.6079 3.68122C14.2496 3.94745 14.634 4.61164 14.5431 5.30164L14.4142 6.28134L15.0153 7.06426C15.1741 7.27109 15.2735 7.50843 15.3133 7.7534C15.3423 7.93203 15.3396 8.11472 15.3051 8.29262C15.2608 8.5213 15.1642 8.742 15.0153 8.93591L14.4142 9.71883L14.5431 10.6985C14.634 11.3885 14.2496 12.0527 13.6079 12.3189L13.6066 12.3195L12.6956 12.6956L12.3189 13.6081C12.0527 14.2498 11.3888 14.6343 10.6988 14.5433L9.71826 14.4143L8.93585 15.0151C8.65986 15.2275 8.32981 15.3335 7.99984 15.3334C7.66986 15.3335 7.33981 15.2275 7.06383 15.0151L6.28141 14.4143L5.30087 14.5433C4.61083 14.6343 3.94699 14.2498 3.6808 13.6081L3.30412 12.6956L2.39303 12.3195L2.39173 12.3189C1.75005 12.0527 1.36565 11.3885 1.45657 10.6985L1.58547 9.71883L0.984385 8.93591C0.811485 8.71075 0.709028 8.44947 0.677232 8.18153C0.631114 7.79303 0.733722 7.39067 0.984385 7.06426L1.58547 6.28134L1.45657 5.30164C1.36565 4.61164 1.75005 3.94745 2.39173 3.68122L2.39303 3.68068L3.30412 3.30452L3.6808 2.39207C3.94699 1.75039 4.61083 1.36588 5.30087 1.45682L6.28141 1.58584L7.06383 0.985077ZM10.8046 6.80482C11.0649 6.54447 11.0649 6.12236 10.8046 5.86201C10.5442 5.60166 10.1221 5.60166 9.86177 5.86201L7.33317 8.39061L6.47124 7.52868C6.21089 7.26833 5.78878 7.26833 5.52843 7.52868C5.26808 7.78903 5.26808 8.21114 5.52843 8.47149L6.86177 9.80482C7.12212 10.0652 7.54423 10.0652 7.80458 9.80482L10.8046 6.80482Z" fill="#1B65FF"/>
                     <path d="M6 7.99992L7.33333 9.33325L10.3333 6.33325" stroke="white" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
               {% elif item.is_featured %}
-                <span class="absolute top-1.5 left-1.5 z-20 bg-purple-700 text-white text-[8px] font-black tracking-wider px-1.5 py-0.5 rounded-md uppercase">
+                <span class="absolute top-2 left-2 z-20 bg-purple-700 text-white text-[9px] font-black tracking-wider px-2 py-0.5 rounded-md uppercase">
                   VIP
                 </span>
               {% endif %}
 
               <!-- Favorite Button -->
-              <a href="{% url 'marketplace:toggle_favorite' item.id %}" class="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xs hover:scale-110 transition-transform">
+              <a href="{% url 'marketplace:toggle_favorite' item.id %}" class="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-xs hover:scale-110 transition-transform">
                 {% if item.id in user_saved_ids %}
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-rose-600 fill-rose-600" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-600 fill-rose-600" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                   </svg>
                 {% else %}
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-500 hover:text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-slate-500 hover:text-rose-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                   </svg>
                 {% endif %}
               </a>
 
-              <span class="absolute bottom-1.5 left-1.5 bg-slate-950/70 backdrop-blur-md text-white text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded-md border border-white/10 z-20">
+              <span class="absolute bottom-2 left-2 bg-slate-950/75 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded-md border border-white/10 z-20">
                 {{ item.get_condition_display }}
               </span>
             </div>
 
             <!-- Details -->
-            <div class="p-2 sm:p-3 flex flex-col flex-1 justify-between min-w-0">
+            <div class="p-2.5 sm:p-3.5 flex flex-col flex-1 justify-between min-w-0">
               <div>
-                <p class="text-[9px] sm:text-[10px] font-semibold text-slate-400 flex items-center gap-1 mb-0.5 truncate">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                
+                <!-- EXPANDED LOCATION PIN AND LARGER TEXT -->
+                <p class="text-[11px] sm:text-xs font-bold text-slate-500 flex items-center gap-1.5 mb-1 truncate">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <span class="truncate">
@@ -478,40 +477,40 @@
                   </span>
                 </p>
 
-                <h3 class="font-bold text-slate-800 line-clamp-2 text-xs leading-snug group-hover:text-purple-600 transition-colors mb-1">
+                <h3 class="font-bold text-slate-800 line-clamp-2 text-xs sm:text-sm leading-snug group-hover:text-purple-600 transition-colors mb-1.5">
                   {{ item.title }}
                 </h3>
 
-                <p class="text-xs sm:text-base font-black text-slate-900 tracking-tight">
+                <p class="text-sm sm:text-base font-black text-slate-900 tracking-tight">
                   ₦{{ item.price|intcomma }}
                 </p>
               </div>
 
-              <!-- Seller Row -->
-              <div class="pt-1.5 sm:pt-2 border-t border-slate-100 mt-2 flex items-center justify-between relative z-20">
-                <div class="flex items-center gap-1 truncate">
-                  <div class="relative w-4 h-4 sm:w-5 sm:h-5 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
+              <!-- SELLER ROW: SHOWS REAL NAME (e.g. Blessing) INSTEAD OF GMAIL -->
+              <div class="pt-2 border-t border-slate-100 mt-2.5 flex items-center justify-between relative z-20">
+                <div class="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1">
+                  <div class="relative w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
                     {% if item.seller.seller_profile.avatar %}
-                      <img src="{{ item.seller.seller_profile.avatar.url }}" alt="{{ item.seller.username }}" class="w-full h-full object-cover">
+                      <img src="{{ item.seller.seller_profile.avatar.url }}" alt="{{ item.seller.first_name|default:item.seller.username }}" class="w-full h-full object-cover">
                     {% else %}
-                      <div class="w-full h-full bg-purple-700 flex items-center justify-center text-white text-[7px] sm:text-[8px] font-black">
-                        {{ item.seller.username|slice:":1"|upper }}
+                      <div class="w-full h-full bg-purple-700 flex items-center justify-center text-white text-[8px] sm:text-[9px] font-black">
+                        {{ item.seller.first_name|default:item.seller.username|slice:":1"|upper }}
                       </div>
                     {% endif %}
                   </div>
-                  <span class="text-[9px] sm:text-[10px] font-bold text-slate-700 truncate max-w-[50px] sm:max-w-[70px]">
-                    {{ item.seller.username }}
+                  <span class="text-[11px] sm:text-xs font-bold text-slate-700 truncate max-w-[85px] sm:max-w-[120px]">
+                    {{ item.seller.first_name|default:item.seller.username }}
                   </span>
                 </div>
 
                 <a 
-                  href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijamaket' }}." 
+                  href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.first_name|default:item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijamaket' }}." 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  class="p-1 sm:px-2 sm:py-0.5 rounded bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[9px] flex items-center gap-1"
+                  class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[10px] flex items-center gap-1 shadow-2xs"
                   title="WhatsApp"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
                   </svg>
                 </a>
@@ -574,10 +573,9 @@
   </main>
 
   <!-- ========================================================= -->
-  <!-- 3. CURVED PURPLE SWOOP FOOTER                             -->
+  <!-- 3. FOOTER                                                 -->
   <!-- ========================================================= -->
   <footer class="mt-14 relative w-full overflow-hidden">
-    
     <div class="w-full leading-none -mb-1">
       <svg viewBox="0 0 1440 220" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto block" preserveAspectRatio="none">
         <path d="M0,80 C360,220 1080,220 1440,80 L1440,220 L0,220 Z" fill="#4C1D95" />
@@ -591,8 +589,6 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div class="grid grid-cols-2 md:grid-cols-5 gap-8 pb-10 border-b border-purple-400/20">
-          
-          <!-- Brand Column -->
           <div class="col-span-2 space-y-3.5">
             <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5">
               {% if settings.logo %}
