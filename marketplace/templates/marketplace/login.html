@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login - Naijamaket</title>
+  <title>Login - Naijasale</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -50,7 +50,7 @@
           name="identifier" 
           required 
           placeholder="Email or Username" 
-          class="w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all"
+          class="w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-none transition-all"
         >
       </div>
 
@@ -62,15 +62,22 @@
           name="password" 
           required 
           placeholder="Password" 
-          class="w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-hidden transition-all pr-11"
+          class="w-full bg-[#F3F4FB] text-slate-800 placeholder-slate-400 px-4 py-3.5 rounded-lg text-sm border border-transparent focus:border-[#2250EB] focus:bg-white focus:outline-none transition-all pr-11"
         >
-        <button type="button" onclick="toggleLoginPassword()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 focus:outline-hidden">
+        <button type="button" onclick="toggleLoginPassword()" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 focus:outline-none">
           <i id="loginEyeIcon" data-lucide="eye" class="w-5 h-5"></i>
         </button>
       </div>
 
+      <!-- Forgot Password Link -->
+      <div class="flex justify-end pt-1">
+        <a href="{% url 'marketplace:password_reset' %}" class="text-xs font-semibold text-[#2952E3] hover:underline">
+          Forgot Password?
+        </a>
+      </div>
+
       <!-- Login Action Button -->
-      <div class="pt-6">
+      <div class="pt-4">
         <button type="submit" class="w-full bg-[#2952E3] hover:bg-[#1E40C7] text-white font-bold py-3.5 rounded-lg text-sm transition-all shadow-md active:scale-98">
           Login
         </button>

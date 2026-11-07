@@ -146,3 +146,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Staff Workspace & Authentication Routing
 LOGIN_REDIRECT_URL = '/workspace/routing/'
 LOGIN_URL = '/admin/login/'
+
+# ==============================================================================
+# BREVO EMAIL ENGINE CONFIGURATION
+# ==============================================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp-relay.brevo.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'c1ec8c001@smtp-brevo.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xsmtpsib-603eda44a21b10ae5e77199571825d3bcdbc9300942d90b4836734eec563b41b-KO1uO9QHMsBaTIS4')
+DEFAULT_FROM_EMAIL = 'Naijasale <support@naijasale.com>'
+SERVER_EMAIL = 'support@naijasale.com'

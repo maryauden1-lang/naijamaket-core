@@ -1,7 +1,34 @@
-from django.urls import path
+from django.urls import path, reverse_lazy
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.forms import PasswordResetForm
+from django.template import loader
+from django.core.mail import EmailMultiAlternatives
 from . import views
 
 app_name = 'marketplace'
+
+
+# Custom form so Django does NOT crash looking for password_reset_subject.txt
+class NaijasalePasswordResetForm(PasswordResetForm):
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        subject = "Reset your Naijasale password"
+        body = loader.render_to_string(email_template_name, context)
+        
+        email_message = EmailMultiAlternatives(subject, body, from_email, [to_email])
+        if html_email_template_name:
+            html_email = loader.render_to_string(html_email_template_name, context)
+            email_message.attach_alternative(html_email, "text/html")
+        
+        email_message.send()
+
 
 urlpatterns = [
     path('', views.index_view, name='home'),
@@ -35,4 +62,39 @@ urlpatterns = [
     path('api/get-areas/', views.get_areas_for_state_view, name='get_areas'),
     path('api/get-subcategories/', views.get_subcategories_for_category_view, name='get_subcategories'),
     path('api/unread-count/', views.unread_count_api_view, name='unread_count_api'),
+
+    # Password Reset Pipeline
+    path(
+        'password-reset/',
+        auth_views.PasswordResetView.as_view(
+            form_class=NaijasalePasswordResetForm,
+            template_name='marketplace/password_reset_form.html',
+            email_template_name='marketplace/emails/password_reset_email.html',
+            html_email_template_name='marketplace/emails/password_reset_email.html',
+            success_url=reverse_lazy('marketplace:password_reset_done'),
+        ),
+        name='password_reset'
+    ),
+    path(
+        'password-reset/done/',
+        auth_views.PasswordResetDoneView.as_view(
+            template_name='marketplace/password_reset_done.html'
+        ),
+        name='password_reset_done'
+    ),
+    path(
+        'password-reset-confirm/<uidb64>/<token>/',
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name='marketplace/password_reset_confirm.html',
+            success_url=reverse_lazy('marketplace:password_reset_complete'),
+        ),
+        name='password_reset_confirm'
+    ),
+    path(
+        'password-reset-complete/',
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name='marketplace/password_reset_complete.html'
+        ),
+        name='password_reset_complete'
+    ),
 ]
