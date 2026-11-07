@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6D28D9">
-  <title>{{ settings.site_name|default:"Naijamaket" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
+  <title>{{ settings.site_name|default:"Naijasale" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
   <!-- FAVICON & APP ICONS (DIRECT FROM YOUR UPLOADED LOGO) -->
   {% if settings.logo %}
@@ -15,7 +15,7 @@
   {% endif %}
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="{{ settings.site_name|default:'Naijamaket' }}">
+  <meta name="apple-mobile-web-app-title" content="{{ settings.site_name|default:'Naijasale' }}">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -69,7 +69,7 @@
         {% endif %}
       </div>
 
-      <h3 class="text-base font-black text-slate-900 mb-1">Add {{ settings.site_name|default:"Naijamaket" }} to Home Screen</h3>
+      <h3 class="text-base font-black text-slate-900 mb-1">Add {{ settings.site_name|default:"Naijasale" }} to Home Screen</h3>
       <p class="text-xs text-slate-500 mb-5 leading-relaxed">
         Install the web app for instant access, real-time message chimes, and smooth marketplace browsing.
       </p>
@@ -123,7 +123,7 @@
             {{ settings.site_name|slice:":1"|upper|default:"N" }}
           </div>
           <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {{ settings.site_name|default:"Naijamaket" }}
+            {{ settings.site_name|default:"Naijasale" }}
           </span>
         {% endif %}
       </a>
@@ -540,7 +540,7 @@
                 </div>
 
                 <a 
-                  href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.first_name|default:item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijamaket' }}." 
+                  href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.first_name|default:item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijasale' }}." 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[10px] flex items-center gap-1 shadow-2xs"
@@ -631,7 +631,7 @@
                 <div class="w-9 h-9 rounded-xl bg-white text-purple-900 font-black text-xl flex items-center justify-center shadow-md">
                   {{ settings.site_name|slice:":1"|upper|default:"N" }}
                 </div>
-                <span class="text-2xl font-black tracking-tight text-white">{{ settings.site_name|default:"Naijamaket" }}</span>
+                <span class="text-2xl font-black tracking-tight text-white">{{ settings.site_name|default:"Naijasale" }}</span>
               {% endif %}
             </a>
             <p class="text-xs text-purple-200/80 leading-relaxed max-w-sm">
@@ -642,7 +642,7 @@
           <div class="space-y-3">
             <h4 class="text-xs font-black text-white uppercase tracking-wider">About & Legal</h4>
             <ul class="space-y-2 text-xs text-purple-200/70 font-medium">
-              <li><a href="{% url 'marketplace:static_page' 'about-us' %}" class="hover:text-white transition-colors">About Naijamaket</a></li>
+              <li><a href="{% url 'marketplace:static_page' 'about-us' %}" class="hover:text-white transition-colors">About {{ settings.site_name|default:"Naijasale" }}</a></li>
               <li><a href="{% url 'marketplace:static_page' 'terms-of-service' %}" class="hover:text-white transition-colors">Terms of Service</a></li>
               <li><a href="{% url 'marketplace:static_page' 'privacy-policy' %}" class="hover:text-white transition-colors">Privacy Policy</a></li>
             </ul>
@@ -666,7 +666,7 @@
         </div>
 
         <div class="pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-purple-200/60 font-medium">
-          <p>&copy; 2026 {{ settings.site_name|default:"Naijamaket" }}. All rights reserved.</p>
+          <p>&copy; 2026 {{ settings.site_name|default:"Naijasale" }}. All rights reserved.</p>
         </div>
 
       </div>

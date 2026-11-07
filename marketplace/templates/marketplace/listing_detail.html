@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6D28D9">
-  <title>{{ listing.title }} - {{ settings.site_name|default:"Naijamaket" }}</title>
+  <title>{{ listing.title }} - {{ settings.site_name|default:"Naijasale" }}</title>
   
   {% if settings.logo %}
     <link rel="icon" href="{{ settings.logo.url }}">
@@ -58,7 +58,7 @@
             {{ settings.site_name|slice:":1"|upper|default:"N" }}
           </div>
           <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {{ settings.site_name|default:"Naijamaket" }}
+            {{ settings.site_name|default:"Naijasale" }}
           </span>
         {% endif %}
       </a>
@@ -259,7 +259,7 @@
             </div>
             <div>
               <h4 class="text-xs sm:text-sm font-bold text-slate-800">Notice something wrong with this ad?</h4>
-              <p class="text-[11px] text-slate-400">Help keep Naijamaket safe by reporting scams, fake prices, or illegal items.</p>
+              <p class="text-[11px] text-slate-400">Help keep {{ settings.site_name|default:"Naijasale" }} safe by reporting scams, fake prices, or illegal items.</p>
             </div>
           </div>
 
@@ -329,7 +329,7 @@
             
             <!-- WhatsApp Button -->
             <a 
-              href="https://wa.me/{{ listing.seller.seller_profile.whatsapp_number|default:listing.seller.seller_profile.phone_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username }},%20I%20saw%20your%20listing%20'{{ listing.title }}'%20on%20{{ settings.site_name }}." 
+              href="https://wa.me/{{ listing.seller.seller_profile.whatsapp_number|default:listing.seller.seller_profile.phone_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username }},%20I%20saw%20your%20listing%20'{{ listing.title }}'%20on%20{{ settings.site_name|default:'Naijasale' }}." 
               target="_blank" 
               class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all"
             >
@@ -562,7 +562,7 @@
   </main>
 
   <!-- ======================================================== -->
-  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                    -->
+  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                     -->
   <!-- ======================================================== -->
   <div id="reportModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
@@ -625,10 +625,10 @@
         {% else %}
           <div class="w-6 h-6 rounded-lg bg-purple-700 flex items-center justify-center text-white font-black text-xs">N</div>
         {% endif %}
-        <span>&copy; 2026 {{ settings.site_name|default:"Naijamaket" }}. Verified Nigerian Classifieds.</span>
+        <span>&copy; 2026 {{ settings.site_name|default:"Naijasale" }}. Verified Nigerian Classifieds.</span>
       </div>
       <div class="flex items-center gap-4">
-        <span>Support: <strong class="text-slate-700">{{ settings.support_phone|default:"0800-NAIJA-MK" }}</strong></span>
+        <span>Support: <strong class="text-slate-700">{{ settings.support_phone|default:"0800-NAIJASALE" }}</strong></span>
       </div>
     </div>
   </footer>
