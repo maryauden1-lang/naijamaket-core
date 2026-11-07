@@ -14,11 +14,22 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-9xps_@o)+#=h7$9lnn^b_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-# Allow all hosts
-ALLOWED_HOSTS = ['*']
+# Allow all hosts (including naijasale.com and www.naijasale.com)
+ALLOWED_HOSTS = [
+    'naijasale.com',
+    'www.naijasale.com',
+    '199.247.22.119',
+    'localhost',
+    '127.0.0.1',
+    '*',
+]
 
-# CSRF trusted origins for Coolify domain proxies
+# CSRF trusted origins for Coolify domain proxies and custom domain
 CSRF_TRUSTED_ORIGINS = [
+    'https://naijasale.com',
+    'https://www.naijasale.com',
+    'http://naijasale.com',
+    'http://www.naijasale.com',
     'http://*.sslip.io',
     'https://*.sslip.io',
     'http://olhbbbatpfblic7yhycinpvh.199.247.22.119.sslip.io',
