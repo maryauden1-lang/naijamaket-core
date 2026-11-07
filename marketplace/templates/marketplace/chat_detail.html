@@ -79,7 +79,7 @@
             {{ other_user.first_name|default:other_user.username }}
           </h1>
           <p class="text-[11px] font-bold text-emerald-600 truncate">
-            {{ conversation.listing.title }} • ₦{{ conversation.listing.price|intcomma }}
+            {% if conversation.listing %}{{ conversation.listing.title }} • ₦{{ conversation.listing.price|intcomma }}{% else %}Naijasale Support & System Notice{% endif %}
           </p>
         </div>
       </div>
@@ -97,7 +97,7 @@
         </button>
         {% endif %}
 
-        <a href="{% url 'marketplace:listing_detail' conversation.listing.slug %}" class="text-xs font-bold text-slate-600 hover:text-purple-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
+        <a href="{% if conversation.listing %}{% url 'marketplace:listing_detail' conversation.listing.slug %}{% else %}#{% endif %}" class="text-xs font-bold text-slate-600 hover:text-purple-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
           View Ad
         </a>
       </div>

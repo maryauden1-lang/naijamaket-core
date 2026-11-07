@@ -1,4 +1,5 @@
 import base64
+import random
 import uuid
 from decimal import Decimal, InvalidOperation
 
@@ -13,6 +14,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
 from django.core.cache import cache
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.conf import settings
 
 from .models import (
     SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing, 
@@ -139,7 +143,6 @@ def listing_detail_view(request, slug):
         slug=slug
     )
     
-    # Unique 24-hour view counter per session (Prevents refresh inflation)
     session_key = f'viewed_ad_{listing.id}'
     if not request.session.get(session_key, False):
         Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
@@ -305,7 +308,6 @@ def inbox_view(request):
 
 @login_required(login_url='marketplace:login')
 def delete_conversation_view(request, conversation_id):
-    """Allows user to remove a conversation thread from their inbox."""
     conv = get_object_or_404(
         Conversation,
         Q(buyer=request.user) | Q(seller=request.user),
@@ -320,7 +322,6 @@ def delete_conversation_view(request, conversation_id):
 
 @login_required(login_url='marketplace:login')
 def delete_message_view(request, message_id):
-    """Allows sender to delete their own message."""
     message = get_object_or_404(Message, id=message_id, sender=request.user)
     conversation_id = message.conversation_id
     message.delete()
@@ -333,7 +334,6 @@ def delete_message_view(request, message_id):
 
 @login_required(login_url='marketplace:login')
 def typing_status_api_view(request, conversation_id):
-    """Tracks and returns typing activity using cache."""
     conv = get_object_or_404(
         Conversation,
         Q(buyer=request.user) | Q(seller=request.user),
@@ -591,6 +591,22 @@ def post_ad_view(request):
     return render(request, 'marketplace/post_ad.html', {'form': form})
 
 
+# ==========================================
+# REGISTRATION WITH 6-DIGIT EMAIL OTP & ADMIN AUTO-INBOX
+# ==========================================
+def send_otp_email(user_email, otp):
+    subject = f"{otp} is your Naijasale verification code"
+    html_content = render_to_string('marketplace/emails/otp_email.html', {'otp_code': otp})
+    msg = EmailMultiAlternatives(
+        subject,
+        f"Your verification code is: {otp}",
+        settings.DEFAULT_FROM_EMAIL,
+        [user_email]
+    )
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('marketplace:home')
@@ -598,30 +614,119 @@ def register_view(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
-            email = form.cleaned_data['email']
+            email = form.cleaned_data['email'].lower().strip()
             full_name = form.cleaned_data['full_name'].strip()
             password = form.cleaned_data['password']
             phone = form.cleaned_data.get('phone_number') or '08000000000'
 
-            user = User.objects.create_user(
-                username=email,
-                email=email,
-                password=password,
-                first_name=full_name
-            )
+            otp_code = f"{random.randint(100000, 999999)}"
 
-            SellerProfile.objects.create(
-                user=user,
-                phone_number=phone,
-                whatsapp_number=phone
-            )
-            login(request, user)
-            messages.success(request, f"Welcome to Naijasale, {full_name}!")
-            return redirect('marketplace:home')
+            request.session['reg_user'] = {
+                'email': email,
+                'full_name': full_name,
+                'password': password,
+                'phone': phone,
+                'otp': otp_code,
+            }
+
+            try:
+                send_otp_email(email, otp_code)
+            except Exception:
+                messages.error(request, "Failed to send verification email. Please check your address or try again.")
+                return render(request, 'marketplace/register.html', {'form': form})
+
+            return redirect('marketplace:verify_email')
     else:
         form = UserRegisterForm()
 
     return render(request, 'marketplace/register.html', {'form': form})
+
+
+def verify_email_view(request):
+    reg_data = request.session.get('reg_user')
+    if not reg_data:
+        messages.warning(request, "Session expired or invalid. Please sign up again.")
+        return redirect('marketplace:register')
+
+    error = None
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp_code', '').strip()
+
+        if entered_otp == reg_data.get('otp'):
+            email = reg_data['email']
+            full_name = reg_data['full_name']
+            password = reg_data['password']
+            phone = reg_data['phone']
+
+            # Safely fetch existing user or create a new one
+            user = User.objects.filter(username=email).first()
+            if not user:
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    password=password,
+                    first_name=full_name
+                )
+            else:
+                user.set_password(password)
+                user.first_name = full_name
+                user.save()
+
+            # Ensure SellerProfile exists
+            SellerProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    'phone_number': phone,
+                    'whatsapp_number': phone
+                }
+            )
+
+            # Auto-send an Admin welcome message directly into their website /inbox/
+            admin_user = User.objects.filter(is_superuser=True).first() or User.objects.filter(is_staff=True).first()
+
+            if admin_user and admin_user != user:
+                welcome_conv, _ = Conversation.objects.get_or_create(
+                    listing=None,
+                    buyer=user,
+                    seller=admin_user
+                )
+                if not welcome_conv.messages.exists():
+                    Message.objects.create(
+                        conversation=welcome_conv,
+                        sender=admin_user,
+                        text=(
+                            f"Hello {full_name}! 👋 Welcome to Naijasale.\n\n"
+                            "Your email has been verified. You can now post ads for free or message sellers directly. "
+                            "If you need any help, just reply here!"
+                        )
+                    )
+
+            if 'reg_user' in request.session:
+                del request.session['reg_user']
+                
+            login(request, user)
+            messages.success(request, f"🎉 Welcome to Naijasale, {full_name}! Your account is verified. A welcome message has been sent to your Inbox.")
+            return redirect('marketplace:home')
+        else:
+            error = "Invalid 6-digit code. Please check your email and try again."
+
+    return render(request, 'marketplace/verify_email.html', {
+        'email': reg_data.get('email'),
+        'error': error
+    })
+
+def resend_otp_view(request):
+    reg_data = request.session.get('reg_user')
+    if not reg_data:
+        return redirect('marketplace:register')
+
+    otp_code = f"{random.randint(100000, 999999)}"
+    reg_data['otp'] = otp_code
+    request.session['reg_user'] = reg_data
+
+    send_otp_email(reg_data['email'], otp_code)
+    messages.info(request, "A new 6-digit verification code has been sent.")
+    return redirect('marketplace:verify_email')
 
 
 def login_view(request):
@@ -644,7 +749,6 @@ def login_view(request):
                 user = None
 
         if user:
-            # Authenticate the user and set session cookies FIRST
             login(request, user)
 
             if user.is_staff or user.is_superuser:
@@ -785,7 +889,6 @@ def get_subcategories_for_category_view(request):
 
 @login_required(login_url='marketplace:login')
 def unread_count_api_view(request):
-    """Returns the total number of unread messages for the logged-in user."""
     count = Message.objects.filter(
         Q(conversation__buyer=request.user) | Q(conversation__seller=request.user),
         is_read=False
