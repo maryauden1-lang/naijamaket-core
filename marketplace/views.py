@@ -616,7 +616,7 @@ def register_view(request):
                 whatsapp_number=phone
             )
             login(request, user)
-            messages.success(request, f"Welcome to Naijamaket, {full_name}!")
+            messages.success(request, f"Welcome to Naijasale, {full_name}!")
             return redirect('marketplace:home')
     else:
         form = UserRegisterForm()
@@ -644,11 +644,13 @@ def login_view(request):
                 user = None
 
         if user:
+            # Authenticate the user and set session cookies FIRST
+            login(request, user)
+
             if user.is_staff or user.is_superuser:
-                messages.warning(request, "Staff accounts must use the Staff Workspace to log in.")
+                messages.success(request, f"Welcome to the Staff Workspace, {user.first_name or user.username}!")
                 return redirect('workspace:dashboard')
 
-            login(request, user)
             messages.success(request, f"Welcome back, {user.first_name or user.username}!")
             next_url = request.GET.get('next', 'marketplace:home')
             return redirect(next_url)
