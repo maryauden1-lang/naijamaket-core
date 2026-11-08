@@ -1,6 +1,7 @@
 import base64
 import random
 import uuid
+import urllib.parse
 from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -378,6 +379,37 @@ def chat_detail_view(request, conversation_id):
     other_user = conversation.seller if request.user == conversation.buyer else conversation.buyer
     other_profile = getattr(other_user, 'seller_profile', None)
 
+    # -------------------------------------------------------------
+    # BUILD AUTOMATED WHATSAPP NOTIFICATION LINK FOR SELLER
+    # -------------------------------------------------------------
+    whatsapp_ping_url = None
+    if request.user == conversation.buyer and conversation.seller:
+        seller_prof = getattr(conversation.seller, 'seller_profile', None)
+        raw_phone = ''
+        if seller_prof:
+            raw_phone = seller_prof.whatsapp_number or seller_prof.phone_number or ''
+        
+        # Clean up the phone number (turn 080... or +234... into 23480...)
+        clean_phone = ''.join(ch for ch in str(raw_phone) if ch.isdigit())
+        if clean_phone.startswith('0') and len(clean_phone) == 11:
+            clean_phone = '234' + clean_phone[1:]
+        elif clean_phone.startswith('234'):
+            pass  # Already in international format
+        
+        if clean_phone:
+            chat_link = request.build_absolute_uri(request.path)
+            listing_title = conversation.listing.title if conversation.listing else "your listing"
+            seller_name = conversation.seller.first_name or conversation.seller.username
+
+            alert_text = (
+                f"Hello {seller_name}! 👋\n\n"
+                f"I just sent you a direct message on Naijasale regarding '*{listing_title}*'.\n\n"
+                f"💬 Please view and reply to my message in your Naijasale inbox here:\n"
+                f"{chat_link}"
+            )
+            encoded_text = urllib.parse.quote(alert_text)
+            whatsapp_ping_url = f"https://api.whatsapp.com/send?phone={clean_phone}&text={encoded_text}"
+
     if request.method == 'POST':
         action = request.POST.get('action', 'send_message')
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest' or request.POST.get('is_ajax') == 'true'
@@ -418,9 +450,10 @@ def chat_detail_view(request, conversation_id):
                     'sender': new_msg.sender.username,
                     'is_me': True,
                     'created_at': new_msg.created_at.strftime('%H:%M'),
+                    'whatsapp_ping_url': whatsapp_ping_url,
                 })
             messages.success(request, f"Offer of ₦{offer_amount:,.2f} sent!")
-            return redirect('marketplace:chat_detail', conversation_id=conversation.id)
+            return redirect(f"{request.path}?sent=1")
 
         else:
             message_text = request.POST.get('message', '').strip()
@@ -442,7 +475,10 @@ def chat_detail_view(request, conversation_id):
                         'sender': new_msg.sender.username,
                         'is_me': True,
                         'created_at': new_msg.created_at.strftime('%H:%M'),
+                        'whatsapp_ping_url': whatsapp_ping_url,
                     })
+                return redirect(f"{request.path}?sent=1")
+
             elif is_ajax:
                 return JsonResponse({'status': 'error', 'message': 'Message cannot be empty.'}, status=400)
 
@@ -450,6 +486,7 @@ def chat_detail_view(request, conversation_id):
 
     chat_messages = conversation.messages.all().select_related('sender')
     last_offer = conversation.messages.filter(msg_type='offer').order_by('-created_at').first()
+    just_sent = (request.GET.get('sent') == '1')
 
     return render(request, 'marketplace/chat_detail.html', {
         'conversation': conversation,
@@ -457,6 +494,8 @@ def chat_detail_view(request, conversation_id):
         'other_profile': other_profile,
         'chat_messages': chat_messages,
         'last_offer': last_offer,
+        'whatsapp_ping_url': whatsapp_ping_url,
+        'just_sent': just_sent,
     })
 
 
@@ -658,7 +697,6 @@ def verify_email_view(request):
             password = reg_data['password']
             phone = reg_data['phone']
 
-            # Safely fetch existing user or create a new one
             user = User.objects.filter(username=email).first()
             if not user:
                 user = User.objects.create_user(
@@ -672,7 +710,6 @@ def verify_email_view(request):
                 user.first_name = full_name
                 user.save()
 
-            # Ensure SellerProfile exists
             SellerProfile.objects.get_or_create(
                 user=user,
                 defaults={
@@ -681,7 +718,6 @@ def verify_email_view(request):
                 }
             )
 
-            # Auto-send an Admin welcome message directly into their website /inbox/
             admin_user = User.objects.filter(is_superuser=True).first() or User.objects.filter(is_staff=True).first()
 
             if admin_user and admin_user != user:
@@ -714,6 +750,7 @@ def verify_email_view(request):
         'email': reg_data.get('email'),
         'error': error
     })
+
 
 def resend_otp_view(request):
     reg_data = request.session.get('reg_user')
