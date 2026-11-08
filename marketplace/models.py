@@ -342,19 +342,18 @@ class Favorite(models.Model):
 # 7. IN-APP MESSAGING SYSTEM (REAL-TIME CHAT & OFFERS)
 # ==========================================
 class Conversation(models.Model):
-    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="conversations")
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="conversations", null=True, blank=True)
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="buyer_conversations")
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="seller_conversations")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("listing", "buyer")
         ordering = ["-updated_at"]
 
     def __str__(self):
-        return f"Chat for {self.listing.title} ({self.buyer.username} & {self.seller.username})"
-
+        item_title = self.listing.title if self.listing else "Support & System Message"
+        return f"Chat for {item_title} ({self.buyer.username} & {self.seller.username})"
 
 class Message(models.Model):
     MESSAGE_TYPES = (

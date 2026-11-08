@@ -8,7 +8,6 @@ from . import views
 app_name = 'marketplace'
 
 
-# Custom form so Django does NOT crash looking for password_reset_subject.txt
 class NaijasalePasswordResetForm(PasswordResetForm):
     def send_mail(
         self,
@@ -48,7 +47,13 @@ urlpatterns = [
     path('api/chat/<int:conversation_id>/typing/', views.typing_status_api_view, name='typing_status_api'),
     path('chat/offer/<int:message_id>/respond/', views.respond_offer_view, name='respond_offer'),
     path('report/<int:listing_id>/', views.report_ad_view, name='report_ad'),
+    
+    # Registration & OTP Verification
     path('register/', views.register_view, name='register'),
+    path('verify-email/', views.verify_email_view, name='verify_email'),
+    path('resend-otp/', views.resend_otp_view, name='resend_otp'),
+
+    # Auth
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
