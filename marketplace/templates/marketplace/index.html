@@ -17,6 +17,62 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="{{ settings.site_name|default:'Naijasale' }}">
 
+  <!-- GOOGLE KNOWLEDGE GRAPH / FOUNDER & ENTITY SCHEMA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://naijasale.com/#organization",
+        "name": "Naijasale",
+        "url": "https://naijasale.com/",
+        "email": "support@naijasale.com",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "support@naijasale.com",
+          "contactType": "customer support"
+        },
+        "founder": {
+          "@id": "https://naijasale.com/#founder"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://naijasale.com/#website",
+        "url": "https://naijasale.com/",
+        "name": "Naijasale",
+        "description": "Verified Nigerian peer-to-peer commerce and classifieds marketplace.",
+        "publisher": {
+          "@id": "https://naijasale.com/#organization"
+        }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://naijasale.com/#founder",
+        "name": "Michael Adedeji Oluwaseun",
+        "jobTitle": "Founder & Software Developer",
+        "worksFor": {
+          "@id": "https://naijasale.com/#organization"
+        },
+        "birthDate": "1999-04-21",
+        "birthPlace": {
+          "@type": "Place",
+          "name": "Yewa North, Ogun State, Nigeria"
+        },
+        "nationality": {
+          "@type": "Country",
+          "name": "Nigeria"
+        },
+        "description": "Software developer and founder of Naijasale, an enterprise peer-to-peer commerce and classifieds ecosystem.",
+        "sameAs": [
+          "https://www.tiktok.com/@michaelafrock"
+        ]
+      }
+    ]
+  }
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
