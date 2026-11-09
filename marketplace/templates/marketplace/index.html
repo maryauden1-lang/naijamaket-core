@@ -884,17 +884,19 @@
 
               textSpan.innerText = detectedArea ? (detectedArea.charAt(0).toUpperCase() + detectedArea.slice(1)) : (detectedState ? (detectedState.charAt(0).toUpperCase() + detectedState.slice(1)) : 'Found!');
 
+              // BUILD CLEAN URL PARAMS (NEVER POLLUTE SEARCH QUERY WITH STATE NAME)
               const urlParams = new URLSearchParams(window.location.search);
+              
               if (detectedState) {
                 urlParams.set('state', detectedState);
               }
-              if (detectedArea) {
-                urlParams.set('q', detectedArea);
-              }
+              
+              // Remove redundant q if it just matches the state
+              urlParams.delete('q');
 
               setTimeout(() => {
                 window.location.search = urlParams.toString();
-              }, 500);
+              }, 400);
 
             } else {
               textSpan.innerText = 'Nearby Area';
