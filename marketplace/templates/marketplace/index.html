@@ -425,7 +425,7 @@
   </section>
 
   <!-- MAIN LAYOUT: Sidebar (Left) + Grid (Right) -->
-  <main class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full">
+  <main id="listings-section" class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full scroll-mt-24">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8 items-start">
       
       <!-- DESKTOP LEFT SIDEBAR -->
@@ -926,6 +926,23 @@
         { timeout: 10000, maximumAge: 60000, enableHighAccuracy: true }
       );
     }
+
+    // =========================================================
+    // AUTO-SCROLL TO LISTINGS WHEN FILTERED OR SEARCHED
+    // =========================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const isFiltered = params.has('q') || params.has('state') || params.has('category') || params.has('subcategory');
+
+      if (isFiltered) {
+        const target = document.getElementById('listings-section');
+        if (target) {
+          setTimeout(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 150);
+        }
+      }
+    });
 
     const searchInput = document.getElementById('liveSearchInput');
     const resultsContainer = document.getElementById('liveSearchResults');
