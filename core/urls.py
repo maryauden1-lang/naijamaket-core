@@ -4,6 +4,37 @@ from django.shortcuts import redirect
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
+from django.contrib.sitemaps.views import sitemap
+from django.http import HttpResponse
+
+# Sitemaps configuration
+from marketplace.sitemaps import StaticViewSitemap, ListingSitemap, StaticPageSitemap
+
+sitemaps = {
+    'static': StaticViewSitemap,
+    'listings': ListingSitemap,
+    'pages': StaticPageSitemap,
+}
+
+
+def robots_txt(request):
+    """Directs search engines to crawl public items while protecting private app areas."""
+    lines = [
+        "User-agent: *",
+        "Disallow: /admin/",
+        "Disallow: /workspace/",
+        "Disallow: /api/",
+        "Disallow: /chat/",
+        "Disallow: /dashboard/",
+        "Disallow: /saved/",
+        "Disallow: /favorite/",
+        "Disallow: /report/",
+        "Disallow: /password-reset/",
+        "Allow: /",
+        "",
+        "Sitemap: https://naijasale.com/sitemap.xml",
+    ]
+    return HttpResponse("\n".join(lines), content_type="text/plain")
 
 
 def admin_access_guard(request):
@@ -28,6 +59,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # Staff workspace portal
     path('workspace/', include('marketplace.workspace_urls')),
+    # Search Engine Crawlers & Indexing
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', robots_txt, name='robots_txt'),
     # Public marketplace routes
     path('', include('marketplace.urls')),
 ]

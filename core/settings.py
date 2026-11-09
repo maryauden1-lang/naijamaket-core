@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',  # Enables automated dynamic XML sitemap generation
     
     # Third-party storage backend
     'storages',

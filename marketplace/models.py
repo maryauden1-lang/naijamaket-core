@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
+from django.urls import reverse
 
 
 # ==========================================
@@ -52,6 +53,12 @@ class StaticPage(models.Model):
     class Meta:
         verbose_name = "Custom Page (Terms, Safety, etc.)"
         verbose_name_plural = "Custom Pages"
+
+    def get_absolute_url(self):
+        try:
+            return reverse('marketplace:static_page', kwargs={'slug': self.slug})
+        except Exception:
+            return f"/page/{self.slug}/"
 
     def __str__(self):
         return self.title
@@ -128,6 +135,12 @@ class Category(models.Model):
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    def get_absolute_url(self):
+        try:
+            return reverse('marketplace:category_detail', kwargs={'slug': self.slug})
+        except Exception:
+            return f"/category/{self.slug}/"
+
     def __str__(self):
         return self.name
 
@@ -146,6 +159,12 @@ class SubCategory(models.Model):
         if not self.slug:
             self.slug = slugify(f"{self.category.name}-{self.name}")
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        try:
+            return reverse('marketplace:subcategory_detail', kwargs={'slug': self.slug})
+        except Exception:
+            return f"/category/{self.category.slug}/{self.slug}/"
 
     def __str__(self):
         return f"{self.category.name} > {self.name}"
@@ -274,6 +293,12 @@ class Listing(models.Model):
                 counter += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        try:
+            return reverse('marketplace:listing_detail', kwargs={'slug': self.slug})
+        except Exception:
+            return f"/listing/{self.slug}/"
 
     def is_locked(self):
         """Check if listing is currently locked by a staff member for less than 10 minutes"""
