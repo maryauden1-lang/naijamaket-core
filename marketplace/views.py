@@ -39,7 +39,7 @@ def index_view(request):
     search_query = request.GET.get('q', '').strip()
     selected_category = request.GET.get('category', '')
     selected_subcategory = request.GET.get('subcategory', '')
-    selected_state = request.GET.get('state', '')
+    selected_state = request.GET.get('state', '').strip()
     selected_condition = request.GET.get('condition', '')
 
     # Base active listings
@@ -61,10 +61,22 @@ def index_view(request):
     if selected_subcategory:
         listings_queryset = listings_queryset.filter(subcategory__slug=selected_subcategory)
 
+    # Resilient State Matching Logic (Handles slug, name, spaces, and hyphens)
     selected_state_obj = None
     if selected_state:
-        listings_queryset = listings_queryset.filter(state__slug=selected_state)
-        selected_state_obj = State.objects.filter(slug=selected_state).first()
+        clean_state = selected_state.lower().strip()
+        selected_state_obj = (
+            State.objects.filter(slug=clean_state).first()
+            or State.objects.filter(name__iexact=clean_state).first()
+            or State.objects.filter(slug=clean_state.replace(' ', '-')).first()
+            or State.objects.filter(name__icontains=clean_state.replace('-', ' ')).first()
+        )
+        if selected_state_obj:
+            listings_queryset = listings_queryset.filter(state=selected_state_obj)
+        else:
+            listings_queryset = listings_queryset.filter(
+                Q(state__slug__iexact=clean_state) | Q(state__name__iexact=clean_state)
+            )
 
     if selected_condition:
         listings_queryset = listings_queryset.filter(condition=selected_condition)
@@ -109,7 +121,9 @@ def index_view(request):
         total_rank_score=F('vip_score') + F('trust_score') + F('freshness_score') + F('engagement_score')
     ).order_by('-total_rank_score', '-created_at')
 
+    # Pagination and Total Found Count
     paginator = Paginator(listings_queryset, 20)
+    total_found = paginator.count
     page_number = request.GET.get('page', 1)
 
     try:
@@ -158,6 +172,7 @@ def index_view(request):
         'settings': site_settings,
         'listings': listings,
         'page_obj': listings,
+        'total_found': total_found,
         'categories': categories,
         'states': states_with_counts,
         'search_query': search_query,

@@ -513,7 +513,7 @@
                 Market Feed
               {% endif %}
             </h2>
-            <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400">{{ listings.paginator.count|default:listings|length }} item{{ listings.paginator.count|pluralize }} found</p>
+            <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400">{{ total_found }} item{{ total_found|pluralize }} found</p>
           </div>
 
           {% if selected_category or selected_subcategory or search_query or selected_state %}
@@ -866,36 +866,34 @@
               if (feature.context) {
                 feature.context.forEach(item => {
                   if (item.id.startsWith('region')) {
-                    detectedState = item.text.toLowerCase().replace('state', '').trim();
+                    detectedState = item.text.replace(/state/gi, '').trim();
                   }
                 });
               }
 
               if (feature.place_type.includes('district') || feature.place_type.includes('locality') || feature.place_type.includes('place')) {
-                detectedArea = feature.text.toLowerCase().trim();
+                detectedArea = feature.text.trim();
               }
 
               if (!detectedState && feature.place_name) {
-                const parts = feature.place_name.split(',').map(p => p.trim().toLowerCase());
+                const parts = feature.place_name.split(',').map(p => p.trim());
                 if (parts.length > 1) {
-                  detectedState = parts[parts.length - 2].replace('state', '').trim();
+                  detectedState = parts[parts.length - 2].replace(/state/gi, '').trim();
                 }
               }
 
-              textSpan.innerText = detectedArea ? (detectedArea.charAt(0).toUpperCase() + detectedArea.slice(1)) : (detectedState ? (detectedState.charAt(0).toUpperCase() + detectedState.slice(1)) : 'Found!');
+              // Clean slug creation for Nigerian states
+              const stateSlug = detectedState.toLowerCase().replace(/\s+/g, '-');
 
-              // BUILD CLEAN URL PARAMS (NEVER POLLUTE SEARCH QUERY WITH STATE NAME)
-              const urlParams = new URLSearchParams(window.location.search);
-              
-              if (detectedState) {
-                urlParams.set('state', detectedState);
-              }
-              
-              // Remove redundant q if it just matches the state
-              urlParams.delete('q');
+              textSpan.innerText = detectedArea || detectedState || 'Found!';
 
+              // Redirect directly to the detected state feed, wiping any old search query
               setTimeout(() => {
-                window.location.search = urlParams.toString();
+                if (stateSlug) {
+                  window.location.href = `/?state=${encodeURIComponent(stateSlug)}`;
+                } else {
+                  window.location.href = '/';
+                }
               }, 400);
 
             } else {
