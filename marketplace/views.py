@@ -2,6 +2,7 @@ import base64
 import random
 import uuid
 import urllib.parse
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -10,7 +11,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.files.base import ContentFile
-from django.db.models import Q, F, Count
+from django.db.models import Q, F, Count, Case, When, Value, IntegerField
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
@@ -41,9 +42,10 @@ def index_view(request):
     selected_state = request.GET.get('state', '')
     selected_condition = request.GET.get('condition', '')
 
+    # Base active listings
     listings_queryset = Listing.objects.filter(status='active').select_related(
         'seller', 'seller__seller_profile', 'category', 'subcategory', 'state', 'area'
-    ).prefetch_related('images').order_by('-is_featured', '-created_at')
+    ).prefetch_related('images')
 
     if search_query:
         listings_queryset = listings_queryset.filter(
@@ -66,6 +68,46 @@ def index_view(request):
 
     if selected_condition:
         listings_queryset = listings_queryset.filter(condition=selected_condition)
+
+    # =========================================================================
+    # WEIGHTED LISTING RANKING ALGORITHM
+    # =========================================================================
+    now = timezone.now()
+    day_1 = now - timedelta(days=1)
+    day_3 = now - timedelta(days=3)
+    day_7 = now - timedelta(days=7)
+    day_14 = now - timedelta(days=14)
+
+    listings_queryset = listings_queryset.annotate(
+        vip_score=Case(
+            When(is_featured=True, then=Value(100)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        trust_score=Case(
+            When(seller__seller_profile__is_nin_verified=True, then=Value(30)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        freshness_score=Case(
+            When(created_at__gte=day_1, then=Value(25)),
+            When(created_at__gte=day_3, then=Value(18)),
+            When(created_at__gte=day_7, then=Value(10)),
+            When(created_at__gte=day_14, then=Value(5)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        engagement_score=Case(
+            When(views_count__gte=125, then=Value(25)),
+            When(views_count__gte=50, then=Value(15)),
+            When(views_count__gte=20, then=Value(8)),
+            When(views_count__gte=5, then=Value(3)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+    ).annotate(
+        total_rank_score=F('vip_score') + F('trust_score') + F('freshness_score') + F('engagement_score')
+    ).order_by('-total_rank_score', '-created_at')
 
     paginator = Paginator(listings_queryset, 20)
     page_number = request.GET.get('page', 1)
@@ -128,6 +170,7 @@ def index_view(request):
         'user_saved_ids': user_saved_ids,
         'unread_messages_count': unread_messages_count,
         'total_nigeria_ads': Listing.objects.filter(status='active').count(),
+        'mapbox_token': getattr(settings, 'MAPBOX_PUBLIC_TOKEN', ''),
     }
     return render(request, 'marketplace/index.html', context)
 
@@ -379,9 +422,6 @@ def chat_detail_view(request, conversation_id):
     other_user = conversation.seller if request.user == conversation.buyer else conversation.buyer
     other_profile = getattr(other_user, 'seller_profile', None)
 
-    # -------------------------------------------------------------
-    # BUILD AUTOMATED WHATSAPP NOTIFICATION LINK FOR SELLER
-    # -------------------------------------------------------------
     whatsapp_ping_url = None
     if request.user == conversation.buyer and conversation.seller:
         seller_prof = getattr(conversation.seller, 'seller_profile', None)
@@ -389,12 +429,11 @@ def chat_detail_view(request, conversation_id):
         if seller_prof:
             raw_phone = seller_prof.whatsapp_number or seller_prof.phone_number or ''
         
-        # Clean up the phone number (turn 080... or +234... into 23480...)
         clean_phone = ''.join(ch for ch in str(raw_phone) if ch.isdigit())
         if clean_phone.startswith('0') and len(clean_phone) == 11:
             clean_phone = '234' + clean_phone[1:]
         elif clean_phone.startswith('234'):
-            pass  # Already in international format
+            pass
         
         if clean_phone:
             chat_link = request.build_absolute_uri(request.path)
@@ -630,9 +669,6 @@ def post_ad_view(request):
     return render(request, 'marketplace/post_ad.html', {'form': form})
 
 
-# ==========================================
-# REGISTRATION WITH 6-DIGIT EMAIL OTP & ADMIN AUTO-INBOX
-# ==========================================
 def send_otp_email(user_email, otp):
     subject = f"{otp} is your Naijasale verification code"
     html_content = render_to_string('marketplace/emails/otp_email.html', {'otp_code': otp})
