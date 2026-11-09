@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from django.contrib import admin, messages
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
@@ -43,7 +44,7 @@ class SiteSettingAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Platform Storage & System Hygiene", {
             "fields": ("system_cleanup_card",),
-            "description": "Available to all authorized staff members to purge dead images, clear expired sessions, and vacuum database fragmentation."
+            "description": "Safe maintenance tool: clears expired sessions, vacuums database fragmentation, and deletes orphaned listing images."
         }),
         ("Branding & Identity", {
             "fields": ("site_name", "tagline", "logo", "logo_preview")
@@ -59,11 +60,6 @@ class SiteSettingAdmin(admin.ModelAdmin):
         }),
     )
 
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context['title'] = "Site Settings & Platform Storage Hygiene"
-        return super().changelist_view(request, extra_context=extra_context)
-
     def logo_preview(self, obj):
         if obj.logo:
             return format_html(
@@ -75,22 +71,22 @@ class SiteSettingAdmin(admin.ModelAdmin):
 
     def system_cleanup_card(self, obj):
         html = '''
-        <div style="background: linear-gradient(135deg, #4C1D95 0%, #6D28D9 100%); padding: 18px; border-radius: 14px; color: white; max-width: 650px; box-shadow: 0 4px 12px rgba(109,40,217,0.25);">
-            <div style="font-weight: 900; font-size: 15px; margin-bottom: 6px;">
-                ⚡ Platform Storage & Database Optimizer
+        <div style="background: linear-gradient(135deg, #1E1B4B 0%, #4338CA 100%); padding: 18px; border-radius: 12px; color: white; max-width: 650px; box-shadow: 0 4px 12px rgba(67,56,202,0.25);">
+            <div style="font-weight: 800; font-size: 15px; margin-bottom: 6px;">
+                ⚡ Safe Storage & Database Optimizer
             </div>
-            <p style="font-size: 12px; line-height: 1.5; color: #E9D5FF; margin: 0 0 14px 0;">
-                Scans all media folders on disk, deletes orphaned photos from deleted ads and inactive users, clears stale sessions, and reclaims wasted SQLite/Postgres disk space.
+            <p style="font-size: 12px; line-height: 1.5; color: #C7D2FE; margin: 0 0 14px 0;">
+                Clears expired Django user sessions, vacuums database fragmentation to speed up SQL queries, and purges orphaned photos in media/listings that no longer belong to any active ad.
             </p>
             <a href="/admin/marketplace/sitesetting/system-cleanup/" 
-               onclick="return confirm('Staff Confirmation: Are you sure you want to purge dead orphaned media files and optimize the platform database? Active ad photos will remain safe.');"
-               style="display: inline-block; background-color: #FF8A00; color: #FFFFFF; font-weight: 800; font-size: 12px; padding: 10px 18px; border-radius: 10px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(255,138,0,0.4);">
-               🚀 Purge Dead Storage & Optimize Platform
+               onclick="return confirm('Run Safe System Optimization? Active listings and user files remain completely safe.');"
+               style="display: inline-block; background-color: #059669; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 10px 18px; border-radius: 8px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px;">
+               🚀 Run Safe Maintenance
             </a>
         </div>
         '''
         return mark_safe(html)
-    system_cleanup_card.short_description = "Platform Garbage Collection"
+    system_cleanup_card.short_description = "System Hygiene"
 
     def get_urls(self):
         urls = super().get_urls()
@@ -101,73 +97,116 @@ class SiteSettingAdmin(admin.ModelAdmin):
 
     def system_cleanup_view(self, request):
         if not (request.user.is_staff or request.user.is_superuser):
-            messages.error(request, "Permission Denied: Only authorized staff members can run system hygiene tasks.")
+            messages.error(request, "Permission Denied: Only staff members can run maintenance.")
             return redirect("admin:index")
 
         deleted_files_count = 0
         freed_bytes = 0
+        total_scanned_images = 0
 
-        # 1. Collect all valid database file paths across models
-        valid_db_files = set()
+        # Whitelist ONLY image extensions (hard guard)
+        VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 
-        def add_file(field_file):
+        # 1. Collect all valid active database file paths
+        valid_db_filenames = set()
+
+        def register_field(field_file):
             if field_file and hasattr(field_file, 'name') and field_file.name:
-                valid_db_files.add(os.path.normpath(field_file.name))
+                # Normalize slashes and lower-case
+                clean_name = str(field_file.name).replace('\\', '/').strip('/').lower()
+                if clean_name:
+                    valid_db_filenames.add(clean_name)
+                    # Also register just the filename (e.g. "photo123.jpg") for extra matching accuracy
+                    valid_db_filenames.add(Path(clean_name).name)
 
         for img in ListingImage.objects.all():
-            add_file(img.image)
+            register_field(img.image)
 
         for prof in SellerProfile.objects.all():
-            add_file(prof.avatar)
-            add_file(prof.store_banner)
-            add_file(prof.id_document)
-            add_file(prof.selfie_image)
+            register_field(prof.avatar)
+            register_field(prof.store_banner)
+            register_field(prof.id_document)
+            register_field(prof.selfie_image)
 
         for cat in Category.objects.all():
-            add_file(cat.icon)
+            register_field(cat.icon)
 
         for sub in SubCategory.objects.all():
-            add_file(sub.icon)
+            register_field(sub.icon)
 
         for setting in SiteSetting.objects.all():
-            add_file(setting.logo)
+            register_field(setting.logo)
 
-        # 2. Inspect physical files in media root and delete orphans
-        media_root = settings.MEDIA_ROOT
-        if os.path.exists(media_root):
-            for root, dirs, files in os.walk(media_root):
+        # 2. Inspect ONLY safe dedicated upload folders inside MEDIA_ROOT
+        media_root = Path(settings.MEDIA_ROOT).resolve()
+        
+        # STRICT BOUNDARY: Only scan these specific subdirectories if they exist
+        safe_target_subdirs = [
+            media_root / 'listings',
+            media_root / 'listing_images',
+            media_root / 'sellers',
+            media_root / 'uploads',
+        ]
+
+        for target_dir in safe_target_subdirs:
+            if not target_dir.exists():
+                continue
+
+            for root, dirs, files in os.walk(target_dir):
                 for file_name in files:
-                    file_path = os.path.join(root, file_name)
-                    rel_path = os.path.normpath(os.path.relpath(file_path, media_root))
+                    file_path = Path(root) / file_name
 
-                    # Safety check: Never delete default placeholder or static icons
-                    if rel_path not in valid_db_files:
+                    # HARD GUARD 1: Only check whitelisted image files
+                    if file_path.suffix.lower() not in VALID_IMAGE_EXTENSIONS:
+                        continue
+
+                    # HARD GUARD 2: Must be physically inside media_root
+                    try:
+                        file_path.relative_to(media_root)
+                    except ValueError:
+                        continue  # Skip anything outside media_root
+
+                    total_scanned_images += 1
+
+                    rel_path_str = str(file_path.relative_to(media_root)).replace('\\', '/').strip('/').lower()
+                    pure_name = file_name.lower()
+
+                    # If not in active DB records, it's an orphan
+                    if (rel_path_str not in valid_db_filenames) and (pure_name not in valid_db_filenames):
                         try:
-                            file_size = os.path.getsize(file_path)
-                            os.remove(file_path)
+                            f_size = file_path.stat().st_size
+                            file_path.unlink()
                             deleted_files_count += 1
-                            freed_bytes += file_size
+                            freed_bytes += f_size
                         except Exception:
                             pass
 
-        # 3. Clean expired Django sessions
+        # 3. Clear expired Django sessions
+        sessions_purged = True
         try:
             call_command('clearsessions')
         except Exception:
-            pass
+            sessions_purged = False
 
-        # 4. Vacuum database to reclaim fragmented space
+        # 4. Vacuum database
+        db_vacuumed = True
         try:
             with connection.cursor() as cursor:
                 cursor.execute("VACUUM;")
         except Exception:
-            pass
+            db_vacuumed = False
 
         freed_mb = freed_bytes / (1024 * 1024)
-        messages.success(
-            request,
-            f"✅ System Optimization Complete! Deleted {deleted_files_count} orphaned file(s), freed {freed_mb:.2f} MB of storage, purged expired sessions, and vacuumed database fragmentation."
+        active_db_count = len(valid_db_filenames)
+
+        msg = (
+            f"✅ System Optimization Complete! "
+            f"Scanned {total_scanned_images} uploaded image(s) in media folders against {active_db_count} active database reference(s). "
+            f"Purged {deleted_files_count} orphaned file(s) (freed {freed_mb:.2f} MB). "
+            f"Expired Sessions: {'Cleared' if sessions_purged else 'N/A'}. "
+            f"Database Fragmentation: {'Vacuumed' if db_vacuumed else 'Skipped (Non-SQLite)'}."
         )
+        messages.success(request, msg)
         return redirect('/admin/marketplace/sitesetting/')
 
 
@@ -286,9 +325,6 @@ class ReportedListingAdmin(admin.ModelAdmin):
     list_editable = ("is_resolved",)
 
 
-# =========================================================================
-# 9. CEO STAFF CONTROLS & IMMUTABLE AUDIT TRAIL
-# =========================================================================
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
     list_display = ("employee_id", "get_staff_name", "role", "phone", "is_active", "created_at")

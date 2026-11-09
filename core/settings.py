@@ -163,7 +163,9 @@ STORAGES = {
     },
 }
 
+# Media URL and Media Root (Explicitly locked to the media/ folder)
 MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
