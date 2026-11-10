@@ -72,11 +72,20 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sitemaps',  # Enables automated dynamic XML sitemap generation
     
+    # Brute-force login defense
+    'axes',
+    
     # Third-party storage backend
     'storages',
     
     # Custom apps
     'marketplace',
+]
+
+# Authentication Backends (Axes checks failed attempts before passing to standard auth)
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 MIDDLEWARE = [
@@ -88,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware',  # Must be at the bottom
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -199,3 +209,16 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'c1ec8c001@smtp-brevo.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xsmtpsib-603eda44a21b10ae5e77199571825d3bcdbc9300942d90b4836734eec563b41b-KO1uO9QHMsBaTIS4')
 DEFAULT_FROM_EMAIL = 'Naijasale <support@naijasale.com>'
 SERVER_EMAIL = 'support@naijasale.com'
+
+# ==============================================================================
+# AXES BRUTE-FORCE SECURITY SETTINGS
+# ==============================================================================
+AXES_FAILURE_LIMIT = 5                      # Lock out after 5 wrong attempts
+AXES_COOLOFF_TIME = 0.5                     # Lockout lasts for 0.5 hours (30 minutes)
+AXES_RESET_ON_SUCCESS = True               # Clear failed counter on good login
+AXES_LOCK_OUT_BY_COMBINATION_USER_AND_IP = True
+AXES_IPWARE_META_PRECEDENCE_ORDER = (       # Detects real visitor IP behind Cloudflare
+    'HTTP_CF_CONNECTING_IP',
+    'HTTP_X_FORWARDED_FOR',
+    'REMOTE_ADDR',
+)
