@@ -1,0 +1,298 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | NaijaSale Admin{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    /* =========================================================
+       NAIJASALE MODERN CEO SUITE GLOBAL THEME
+       ========================================================= */
+    :root {
+        --primary: #059669 !important;
+        --primary-dark: #047857 !important;
+        --primary-light: #ecfdf5 !important;
+        --accent: #10b981 !important;
+        --body-bg: #f8fafc !important;
+        --card-bg: #ffffff !important;
+        --text-main: #0f172a !important;
+        --text-muted: #64748b !important;
+        --border-color: #e2e8f0 !important;
+        --radius: 12px !important;
+    }
+
+    body {
+        background-color: var(--body-bg) !important;
+        color: var(--text-main) !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    }
+
+    /* 1. TOP HEADER & NAVBAR */
+    #header {
+        background: #ffffff !important;
+        color: var(--text-main) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding: 12px 24px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    #branding h1 {
+        margin: 0 !important;
+        font-weight: 800 !important;
+        font-size: 1.35rem !important;
+    }
+
+    #branding h1 a:link, #branding h1 a:visited {
+        color: #0f172a !important;
+        text-decoration: none !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+
+    #branding h1 a::before {
+        content: "\f290";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        color: #059669;
+        font-size: 1.2rem;
+    }
+
+    #user-tools {
+        color: var(--text-muted) !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+    }
+
+    #user-tools a {
+        color: #0f172a !important;
+        border-bottom: none !important;
+        padding: 5px 10px !important;
+        border-radius: 6px !important;
+        transition: 0.2s !important;
+    }
+
+    #user-tools a:hover {
+        background: var(--primary-light) !important;
+        color: var(--primary) !important;
+    }
+
+    /* 2. BREADCRUMBS BAR */
+    div.breadcrumbs {
+        background: #ffffff !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding: 10px 24px !important;
+        color: var(--text-muted) !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+    }
+
+    div.breadcrumbs a {
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+    }
+
+    /* 3. CONTENT AREA & HEADINGS */
+    #content {
+        padding: 24px !important;
+    }
+
+    #content h1 {
+        font-size: 1.5rem !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        margin-bottom: 18px !important;
+    }
+
+    /* 4. CHANGELIST TABLES (THE USERS / LISTINGS DATA TABLE) */
+    #changelist {
+        background: transparent !important;
+        display: flex !important;
+        flex-direction: row-reverse !important;
+        gap: 20px !important;
+    }
+
+    #changelist #changelist-form {
+        flex: 1 1 auto !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius) !important;
+        padding: 18px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+        overflow: hidden !important;
+    }
+
+    #changelist table {
+        border-radius: 8px !important;
+        overflow: hidden !important;
+        border: 1px solid #f1f5f9 !important;
+        width: 100% !important;
+    }
+
+    #changelist table thead th {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        font-weight: 700 !important;
+        font-size: 0.8rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        border-bottom: 2px solid var(--border-color) !important;
+        padding: 12px 14px !important;
+    }
+
+    #changelist table thead th a {
+        color: #334155 !important;
+    }
+
+    #changelist table tbody tr {
+        border-bottom: 1px solid #f1f5f9 !important;
+        transition: background 0.15s !important;
+    }
+
+    #changelist table tbody tr:hover {
+        background: #fdfdfd !important;
+    }
+
+    #changelist table tbody td, #changelist table tbody th {
+        padding: 14px !important;
+        font-size: 0.88rem !important;
+        color: #1e293b !important;
+    }
+
+    #changelist table tbody th a {
+        color: #0284c7 !important;
+        font-weight: 700 !important;
+        text-decoration: none !important;
+    }
+
+    #changelist table tbody th a:hover {
+        text-decoration: underline !important;
+    }
+
+    /* 5. SIDEBAR FILTERS */
+    #changelist-filter {
+        position: static !important;
+        width: 260px !important;
+        background: #ffffff !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius) !important;
+        padding: 16px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+        height: fit-content !important;
+    }
+
+    #changelist-filter h2 {
+        background: transparent !important;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        font-size: 0.95rem !important;
+        padding: 0 0 10px 0 !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    #changelist-filter h3 {
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        color: #334155 !important;
+        margin-top: 14px !important;
+    }
+
+    #changelist-filter li.selected a {
+        color: var(--primary) !important;
+        font-weight: 700 !important;
+    }
+
+    #changelist-filter li a:hover {
+        color: var(--primary) !important;
+    }
+
+    /* 6. BUTTONS (ADD USER, SEARCH, ACTIONS) */
+    .object-tools li a, .button, input[type=submit], input[type=button] {
+        background: var(--primary) !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+        font-weight: 700 !important;
+        font-size: 0.82rem !important;
+        padding: 9px 16px !important;
+        border: none !important;
+        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        transition: 0.15s ease !important;
+    }
+
+    .object-tools li a:hover, .button:hover, input[type=submit]:hover {
+        background: var(--primary-dark) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    /* Form input search fields */
+    #toolbar form input[type="text"] {
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 8px 14px !important;
+        font-size: 0.88rem !important;
+        background: #ffffff !important;
+        min-width: 260px !important;
+    }
+
+    /* 7. EDIT FORMS & DETAIL PAGES */
+    .module {
+        background: #ffffff !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+        margin-bottom: 20px !important;
+        padding: 18px !important;
+    }
+
+    .module h2 {
+        background: transparent !important;
+        color: var(--primary) !important;
+        font-weight: 800 !important;
+        font-size: 1rem !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding-bottom: 8px !important;
+    }
+
+    .form-row {
+        border-bottom: 1px solid #f8fafc !important;
+        padding: 14px 0 !important;
+    }
+
+    input[type=text], input[type=password], input[type=email], input[type=url], 
+    input[type=number], textarea, select {
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding: 8px 12px !important;
+        font-size: 0.88rem !important;
+        outline: none !important;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15) !important;
+    }
+
+    /* Dark theme toggle icon clean hide if interfering */
+    .theme-toggle {
+        display: none !important;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="/portal-management-99/">
+        <span>Naija<strong>Sale</strong></span>
+    </a>
+</h1>
+{% endblock %}
