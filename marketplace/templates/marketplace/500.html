@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Error (500) | Naijasale</title>
+    <style>
+        :root {
+            --primary: #15803d;
+            --primary-hover: #166534;
+            --surface: #ffffff;
+            --background: #f8fafc;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .error-card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+        }
+
+        .status-badge {
+            display: inline-block;
+            background-color: #fef2f2;
+            color: #dc2626;
+            font-size: 0.875rem;
+            font-weight: 700;
+            padding: 0.35rem 0.85rem;
+            border-radius: 9999px;
+            margin-bottom: 1.25rem;
+            letter-spacing: 0.05em;
+        }
+
+        .error-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+        }
+
+        .error-desc {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: #ffffff;
+            border: 1px solid var(--primary);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f1f5f9;
+        }
+
+        .brand-footer {
+            margin-top: 2.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <span class="status-badge">ERROR 500</span>
+        <h1 class="error-title">Temporary Server Issue</h1>
+        <p class="error-desc">
+            Something unexpected happened on our end while processing your request. Our team has been notified, and we are working to resolve it.
+        </p>
+        <div class="btn-group">
+            <a href="/" class="btn btn-primary">Back to Homepage</a>
+            <button onclick="window.location.reload();" class="btn btn-secondary">Try Again</button>
+        </div>
+        <div class="brand-footer">
+            &copy; Naijasale Marketplace
+        </div>
+    </div>
+</body>
+</html>

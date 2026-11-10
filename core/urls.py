@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
+from django.views.generic import TemplateView
 
 # Sitemaps configuration
 from marketplace.sitemaps import StaticViewSitemap, ListingSitemap, StaticPageSitemap
@@ -53,6 +54,9 @@ def admin_access_guard(request):
 
 
 urlpatterns = [
+    # Temporary route to preview custom 500 page locally
+    path('test-500/', TemplateView.as_view(template_name='500.html'), name='test_500'),
+    
     # Guarded root admin entry
     path('portal-management-99/', admin_access_guard, name='admin_guard'),
     # Full Django admin sub-routes
