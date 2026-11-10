@@ -12,16 +12,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-9xps_@o)+#=h7$9lnn^b_gdj6*k2%!!p9)m*%0zv66&4!hhl48')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
-# Allow all hosts (including naijasale.com and www.naijasale.com)
+# Allowed hosts (wildcard removed for production host-header security)
 ALLOWED_HOSTS = [
     'naijasale.com',
     'www.naijasale.com',
     '199.247.22.119',
+    'olhbbbatpfblic7yhycinpvh.199.247.22.119.sslip.io',
     'localhost',
     '127.0.0.1',
-    '*',
 ]
 
 # CSRF trusted origins for Coolify domain proxies and custom domain
@@ -43,9 +43,23 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
-# Prevent cookie rejection on mixed HTTP/HTTPS connections
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+# Security Headers & Cookie Protection
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+
+# Defense against Session Hijacking, Clickjacking, and MIME-sniffing
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 # Application definition
 INSTALLED_APPS = [
