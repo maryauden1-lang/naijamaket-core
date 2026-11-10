@@ -21,7 +21,7 @@ def robots_txt(request):
     """Directs search engines to crawl public items while protecting private app areas."""
     lines = [
         "User-agent: *",
-        "Disallow: /admin/",
+        "Disallow: /portal-management-99/",
         "Disallow: /workspace/",
         "Disallow: /api/",
         "Disallow: /chat/",
@@ -39,7 +39,7 @@ def robots_txt(request):
 
 def admin_access_guard(request):
     """
-    Guards /admin/:
+    Guards /portal-management-99/:
     - If superuser -> allow into standard Django admin
     - If staff (moderator/support) -> redirect straight to /workspace/
     - Otherwise -> standard admin login
@@ -54,9 +54,9 @@ def admin_access_guard(request):
 
 urlpatterns = [
     # Guarded root admin entry
-    path('admin/', admin_access_guard, name='admin_guard'),
+    path('portal-management-99/', admin_access_guard, name='admin_guard'),
     # Full Django admin sub-routes
-    path('admin/', admin.site.urls),
+    path('portal-management-99/', admin.site.urls),
     # Staff workspace portal
     path('workspace/', include('marketplace.workspace_urls')),
     # Search Engine Crawlers & Indexing

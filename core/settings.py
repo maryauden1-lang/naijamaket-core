@@ -196,7 +196,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Staff Workspace & Authentication Routing
 LOGIN_REDIRECT_URL = '/workspace/routing/'
-LOGIN_URL = '/admin/login/'
+LOGIN_URL = '/portal-management-99/login/'
 
 # ==============================================================================
 # BREVO EMAIL ENGINE CONFIGURATION
