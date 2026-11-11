@@ -10,7 +10,10 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-naijasale-local-dev-key')
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-naijasale-prod-hardened-key-x889210-change-in-coolify'
+)
 
 # DEBUG: Defaults to False in production. Evaluates True only if explicitly set to 'true', '1', or 'yes'.
 DEBUG = os.environ.get('DJANGO_DEBUG', os.environ.get('DEBUG', 'False')).strip().lower() in ('true', '1', 'yes')
@@ -30,6 +33,28 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
 ]
+
+# ==============================================================================
+# PRODUCTION SSL, REVERSE PROXY & SECURITY HEADERS
+# ==============================================================================
+if not DEBUG:
+    # Tell Django it sits behind Cloudflare and Coolify's Traefik reverse proxy
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+
+    # Cookie security (Transmit only over HTTPS)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+    # Browser defense headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+
+    # HTTP Strict Transport Security (HSTS - 1 Year)
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Application definition
 INSTALLED_APPS = [
@@ -143,7 +168,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-]
+] if (BASE_DIR / 'static').exists() else []
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ==============================================================================
