@@ -1,19 +1,16 @@
 """
 Django settings for core project.
-Configured for production on Coolify, Cloudflare proxy, and Backblaze B2 storage.
+Configured for NaijaSale production with Coolify, SQLite, and Backblaze B2.
 """
 
 from pathlib import Path
 import os
-from django.core.management.utils import get_random_secret_key
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-naijasale-local-dev-key-change-in-prod')
-
-# SECURITY WARNING: don't run with debug turned on in production!
+# Security settings
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-naijasale-local-dev-key')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
@@ -22,17 +19,15 @@ ALLOWED_HOSTS = [
     'naijasale.com',
     'www.naijasale.com',
     '.naijasale.com',
-    '*',  # Convenient for testing across devices on the local router
+    '*',
 ]
 
-# CSRF Trusted Origins for Cloudflare and HTTPS
 CSRF_TRUSTED_ORIGINS = [
     'https://naijasale.com',
     'https://www.naijasale.com',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
 ]
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -43,10 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sitemaps',
-    'django.contrib.humanize',  # Solves the TemplateSyntaxError for prices/numbers
+    'django.contrib.humanize',
 
     # Third-party apps
     'axes',
+    'storages',  # Required for Backblaze B2 S3 storage
 
     # Local application
     'marketplace.apps.MarketplaceConfig',
@@ -61,11 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
-    # Axes security middleware
     'axes.middleware.AxesMiddleware',
-    
-    # Real-time unique device visitor tracker
     'marketplace.middleware.ActiveUserMiddleware',
 ]
 
@@ -92,21 +84,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
+# ==============================================================================
+# DATABASE CONFIGURATION
+# Automatically uses /app/data/db.sqlite3 on the server if present,
+# otherwise falls back to local db.sqlite3 on your laptop.
+# ==============================================================================
+DATA_DIR = BASE_DIR / 'data'
+if (DATA_DIR / 'db.sqlite3').exists():
+    DB_PATH = DATA_DIR / 'db.sqlite3'
+else:
+    DB_PATH = BASE_DIR / 'db.sqlite3'
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DB_PATH,
     }
 }
 
-
-# ==============================================================================
-# DATABASE CACHE BACKEND
-# Shared memory across all worker processes for live visitor counts
-# ==============================================================================
+# Database cache for visitor tracking
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
@@ -115,9 +111,7 @@ CACHES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -125,29 +119,24 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Authentication Backends (Includes Axes)
+# Axes security
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# Axes Configuration
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = 1  # 1 hour lockout
+AXES_COOLOFF_TIME = 1
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_TEMPLATE = None
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
+# Localization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Lagos'
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
+# Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
@@ -155,14 +144,49 @@ STATICFILES_DIRS = [
 ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# Media Files (User uploads: listings, avatar, etc.)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# ==============================================================================
+# BACKBLAZE B2 (S3 COMPATIBLE) STORAGE CONFIGURATION
+# Reads credentials from Coolify Environment Variables
+# ==============================================================================
+BACKBLAZE_BUCKET_NAME = os.environ.get('BACKBLAZE_BUCKET_NAME')
 
-# Default primary key field type
+if BACKBLAZE_BUCKET_NAME:
+    AWS_ACCESS_KEY_ID = os.environ.get('BACKBLAZE_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.environ.get('BACKBLAZE_APPLICATION_KEY')
+    AWS_STORAGE_BUCKET_NAME = BACKBLAZE_BUCKET_NAME
+    AWS_S3_ENDPOINT_URL = os.environ.get('BACKBLAZE_S3_ENDPOINT', 'https://s3.us-east-005.backblazeb2.com')
+    
+    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_ENDPOINT_URL.replace('https://', '')}"
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "location": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+else:
+    # Local fallback for development on laptop
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# Session settings to ensure guest tracking stays persistent across page clicks
-SESSION_COOKIE_AGE = 86400 * 30  # 30 days
+SESSION_COOKIE_AGE = 86400 * 30
 SESSION_SAVE_EVERY_REQUEST = True
