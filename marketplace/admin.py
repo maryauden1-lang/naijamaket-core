@@ -13,6 +13,7 @@ from django.db import connection
 from django.db.models import Count, Sum
 from django.utils import timezone
 from django.core.management import call_command
+from django.core.cache import cache
 
 # Optional import for AXES logs
 try:
@@ -60,8 +61,15 @@ def custom_admin_index(request, extra_context=None):
     total_axes_failures = AccessFailureLog.objects.count() if AccessFailureLog else 0
     total_axes_logs = AccessLog.objects.count() if AccessLog else 0
 
-    # 2. Marketplace Metrics
+    # 2. Marketplace Metrics & Moderation Queues
     total_listings = Listing.objects.count()
+    pending_listings_count = Listing.objects.filter(status='pending').count()
+    pending_kyc_count = SellerProfile.objects.filter(verification_status='pending').count()
+    unresolved_reports_count = ReportedListing.objects.filter(is_resolved=False).count()
+
+    # Total combined pending actions for CEO alerts
+    total_notifications = pending_listings_count + pending_kyc_count + unresolved_reports_count
+
     total_conversations = Conversation.objects.count()
     total_favorites = Favorite.objects.count()
     total_views = Listing.objects.aggregate(total=Sum('views_count'))['total'] or 0
@@ -78,13 +86,32 @@ def custom_admin_index(request, extra_context=None):
         listing_count=Count('listings')
     ).order_by('-listing_count')[:4]
 
+    # 5. Real-Time Online Visitors (last 5 minutes)
+    active_keys = cache.get('active_visitor_keys', set())
+    now = timezone.now().timestamp()
+    valid_keys = set()
+
+    if isinstance(active_keys, set):
+        for key in list(active_keys):
+            last_seen = cache.get(key)
+            if last_seen and (now - last_seen) < 300:
+                valid_keys.add(key)
+    
+    cache.set('active_visitor_keys', valid_keys, timeout=600)
+    online_count = max(len(valid_keys), 1)
+
     extra_context.update({
         'total_groups': total_groups,
         'total_users': total_users,
+        'online_count': online_count,
         'total_axes_attempts': total_axes_attempts,
         'total_axes_failures': total_axes_failures,
         'total_axes_logs': total_axes_logs,
         'total_listings': total_listings,
+        'pending_listings_count': pending_listings_count,
+        'pending_kyc_count': pending_kyc_count,
+        'unresolved_reports_count': unresolved_reports_count,
+        'total_notifications': total_notifications,
         'total_conversations': total_conversations,
         'total_favorites': total_favorites,
         'total_views': total_views,

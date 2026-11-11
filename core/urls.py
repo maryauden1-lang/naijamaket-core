@@ -1,79 +1,35 @@
+"""
+URL configuration for core project.
+"""
 from django.contrib import admin
-from django.urls import path, include, re_path
-from django.shortcuts import redirect
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.static import serve
 from django.contrib.sitemaps.views import sitemap
 from django.http import HttpResponse
-from django.views.generic import TemplateView
 
-# Sitemaps configuration
-from marketplace.sitemaps import StaticViewSitemap, ListingSitemap, StaticPageSitemap
-
-sitemaps = {
-    'static': StaticViewSitemap,
-    'listings': ListingSitemap,
-    'pages': StaticPageSitemap,
-}
-
-
-def robots_txt(request):
-    """Directs search engines to crawl public items while protecting private app areas."""
-    lines = [
-        "User-agent: *",
-        "Disallow: /portal-management-99/",
-        "Disallow: /workspace/",
-        "Disallow: /api/",
-        "Disallow: /chat/",
-        "Disallow: /dashboard/",
-        "Disallow: /saved/",
-        "Disallow: /favorite/",
-        "Disallow: /report/",
-        "Disallow: /password-reset/",
-        "Allow: /",
-        "",
-        "Sitemap: https://naijasale.com/sitemap.xml",
-    ]
-    return HttpResponse("\n".join(lines), content_type="text/plain")
-
-
-def admin_access_guard(request):
-    """
-    Guards /portal-management-99/:
-    - If superuser -> allow into standard Django admin
-    - If staff (moderator/support) -> redirect straight to /workspace/
-    - Otherwise -> standard admin login
-    """
-    if request.user.is_authenticated:
-        if request.user.is_superuser:
-            return admin.site.index(request)
-        elif request.user.is_staff:
-            return redirect('workspace:dashboard')
-    return admin.site.login(request, extra_context={'next': '/workspace/'})
-
+# If you have custom sitemaps defined in marketplace:
+try:
+    from marketplace.sitemaps import ListingSitemap, StaticViewSitemap
+    sitemaps = {
+        'listings': ListingSitemap,
+        'static': StaticViewSitemap,
+    }
+except ImportError:
+    sitemaps = {}
 
 urlpatterns = [
-    # Temporary route to preview custom 500 page locally
-    path('test-500/', TemplateView.as_view(template_name='500.html'), name='test_500'),
-    
-    # Guarded root admin entry
-    path('portal-management-99/', admin_access_guard, name='admin_guard'),
-    # Full Django admin sub-routes
+    # Custom secured CEO Admin Suite
     path('portal-management-99/', admin.site.urls),
-    # Staff workspace portal
-    path('workspace/', include('marketplace.workspace_urls')),
-    # Search Engine Crawlers & Indexing
+
+    # XML Sitemap for SEO & Search Console
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    path('robots.txt', robots_txt, name='robots_txt'),
-    # Public marketplace routes
-    path('', include('marketplace.urls')),
+
+    # Marketplace core application
+    path('', include('marketplace.urls', namespace='marketplace')),
 ]
 
-# Ensure uploaded media serves properly
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-]
-
+# Serve local media files during development
 if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

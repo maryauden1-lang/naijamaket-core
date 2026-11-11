@@ -207,6 +207,12 @@
             justify-content: center;
             color: #475569;
             cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .notif-bell:hover {
+            border-color: var(--brand-green);
+            color: var(--brand-green);
         }
 
         .notif-badge {
@@ -443,6 +449,12 @@
 
         .circle-metric {
             text-align: center;
+            text-decoration: none;
+            transition: transform 0.15s ease;
+        }
+
+        .circle-metric:hover {
+            transform: translateY(-2px);
         }
 
         .circle-ring {
@@ -458,6 +470,7 @@
         }
         .circle-ring.blue { border-color: #3b82f6; }
         .circle-ring.purple { border-color: #8b5cf6; }
+        .circle-ring.orange { border-color: #f97316; background: #fff7ed; }
 
         .circle-val { font-size: 1rem; font-weight: 800; color: #0f172a; }
         .circle-lbl { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
@@ -631,13 +644,73 @@
                 <p>Welcome back, {{ request.user.username|capfirst }}! Here's what's happening on NaijaSale.</p>
             </div>
             <div class="top-actions">
-                <div class="status-pill">
-                    <span class="status-dot"></span> Site Online
+                <!-- DYNAMIC REAL-TIME ONLINE VISITOR PILL -->
+                <div class="status-pill" title="Real-time visitors active in the last 5 minutes">
+                    <span class="status-dot"></span> {{ online_count }} Online Now
                 </div>
-                <div class="notif-bell">
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="notif-badge">3</span>
+
+                <!-- NOTIFICATION BELL & INTERACTIVE DROPDOWN -->
+                <div style="position: relative;">
+                    <div class="notif-bell" id="notifBellBtn" onclick="toggleNotifDropdown()">
+                        <i class="fa-regular fa-bell"></i>
+                        {% if total_notifications > 0 %}
+                        <span class="notif-badge">{{ total_notifications }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- DROPDOWN CONTENT -->
+                    <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 48px; width: 320px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 999; overflow: hidden;">
+                        <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">Action Required</span>
+                            <span style="background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
+                        </div>
+
+                        <div style="padding: 8px 0;">
+                            <!-- PENDING LISTINGS -->
+                            <a href="/portal-management-99/marketplace/listing/?status__exact=pending" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f97316; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                        <i class="fa-solid fa-hourglass-half"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">Pending Ads</div>
+                                        <div style="font-size: 0.72rem; color: #64748b;">Awaiting review & approval</div>
+                                    </div>
+                                </div>
+                                <span style="font-weight: 800; font-size: 0.85rem; color: #f97316;">{{ pending_listings_count }}</span>
+                            </a>
+
+                            <!-- PENDING KYC -->
+                            <a href="/portal-management-99/marketplace/sellerprofile/?verification_status__exact=pending" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                        <i class="fa-solid fa-id-card"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">NIN Verifications</div>
+                                        <div style="font-size: 0.72rem; color: #64748b;">Seller identity approvals</div>
+                                    </div>
+                                </div>
+                                <span style="font-weight: 800; font-size: 0.85rem; color: #2563eb;">{{ pending_kyc_count }}</span>
+                            </a>
+
+                            <!-- UNRESOLVED SAFETY REPORTS -->
+                            <a href="/portal-management-99/marketplace/reportedlisting/?is_resolved__exact=0" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                                        <i class="fa-solid fa-flag"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">Fraud Reports</div>
+                                        <div style="font-size: 0.72rem; color: #64748b;">User dispute complaints</div>
+                                    </div>
+                                </div>
+                                <span style="font-weight: 800; font-size: 0.85rem; color: #ef4444;">{{ unresolved_reports_count }}</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
+
                 <a href="/portal-management-99/auth/user/{{ request.user.id }}/change/" class="admin-profile-pill">
                     <div class="admin-avatar">{{ request.user.username|make_list|first|upper }}</div>
                     <span style="font-size: 0.85rem; font-weight: 700;">{{ request.user.username }}</span>
@@ -839,29 +912,41 @@
                 </div>
 
                 <div class="circles-row">
-                    <div class="circle-metric">
+                    <!-- ALL LISTINGS -->
+                    <a href="/portal-management-99/marketplace/listing/" class="circle-metric">
                         <div class="circle-ring">
                             <i class="fa-solid fa-box-open" style="color: #10b981; font-size: 0.85rem; margin-bottom: 2px;"></i>
                             <div class="circle-val">{{ total_listings }}</div>
                         </div>
-                        <div class="circle-lbl">Listings</div>
-                    </div>
+                        <div class="circle-lbl">Total Listings</div>
+                    </a>
 
-                    <div class="circle-metric">
+                    <!-- PENDING APPROVAL QUEUE -->
+                    <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="circle-metric">
+                        <div class="circle-ring orange">
+                            <i class="fa-solid fa-hourglass-half" style="color: #ea580c; font-size: 0.85rem; margin-bottom: 2px;"></i>
+                            <div class="circle-val" style="color: #ea580c;">{{ pending_listings_count }}</div>
+                        </div>
+                        <div class="circle-lbl" style="color: #ea580c; font-weight: 700;">Pending Review</div>
+                    </a>
+
+                    <!-- CONVERSATIONS -->
+                    <a href="/portal-management-99/marketplace/conversation/" class="circle-metric">
                         <div class="circle-ring blue">
                             <i class="fa-solid fa-comments" style="color: #3b82f6; font-size: 0.85rem; margin-bottom: 2px;"></i>
                             <div class="circle-val">{{ total_conversations }}</div>
                         </div>
                         <div class="circle-lbl">Conversations</div>
-                    </div>
+                    </a>
 
-                    <div class="circle-metric">
+                    <!-- FAVORITES -->
+                    <a href="/portal-management-99/marketplace/favorite/" class="circle-metric">
                         <div class="circle-ring purple">
                             <i class="fa-solid fa-heart" style="color: #8b5cf6; font-size: 0.85rem; margin-bottom: 2px;"></i>
                             <div class="circle-val">{{ total_favorites }}</div>
                         </div>
                         <div class="circle-lbl">Favorites</div>
-                    </div>
+                    </a>
                 </div>
             </div>
 
@@ -964,8 +1049,23 @@
         </div>
     </main>
 
-    <!-- CHART.JS LOGIC -->
+    <!-- NOTIFICATION DROPDOWN JAVASCRIPT & CHART -->
     <script>
+        function toggleNotifDropdown() {
+            const menu = document.getElementById('notifDropdownMenu');
+            menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const btn = document.getElementById('notifBellBtn');
+            const menu = document.getElementById('notifDropdownMenu');
+            if (btn && menu && !btn.contains(event.target) && !menu.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
+        // Chart rendering
         const ctx = document.getElementById('marketViewsChart').getContext('2d');
         const gradient = ctx.createLinearGradient(0, 0, 0, 200);
         gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
@@ -991,15 +1091,13 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: { color: '#f1f5f9' },
                         ticks: {
-                            callback: function(value) { return value >= 1000 ? (value/1000) + 'K' : value; },
+                            callback: function(val) { return val >= 1000 ? (val/1000) + 'K' : val; },
                             color: '#94a3b8',
                             font: { size: 11 }
                         }
