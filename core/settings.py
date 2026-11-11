@@ -136,7 +136,7 @@ TIME_ZONE = 'Africa/Lagos'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# Static files (CSS, JavaScript, Icons)
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
@@ -145,8 +145,8 @@ STATICFILES_DIRS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ==============================================================================
-# BACKBLAZE B2 (S3 COMPATIBLE) STORAGE CONFIGURATION
-# Matches your exact Coolify environment variable names
+# BACKBLAZE B2 STORAGE CONFIGURATION
+# Directly maps to bucket root without adding /media/ prefix
 # ==============================================================================
 BUCKET_NAME = (
     os.environ.get('AWS_STORAGE_BUCKET_NAME')
@@ -184,15 +184,13 @@ if BUCKET_NAME and ACCESS_KEY and SECRET_KEY_B2:
     STORAGES = {
         "default": {
             "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-            "OPTIONS": {
-                "location": "media",
-            },
+            "OPTIONS": {},
         },
         "staticfiles": {
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 else:
     # Local fallback for development on laptop
     STORAGES = {
