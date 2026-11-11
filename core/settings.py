@@ -146,16 +146,36 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ==============================================================================
 # BACKBLAZE B2 (S3 COMPATIBLE) STORAGE CONFIGURATION
-# Reads credentials from Coolify Environment Variables
+# Matches your exact Coolify environment variable names
 # ==============================================================================
-BACKBLAZE_BUCKET_NAME = os.environ.get('BACKBLAZE_BUCKET_NAME')
+BUCKET_NAME = (
+    os.environ.get('AWS_STORAGE_BUCKET_NAME')
+    or os.environ.get('AWS_S3_BUCKET_NAME')
+    or os.environ.get('BACKBLAZE_BUCKET_NAME')
+)
 
-if BACKBLAZE_BUCKET_NAME:
-    AWS_ACCESS_KEY_ID = os.environ.get('BACKBLAZE_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = os.environ.get('BACKBLAZE_APPLICATION_KEY')
-    AWS_STORAGE_BUCKET_NAME = BACKBLAZE_BUCKET_NAME
-    AWS_S3_ENDPOINT_URL = os.environ.get('BACKBLAZE_S3_ENDPOINT', 'https://s3.us-east-005.backblazeb2.com')
-    
+ACCESS_KEY = (
+    os.environ.get('AWS_ACCESS_KEY_ID')
+    or os.environ.get('BACKBLAZE_KEY_ID')
+)
+
+SECRET_KEY_B2 = (
+    os.environ.get('AWS_SECRET_ACCESS_KEY')
+    or os.environ.get('BACKBLAZE_APPLICATION_KEY')
+)
+
+ENDPOINT_URL = (
+    os.environ.get('AWS_S3_ENDPOINT_URL')
+    or os.environ.get('BACKBLAZE_S3_ENDPOINT')
+    or 'https://s3.us-east-005.backblazeb2.com'
+)
+
+if BUCKET_NAME and ACCESS_KEY and SECRET_KEY_B2:
+    AWS_ACCESS_KEY_ID = ACCESS_KEY
+    AWS_SECRET_ACCESS_KEY = SECRET_KEY_B2
+    AWS_STORAGE_BUCKET_NAME = BUCKET_NAME
+    AWS_S3_ENDPOINT_URL = ENDPOINT_URL
+
     AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_ENDPOINT_URL.replace('https://', '')}"
     AWS_DEFAULT_ACL = None
     AWS_S3_FILE_OVERWRITE = False
