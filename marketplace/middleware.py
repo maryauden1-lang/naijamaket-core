@@ -1,36 +1,44 @@
+import time
 from django.core.cache import cache
-from django.utils import timezone
 
 
 class ActiveUserMiddleware:
     """
-    Tracks active online visitors (both authenticated users and guests)
-    using Django's fast in-memory/database cache backend without slowing down SQL.
+    Counts every device individually by assigning each browser an isolated session.
+    Works seamlessly across shared Wi-Fi, routers, and mobile proxies.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. Determine unique identifier (User ID if logged in, otherwise Session Key or IP)
+        # 1. Skip static assets, media, and background icon queries
+        if request.path.startswith('/static/') or request.path.startswith('/media/') or request.path == '/favicon.ico':
+            return self.get_response(request)
+
+        # 2. Force session creation so every unique phone/browser has a distinct token
+        if not request.session.session_key:
+            request.session.save()
+
+        # 3. Use the unique session key (or User ID if logged in)
         if request.user.is_authenticated:
-            visitor_id = f"online_user_{request.user.id}"
-        elif request.session.session_key:
-            visitor_id = f"online_guest_{request.session.session_key}"
+            device_id = f"user_{request.user.id}"
         else:
-            # Fallback to remote IP if no session exists yet
-            ip = request.META.get('HTTP_CF_CONNECTING_IP') or request.META.get('REMOTE_ADDR')
-            visitor_id = f"online_ip_{ip}"
+            device_id = f"guest_{request.session.session_key}"
 
-        # 2. Store timestamp in cache with a 5-minute (300 seconds) sliding window
-        cache.set(visitor_id, timezone.now().timestamp(), timeout=300)
+        now = time.time()
 
-        # 3. Keep an index of active keys in cache
-        active_keys = cache.get('active_visitor_keys', set())
-        if not isinstance(active_keys, set):
-            active_keys = set()
+        # 4. Read active devices dictionary from the shared database cache
+        active_registry = cache.get('active_visitor_registry') or {}
 
-        active_keys.add(visitor_id)
-        cache.set('active_visitor_keys', active_keys, timeout=600)
+        # 5. Record/refresh this device's timestamp
+        active_registry[device_id] = now
+
+        # 6. Prune any device that hasn't made a request in the last 5 minutes (300s)
+        cutoff = now - 300
+        pruned_registry = {d_id: ts for d_id, ts in active_registry.items() if ts > cutoff}
+
+        # 7. Write back to cache
+        cache.set('active_visitor_registry', pruned_registry, timeout=600)
 
         response = self.get_response(request)
         return response

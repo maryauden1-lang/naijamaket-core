@@ -646,23 +646,21 @@
             <div class="top-actions">
                 <!-- DYNAMIC REAL-TIME ONLINE VISITOR PILL -->
                 <div class="status-pill" title="Real-time visitors active in the last 5 minutes">
-                    <span class="status-dot"></span> {{ online_count }} Online Now
+                    <span class="status-dot"></span> <span id="liveOnlineCounter">{{ online_count }}</span>&nbsp;Online Now
                 </div>
 
                 <!-- NOTIFICATION BELL & INTERACTIVE DROPDOWN -->
                 <div style="position: relative;">
                     <div class="notif-bell" id="notifBellBtn" onclick="toggleNotifDropdown()">
                         <i class="fa-regular fa-bell"></i>
-                        {% if total_notifications > 0 %}
-                        <span class="notif-badge">{{ total_notifications }}</span>
-                        {% endif %}
+                        <span class="notif-badge" id="notifBadgeCounter" style="{% if total_notifications == 0 %}display:none;{% endif %}">{{ total_notifications }}</span>
                     </div>
 
                     <!-- DROPDOWN CONTENT -->
                     <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 48px; width: 320px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 999; overflow: hidden;">
                         <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">Action Required</span>
-                            <span style="background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
+                            <span id="dropdownPendingPill" style="background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
                         </div>
 
                         <div style="padding: 8px 0;">
@@ -677,7 +675,7 @@
                                         <div style="font-size: 0.72rem; color: #64748b;">Awaiting review & approval</div>
                                     </div>
                                 </div>
-                                <span style="font-weight: 800; font-size: 0.85rem; color: #f97316;">{{ pending_listings_count }}</span>
+                                <span id="pendingListingsCounter" style="font-weight: 800; font-size: 0.85rem; color: #f97316;">{{ pending_listings_count }}</span>
                             </a>
 
                             <!-- PENDING KYC -->
@@ -691,7 +689,7 @@
                                         <div style="font-size: 0.72rem; color: #64748b;">Seller identity approvals</div>
                                     </div>
                                 </div>
-                                <span style="font-weight: 800; font-size: 0.85rem; color: #2563eb;">{{ pending_kyc_count }}</span>
+                                <span id="pendingKycCounter" style="font-weight: 800; font-size: 0.85rem; color: #2563eb;">{{ pending_kyc_count }}</span>
                             </a>
 
                             <!-- UNRESOLVED SAFETY REPORTS -->
@@ -705,7 +703,7 @@
                                         <div style="font-size: 0.72rem; color: #64748b;">User dispute complaints</div>
                                     </div>
                                 </div>
-                                <span style="font-weight: 800; font-size: 0.85rem; color: #ef4444;">{{ unresolved_reports_count }}</span>
+                                <span id="unresolvedReportsCounter" style="font-weight: 800; font-size: 0.85rem; color: #ef4444;">{{ unresolved_reports_count }}</span>
                             </a>
                         </div>
                     </div>
@@ -925,7 +923,7 @@
                     <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="circle-metric">
                         <div class="circle-ring orange">
                             <i class="fa-solid fa-hourglass-half" style="color: #ea580c; font-size: 0.85rem; margin-bottom: 2px;"></i>
-                            <div class="circle-val" style="color: #ea580c;">{{ pending_listings_count }}</div>
+                            <div id="pendingListingsRingVal" class="circle-val" style="color: #ea580c;">{{ pending_listings_count }}</div>
                         </div>
                         <div class="circle-lbl" style="color: #ea580c; font-weight: 700;">Pending Review</div>
                     </a>
@@ -1064,6 +1062,59 @@
                 menu.style.display = 'none';
             }
         });
+
+        // REAL-TIME AUTO-UPDATE WITHOUT PAGE REFRESH (Runs every 5 seconds)
+        function pollLiveStats() {
+            fetch('/portal-management-99/live-stats-ping/')
+                .then(response => {
+                    if (!response.ok) throw new Error('Live ping failed');
+                    return response.json();
+                })
+                .then(data => {
+                    // 1. Update online visitors count
+                    const onlineCounter = document.getElementById('liveOnlineCounter');
+                    if (onlineCounter && data.online_count !== undefined) {
+                        onlineCounter.innerText = data.online_count;
+                    }
+
+                    // 2. Update bell badge count
+                    const badge = document.getElementById('notifBadgeCounter');
+                    const dropPill = document.getElementById('dropdownPendingPill');
+                    if (badge && data.total_notifications !== undefined) {
+                        badge.innerText = data.total_notifications;
+                        badge.style.display = data.total_notifications > 0 ? 'flex' : 'none';
+                    }
+                    if (dropPill && data.total_notifications !== undefined) {
+                        dropPill.innerText = data.total_notifications + ' Pending';
+                    }
+
+                    // 3. Update pending listings counts
+                    const pendingAds = document.getElementById('pendingListingsCounter');
+                    const pendingRing = document.getElementById('pendingListingsRingVal');
+                    if (pendingAds && data.pending_listings !== undefined) {
+                        pendingAds.innerText = data.pending_listings;
+                    }
+                    if (pendingRing && data.pending_listings !== undefined) {
+                        pendingRing.innerText = data.pending_listings;
+                    }
+
+                    // 4. Update KYC & Reports counters
+                    const pendingKyc = document.getElementById('pendingKycCounter');
+                    if (pendingKyc && data.pending_kyc !== undefined) {
+                        pendingKyc.innerText = data.pending_kyc;
+                    }
+                    const reports = document.getElementById('unresolvedReportsCounter');
+                    if (reports && data.unresolved_reports !== undefined) {
+                        reports.innerText = data.unresolved_reports;
+                    }
+                })
+                .catch(err => {
+                    // Silent catch to prevent console spam
+                });
+        }
+
+        // Trigger polling every 5 seconds
+        setInterval(pollLiveStats, 5000);
 
         // Chart rendering
         const ctx = document.getElementById('marketViewsChart').getContext('2d');

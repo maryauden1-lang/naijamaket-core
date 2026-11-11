@@ -1,4 +1,5 @@
 import os
+import time
 from pathlib import Path
 from datetime import timedelta
 
@@ -14,6 +15,7 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 from django.core.management import call_command
 from django.core.cache import cache
+from django.http import JsonResponse
 
 # Optional import for AXES logs
 try:
@@ -42,6 +44,40 @@ from .models import (
     StaffProfile,
     StaffActivityLog,
 )
+
+
+# ==============================================================================
+# REAL-TIME POLLING JSON ENDPOINT FOR BACKGROUND FETCH
+# ==============================================================================
+def live_online_stats_view(request):
+    """
+    Returns the real-time online visitor count and pending review queues
+    as JSON for automatic background polling without page refresh.
+    """
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    now_ts = time.time()
+    active_registry = cache.get('active_visitor_registry') or {}
+
+    live_devices = [
+        device_id for device_id, ts in active_registry.items()
+        if (now_ts - ts) < 300
+    ]
+    online_count = max(len(live_devices), 1)
+
+    pending_listings = Listing.objects.filter(status='pending').count()
+    pending_kyc = SellerProfile.objects.filter(verification_status='pending').count()
+    unresolved_reports = ReportedListing.objects.filter(is_resolved=False).count()
+    total_notifications = pending_listings + pending_kyc + unresolved_reports
+
+    return JsonResponse({
+        'online_count': online_count,
+        'pending_listings': pending_listings,
+        'pending_kyc': pending_kyc,
+        'unresolved_reports': unresolved_reports,
+        'total_notifications': total_notifications,
+    })
 
 
 # ==============================================================================
@@ -86,19 +122,16 @@ def custom_admin_index(request, extra_context=None):
         listing_count=Count('listings')
     ).order_by('-listing_count')[:4]
 
-    # 5. Real-Time Online Visitors (last 5 minutes)
-    active_keys = cache.get('active_visitor_keys', set())
-    now = timezone.now().timestamp()
-    valid_keys = set()
+    # 5. Real-Time Online Visitors (active within the last 5 minutes across shared routers)
+    now_ts = time.time()
+    active_registry = cache.get('active_visitor_registry') or {}
 
-    if isinstance(active_keys, set):
-        for key in list(active_keys):
-            last_seen = cache.get(key)
-            if last_seen and (now - last_seen) < 300:
-                valid_keys.add(key)
-    
-    cache.set('active_visitor_keys', valid_keys, timeout=600)
-    online_count = max(len(valid_keys), 1)
+    # Count distinct active devices/sessions seen within the last 300 seconds
+    live_devices = [
+        device_id for device_id, ts in active_registry.items()
+        if (now_ts - ts) < 300
+    ]
+    online_count = max(len(live_devices), 1)
 
     extra_context.update({
         'total_groups': total_groups,
@@ -131,6 +164,19 @@ admin.site.index = custom_admin_index
 admin.site.site_header = "NaijaSale Admin"
 admin.site.site_title = "NaijaSale Management"
 admin.site.index_title = "Admin Dashboard"
+
+# Hook the background ping URL into Django admin's URL dispatcher
+_original_get_urls = admin.site.get_urls
+
+
+def custom_admin_urls():
+    custom_patterns = [
+        path('live-stats-ping/', admin.site.admin_view(live_online_stats_view), name='live_stats_ping'),
+    ]
+    return custom_patterns + _original_get_urls()
+
+
+admin.site.get_urls = custom_admin_urls
 
 
 # ==============================================================================
