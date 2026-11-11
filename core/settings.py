@@ -11,7 +11,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-naijasale-local-dev-key')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+
+# DEBUG: Defaults to False in production. Evaluates True only if explicitly set to 'true', '1', or 'yes'.
+DEBUG = os.environ.get('DJANGO_DEBUG', os.environ.get('DEBUG', 'False')).strip().lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
