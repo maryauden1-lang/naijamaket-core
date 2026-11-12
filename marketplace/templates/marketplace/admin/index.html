@@ -1,45 +1,44 @@
-{% load static %}
+{% load static humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NaijaSale Admin Dashboard</title>
-    <!-- Font Awesome Icons -->
+    <title>NaijaSale Admin — Command Center</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Chart.js for Market Overview Chart -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-body: #f8fafc;
-            --sidebar-bg: #ffffff;
-            --text-dark: #0f172a;
-            --text-muted: #64748b;
-            --brand-green: #059669;
-            --brand-green-light: #ecfdf5;
-            --border-color: #f1f5f9;
-            --card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+            --bg-body: #f1f5f9;
+            --surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --brand: #059669;
+            --brand-soft: #ecfdf5;
+            --border: #e2e8f0;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
         }
 
         body {
             background-color: var(--bg-body);
-            color: var(--text-dark);
+            color: var(--text-primary);
             display: flex;
             min-height: 100vh;
+            font-size: 13px;
         }
 
-        /* SIDEBAR */
+        /* COMPACT SIDEBAR */
         .sidebar {
-            width: 260px;
-            background: var(--sidebar-bg);
-            border-right: 1px solid #e2e8f0;
+            width: 225px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -50,146 +49,151 @@
         }
 
         .brand-header {
-            padding: 1.5rem 1.25rem 1rem 1.25rem;
+            padding: 1rem 1rem 0.75rem 1rem;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 9px;
+            border-bottom: 1px solid #f1f5f9;
         }
 
         .brand-logo-icon {
-            width: 38px;
-            height: 38px;
-            background: #ecfdf5;
-            color: var(--brand-green);
-            border-radius: 10px;
+            width: 30px;
+            height: 30px;
+            background: var(--brand-soft);
+            color: var(--brand);
+            border-radius: 7px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.25rem;
+            font-size: 0.95rem;
         }
 
         .brand-title {
-            font-size: 1.35rem;
+            font-size: 1.05rem;
             font-weight: 800;
             color: #0f172a;
-            line-height: 1;
+            line-height: 1.1;
         }
-
-        .brand-title span { color: var(--brand-green); }
-        .brand-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; }
+        .brand-title span { color: var(--brand); }
+        .brand-sub { font-size: 0.65rem; color: var(--text-muted); font-weight: 600; }
 
         .nav-item-active-dashboard {
-            margin: 0.75rem 1rem;
-            background: var(--brand-green);
+            margin: 0.65rem 0.75rem 0.35rem 0.75rem;
+            background: var(--brand);
             color: #ffffff !important;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-decoration: none;
-            box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
         }
 
         .sidebar-section-title {
-            font-size: 0.75rem;
-            font-weight: 800;
+            font-size: 0.65rem;
+            font-weight: 700;
             text-transform: uppercase;
-            color: #059669;
-            background: #ecfdf5;
-            padding: 0.45rem 1.25rem;
-            margin-top: 0.75rem;
-            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            padding: 0.65rem 1rem 0.25rem 1rem;
+            letter-spacing: 0.6px;
         }
 
-        .sidebar-menu { list-style: none; padding: 0.5rem 0; }
+        .sidebar-menu { list-style: none; padding: 0 0.5rem; }
         .sidebar-menu li a {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.65rem 1.25rem;
-            color: #334155;
+            padding: 0.38rem 0.6rem;
+            color: var(--text-secondary);
             text-decoration: none;
-            font-size: 0.88rem;
+            font-size: 0.78rem;
             font-weight: 500;
-            transition: all 0.15s ease;
+            border-radius: 5px;
+            transition: background 0.12s ease, color 0.12s ease;
         }
 
         .sidebar-menu li a:hover {
             background: #f8fafc;
-            color: var(--brand-green);
-            padding-left: 1.45rem;
+            color: var(--brand);
         }
 
-        .sidebar-menu li a div { display: flex; align-items: center; gap: 12px; }
-        .sidebar-menu li a i.nav-icon { width: 16px; color: #64748b; font-size: 0.95rem; }
-        .sidebar-menu li a:hover i.nav-icon { color: var(--brand-green); }
-        .sidebar-menu li a i.chevron { font-size: 0.75rem; color: #cbd5e1; }
+        .sidebar-menu li a div { display: flex; align-items: center; gap: 8px; }
+        .sidebar-menu li a i.nav-icon { width: 14px; color: #94a3b8; font-size: 0.78rem; text-align: center; }
+        .sidebar-menu li a:hover i.nav-icon { color: var(--brand); }
+        .sidebar-menu li a i.chevron { font-size: 0.6rem; color: #cbd5e1; }
 
         .sidebar-footer {
             margin-top: auto;
-            padding: 1rem;
-            background: #059669;
-            color: #ffffff;
-            font-size: 0.75rem;
-            font-weight: 700;
+            padding: 0.65rem 1rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
-        /* MAIN CONTENT AREA */
+        /* MAIN WORKSPACE */
         .main-content {
             flex: 1;
-            padding: 1.75rem 2rem;
+            padding: 1.1rem 1.5rem;
             overflow-y: auto;
+            max-width: 1600px;
         }
 
-        /* TOP NAVIGATION BAR */
+        /* SLIM TOP HEADER */
         .top-navbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .top-navbar .title-area {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
         }
 
         .top-navbar .title-area h1 {
-            font-size: 1.65rem;
+            font-size: 1.15rem;
             font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 4px;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
         }
 
         .top-navbar .title-area p {
             color: var(--text-muted);
-            font-size: 0.92rem;
+            font-size: 0.78rem;
         }
 
         .top-actions {
             display: flex;
             align-items: center;
-            gap: 1.25rem;
+            gap: 0.75rem;
         }
 
         .status-pill {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            padding: 0.45rem 0.95rem;
-            border-radius: 9999px;
-            font-size: 0.82rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            gap: 6px;
         }
 
         .status-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             background: #10b981;
             border-radius: 50%;
             display: inline-block;
@@ -197,513 +201,425 @@
 
         .notif-bell {
             position: relative;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #475569;
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s ease;
+            font-size: 0.82rem;
         }
-
-        .notif-bell:hover {
-            border-color: var(--brand-green);
-            color: var(--brand-green);
-        }
+        .notif-bell:hover { border-color: var(--brand); color: var(--brand); }
 
         .notif-badge {
             position: absolute;
-            top: -2px;
-            right: -2px;
+            top: -4px;
+            right: -4px;
             background: #ef4444;
             color: white;
-            font-size: 0.65rem;
-            width: 17px;
-            height: 17px;
-            border-radius: 50%;
+            font-size: 0.6rem;
+            min-width: 15px;
+            height: 15px;
+            padding: 0 3px;
+            border-radius: 9999px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            border: 2px solid #ffffff;
         }
 
         .admin-profile-pill {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            padding: 0.35rem 0.85rem 0.35rem 0.35rem;
-            border-radius: 9999px;
-            cursor: pointer;
+            gap: 7px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 0.25rem 0.65rem 0.25rem 0.3rem;
+            border-radius: 6px;
             text-decoration: none;
-            color: inherit;
+            color: var(--text-primary);
+            font-size: 0.78rem;
+            font-weight: 700;
         }
 
         .admin-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #059669;
+            width: 22px;
+            height: 22px;
+            border-radius: 4px;
+            background: var(--brand);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.72rem;
         }
 
-        /* 4 MAIN STATS CARDS */
-        .stats-grid {
+        /* UNIFIED COMPACT KPI & TREASURY STRIP (5 CARDS IN 1 ROW) */
+        .kpi-strip {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 2rem;
+            grid-template-columns: 1.55fr repeat(4, 1fr);
+            gap: 0.85rem;
+            margin-bottom: 1rem;
         }
 
-        .stat-card {
-            border-radius: 1rem;
-            padding: 1.5rem;
-            color: white;
-            position: relative;
-            overflow: hidden;
+        .kpi-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 140px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
         }
 
-        .stat-card.blue { background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); }
-        .stat-card.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-        .stat-card.purple { background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); }
-        .stat-card.orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .kpi-card.treasury {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 70%, #064e3b 100%);
+            border-color: #1e293b;
+            color: #ffffff;
+        }
 
-        .stat-card-header {
+        .kpi-top {
             display: flex;
             align-items: center;
-            gap: 15px;
+            justify-content: space-between;
+            margin-bottom: 0.4rem;
         }
 
-        .stat-icon-circle {
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.35rem;
-        }
-
-        .stat-val-num { font-size: 2rem; font-weight: 800; line-height: 1; }
-        .stat-val-lbl { font-size: 0.95rem; font-weight: 500; opacity: 0.9; margin-top: 4px; }
-
-        .stat-btn {
-            align-self: flex-end;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(4px);
-            padding: 0.4rem 0.9rem;
-            border-radius: 9999px;
-            color: white;
-            font-size: 0.78rem;
+        .kpi-label {
+            font-size: 0.7rem;
             font-weight: 700;
-            text-decoration: none;
-            display: inline-flex;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            display: flex;
             align-items: center;
             gap: 5px;
-            transition: all 0.15s ease;
         }
-        .stat-btn:hover { background: rgba(255, 255, 255, 0.35); }
+        .kpi-card.treasury .kpi-label { color: #6ee7b7; }
 
-        /* MIDDLE 3 COLUMNS */
-        .mid-grid {
+        .kpi-link {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--brand);
+        }
+        .kpi-card.treasury .kpi-link { color: #34d399; }
+        .kpi-link:hover { text-decoration: underline; }
+
+        .kpi-value {
+            font-size: 1.45rem;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -0.4px;
+            font-variant-numeric: tabular-nums;
+        }
+        .kpi-card.treasury .kpi-value { font-size: 1.6rem; color: #ffffff; }
+
+        .kpi-meta {
+            margin-top: 0.45rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .kpi-card.treasury .kpi-meta { color: #cbd5e1; }
+
+        /* MAIN DENSE 3-COLUMN WORKSPACE */
+        .workspace-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 1.25rem;
-            margin-bottom: 2rem;
+            grid-template-columns: 1.35fr 1fr 1fr;
+            gap: 0.85rem;
+            margin-bottom: 1rem;
         }
 
         .panel-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            box-shadow: var(--card-shadow);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
         }
 
         .panel-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.25rem;
-            padding-bottom: 0.85rem;
+            margin-bottom: 0.65rem;
+            padding-bottom: 0.5rem;
             border-bottom: 1px solid #f1f5f9;
         }
 
-        .panel-header-left { display: flex; align-items: center; gap: 10px; }
-        .panel-title { font-size: 1rem; font-weight: 800; color: #0f172a; }
-        .panel-sub { font-size: 0.78rem; color: var(--text-muted); }
-
-        .btn-pill-manage {
-            background: #ecfdf5;
-            color: var(--brand-green);
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-decoration: none;
-            display: inline-flex;
+        .panel-title {
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
 
-        .btn-pill-purple {
-            background: #f5f3ff;
-            color: #7c3aed;
-            padding: 0.35rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
+        .pill-btn {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.2rem 0.55rem;
+            border-radius: 5px;
+            font-size: 0.68rem;
             font-weight: 700;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+        }
+        .pill-btn:hover { border-color: var(--brand); color: var(--brand); }
+
+        /* COMPACT DATA TABLE */
+        .compact-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .compact-table th {
+            text-align: left;
+            font-size: 0.66rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 0.35rem 0.4rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .compact-table td {
+            padding: 0.45rem 0.4rem;
+            border-bottom: 1px solid #f8fafc;
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+        .compact-table tr:last-child td { border-bottom: none; }
+
+        .badge-paid {
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.64rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.64rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
         }
 
-        .list-row-item {
+        /* COMPACT LIST ROWS */
+        .list-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.85rem 0;
+            padding: 0.42rem 0;
             border-bottom: 1px solid #f8fafc;
+            font-size: 0.76rem;
         }
-        .list-row-item:last-child { border-bottom: none; }
+        .list-row:last-child { border-bottom: none; }
 
-        .item-info { display: flex; align-items: center; gap: 12px; }
-        .item-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+        .row-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .row-dot-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 0.72rem;
+            flex-shrink: 0;
         }
-        .item-name { font-weight: 700; font-size: 0.9rem; color: #1e293b; }
-        .item-sub { font-size: 0.75rem; color: var(--text-muted); }
+        .row-title { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .row-sub { font-size: 0.68rem; color: var(--text-muted); }
 
-        .row-action-btn {
-            background: #ecfdf5;
-            color: var(--brand-green);
-            border: 1px solid #d1fae5;
-            padding: 0.35rem 0.65rem;
-            border-radius: 6px;
-            font-size: 0.75rem;
+        .mini-action {
+            padding: 0.18rem 0.45rem;
+            border-radius: 4px;
+            font-size: 0.68rem;
             font-weight: 700;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+            background: var(--brand-soft);
+            color: var(--brand);
         }
 
-        .user-avatar-mini {
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-
-        /* MARKETPLACE OVERVIEW SECTION */
-        .bottom-grid {
+        /* BOTTOM ANALYTICS & SYSTEM ROW */
+        .bottom-workspace {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.25rem;
-            margin-bottom: 1.5rem;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 0.85rem;
+            margin-bottom: 1rem;
         }
 
-        .chart-container-wrapper {
+        .chart-box {
+            height: 145px;
             position: relative;
-            height: 220px;
-            margin-top: 1rem;
         }
 
-        .circles-row {
+        .quick-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .quick-tile {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 0.55rem 0.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
-            justify-content: space-around;
-            margin-top: 1.25rem;
-            padding-top: 1.25rem;
+            gap: 7px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            transition: border-color 0.12s ease;
+        }
+        .quick-tile:hover { border-color: var(--brand); background: #ffffff; }
+        .quick-tile i { font-size: 0.8rem; }
+
+        .micro-stats-bar {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
             border-top: 1px solid #f1f5f9;
         }
 
-        .circle-metric {
+        .micro-stat {
             text-align: center;
             text-decoration: none;
-            transition: transform 0.15s ease;
-        }
-
-        .circle-metric:hover {
-            transform: translateY(-2px);
-        }
-
-        .circle-ring {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            border: 4px solid #10b981;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 8px auto;
-        }
-        .circle-ring.blue { border-color: #3b82f6; }
-        .circle-ring.purple { border-color: #8b5cf6; }
-        .circle-ring.orange { border-color: #f97316; background: #fff7ed; }
-
-        .circle-val { font-size: 1rem; font-weight: 800; color: #0f172a; }
-        .circle-lbl { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
-
-        /* QUICK ACTIONS */
-        .quick-actions-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .quick-action-btn {
+            padding: 0.35rem;
+            border-radius: 6px;
             background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.85rem;
-            padding: 1.1rem 0.5rem;
-            text-align: center;
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.15s ease;
         }
-        .quick-action-btn:hover {
-            transform: translateY(-2px);
-            border-color: var(--brand-green);
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+        .micro-stat:hover { background: #f1f5f9; }
+        .micro-stat-num { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); }
+        .micro-stat-lbl { font-size: 0.65rem; font-weight: 600; color: var(--text-muted); }
 
-        .qa-icon-wrap {
-            width: 38px;
-            height: 38px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
+        @media (max-width: 1200px) {
+            .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+            .workspace-grid { grid-template-columns: 1fr; }
+            .bottom-workspace { grid-template-columns: 1fr; }
         }
-        .quick-action-btn span { font-size: 0.72rem; font-weight: 700; color: #334155; }
-
-        /* MINI BOTTOM 4 STATS */
-        .bottom-mini-stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 2rem;
-        }
-
-        .mini-stat-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 1rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: var(--card-shadow);
-        }
-
-        .mini-stat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .mini-stat-val { font-size: 1.35rem; font-weight: 800; color: #0f172a; line-height: 1; }
-        .mini-stat-lbl { font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-top: 4px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. LEFT SIDEBAR -->
+    <!-- COMPACT LEFT SIDEBAR -->
     <aside class="sidebar">
         <div class="brand-header">
             <div class="brand-logo-icon"><i class="fa-solid fa-bag-shopping"></i></div>
             <div>
                 <div class="brand-title">Naija<span>Sale</span></div>
-                <div class="brand-sub">Buy &bull; Sell &bull; Trade</div>
+                <div class="brand-sub">Executive Console</div>
             </div>
         </div>
 
         <a href="/portal-management-99/" class="nav-item-active-dashboard">
-            <i class="fa-solid fa-house"></i>
-            Dashboard
+            <i class="fa-solid fa-chart-line"></i>
+            Overview
         </a>
 
-        <!-- AUTHENTICATION -->
-        <div class="sidebar-section-title">Authentication</div>
+        <div class="sidebar-section-title">Monetization & Billing</div>
         <ul class="sidebar-menu">
             <li>
-                <a href="/portal-management-99/auth/group/">
-                    <div><i class="fa-solid fa-users nav-icon"></i> Groups</div>
+                <a href="/portal-management-99/marketplace/paymenttransaction/">
+                    <div><i class="fa-solid fa-receipt nav-icon" style="color: #059669;"></i> Payment Ledger</div>
                     <i class="fa-solid fa-chevron-right chevron"></i>
                 </a>
             </li>
             <li>
-                <a href="/portal-management-99/auth/user/">
-                    <div><i class="fa-solid fa-user nav-icon"></i> Users</div>
+                <a href="/portal-management-99/marketplace/promotionplan/">
+                    <div><i class="fa-solid fa-rocket nav-icon" style="color: #d97706;"></i> Boost Plans</div>
                     <i class="fa-solid fa-chevron-right chevron"></i>
                 </a>
             </li>
         </ul>
 
-        <!-- AXES -->
-        <div class="sidebar-section-title">AXES Security</div>
-        <ul class="sidebar-menu">
-            <li>
-                <a href="/portal-management-99/axes/accessattempt/">
-                    <div><i class="fa-solid fa-shield-halved nav-icon"></i> Access Attempts</div>
-                    <i class="fa-solid fa-chevron-right chevron"></i>
-                </a>
-            </li>
-            <li>
-                <a href="/portal-management-99/axes/accessfailurelog/">
-                    <div><i class="fa-solid fa-triangle-exclamation nav-icon"></i> Access Failures</div>
-                    <i class="fa-solid fa-chevron-right chevron"></i>
-                </a>
-            </li>
-            <li>
-                <a href="/portal-management-99/axes/accesslog/">
-                    <div><i class="fa-solid fa-list-check nav-icon"></i> Access Logs</div>
-                    <i class="fa-solid fa-chevron-right chevron"></i>
-                </a>
-            </li>
-        </ul>
-
-        <!-- MARKETPLACE -->
         <div class="sidebar-section-title">Marketplace</div>
         <ul class="sidebar-menu">
-            <li><a href="/portal-management-99/marketplace/area/"><div><i class="fa-solid fa-map-location-dot nav-icon"></i> Areas</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/listing/"><div><i class="fa-solid fa-box-open nav-icon"></i> Listings</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/sellerprofile/"><div><i class="fa-solid fa-address-card nav-icon"></i> Seller Profiles</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/reportedlisting/"><div><i class="fa-solid fa-flag nav-icon"></i> Fraud Reports</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
             <li><a href="/portal-management-99/marketplace/category/"><div><i class="fa-solid fa-tags nav-icon"></i> Categories</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/subcategory/"><div><i class="fa-solid fa-folder-tree nav-icon"></i> Sub-Categories</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/state/"><div><i class="fa-solid fa-earth-africa nav-icon"></i> States</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/area/"><div><i class="fa-solid fa-map-location-dot nav-icon"></i> Areas</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
             <li><a href="/portal-management-99/marketplace/conversation/"><div><i class="fa-solid fa-comments nav-icon"></i> Conversations</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/favorite/"><div><i class="fa-solid fa-star nav-icon"></i> Favorites</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/sellerreview/"><div><i class="fa-solid fa-pen-to-square nav-icon"></i> Seller Reviews</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
             <li><a href="/portal-management-99/marketplace/staticpage/"><div><i class="fa-solid fa-file-lines nav-icon"></i> Custom Pages</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
             <li><a href="/portal-management-99/marketplace/faq/"><div><i class="fa-solid fa-circle-question nav-icon"></i> FAQs</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/favorite/"><div><i class="fa-solid fa-star nav-icon"></i> Favorites</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/sitesetting/"><div><i class="fa-solid fa-gear nav-icon"></i> Global Site Settings</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/listing/"><div><i class="fa-solid fa-box-open nav-icon"></i> Listings</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/reportedlisting/"><div><i class="fa-solid fa-flag nav-icon"></i> Reported Listings</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/sellerprofile/"><div><i class="fa-solid fa-address-card nav-icon"></i> Seller Profiles</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/sellerreview/"><div><i class="fa-solid fa-pen-to-square nav-icon"></i> Seller Reviews</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/sitesetting/"><div><i class="fa-solid fa-gear nav-icon"></i> Site Settings</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
         </ul>
 
-        <!-- AUDIT & OTHER -->
-        <div class="sidebar-section-title">Audit & Other</div>
+        <div class="sidebar-section-title">Users & Security</div>
         <ul class="sidebar-menu">
-            <li><a href="/portal-management-99/marketplace/staffactivitylog/"><div><i class="fa-solid fa-clipboard-list nav-icon"></i> Staff Activity Audit Logs</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/auth/user/"><div><i class="fa-solid fa-user nav-icon"></i> Users</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/auth/group/"><div><i class="fa-solid fa-users nav-icon"></i> Groups</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
             <li><a href="/portal-management-99/marketplace/staffprofile/"><div><i class="fa-solid fa-id-badge nav-icon"></i> Staff Profiles</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/state/"><div><i class="fa-solid fa-earth-africa nav-icon"></i> States</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
-            <li><a href="/portal-management-99/marketplace/subcategory/"><div><i class="fa-solid fa-folder-tree nav-icon"></i> Sub-Categories</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/marketplace/staffactivitylog/"><div><i class="fa-solid fa-clipboard-list nav-icon"></i> Audit Logs</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/axes/accessattempt/"><div><i class="fa-solid fa-shield-halved nav-icon"></i> AXES Attempts</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/axes/accessfailurelog/"><div><i class="fa-solid fa-triangle-exclamation nav-icon"></i> AXES Failures</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
+            <li><a href="/portal-management-99/axes/accesslog/"><div><i class="fa-solid fa-list-check nav-icon"></i> AXES Logs</div><i class="fa-solid fa-chevron-right chevron"></i></a></li>
         </ul>
 
         <div class="sidebar-footer">
-            <i class="fa-solid fa-crown"></i> NaijaSale Admin Panel v1.0
+            <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> NaijaSale v1.0 &bull; Live
         </div>
     </aside>
 
-    <!-- 2. MAIN BODY -->
+    <!-- MAIN CONTENT -->
     <main class="main-content">
-        <!-- TOP HEADER -->
+
+        <!-- SLIM TOP BAR -->
         <div class="top-navbar">
             <div class="title-area">
-                <h1>Admin Dashboard</h1>
-                <p>Welcome back, {{ request.user.username|capfirst }}! Here's what's happening on NaijaSale.</p>
+                <h1>Operations & Revenue Overview</h1>
+                <p>Welcome back, {{ request.user.username|capfirst }}</p>
             </div>
             <div class="top-actions">
-                <!-- DYNAMIC REAL-TIME ONLINE VISITOR PILL -->
-                <div class="status-pill" title="Real-time visitors active in the last 5 minutes">
-                    <span class="status-dot"></span> <span id="liveOnlineCounter">{{ online_count }}</span>&nbsp;Online Now
+                <div class="status-pill">
+                    <span class="status-dot"></span> <span id="liveOnlineCounter">{{ online_count }}</span>&nbsp;Online
                 </div>
 
-                <!-- NOTIFICATION BELL & INTERACTIVE DROPDOWN -->
+                <!-- NOTIFICATION BELL -->
                 <div style="position: relative;">
                     <div class="notif-bell" id="notifBellBtn" onclick="toggleNotifDropdown()">
                         <i class="fa-regular fa-bell"></i>
                         <span class="notif-badge" id="notifBadgeCounter" style="{% if total_notifications == 0 %}display:none;{% endif %}">{{ total_notifications }}</span>
                     </div>
 
-                    <!-- DROPDOWN CONTENT -->
-                    <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 48px; width: 320px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 999; overflow: hidden;">
-                        <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">Action Required</span>
-                            <span id="dropdownPendingPill" style="background: #ef4444; color: white; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
+                    <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 38px; width: 280px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); z-index: 999; overflow: hidden;">
+                        <div style="padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 800; font-size: 0.75rem;">Action Queue</span>
+                            <span id="dropdownPendingPill" style="background: #ef4444; color: white; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
                         </div>
-
-                        <div style="padding: 8px 0;">
-                            <!-- PENDING LISTINGS -->
-                            <a href="/portal-management-99/marketplace/listing/?status__exact=pending" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #fff7ed; color: #f97316; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
-                                        <i class="fa-solid fa-hourglass-half"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">Pending Ads</div>
-                                        <div style="font-size: 0.72rem; color: #64748b;">Awaiting review & approval</div>
-                                    </div>
-                                </div>
-                                <span id="pendingListingsCounter" style="font-weight: 800; font-size: 0.85rem; color: #f97316;">{{ pending_listings_count }}</span>
+                        <div>
+                            <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="list-row" style="padding: 8px 12px; text-decoration: none; color: inherit;">
+                                <span>Pending Ads</span>
+                                <strong id="pendingListingsCounter" style="color: #ea580c;">{{ pending_listings_count }}</strong>
                             </a>
-
-                            <!-- PENDING KYC -->
-                            <a href="/portal-management-99/marketplace/sellerprofile/?verification_status__exact=pending" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
-                                        <i class="fa-solid fa-id-card"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">NIN Verifications</div>
-                                        <div style="font-size: 0.72rem; color: #64748b;">Seller identity approvals</div>
-                                    </div>
-                                </div>
-                                <span id="pendingKycCounter" style="font-weight: 800; font-size: 0.85rem; color: #2563eb;">{{ pending_kyc_count }}</span>
+                            <a href="/portal-management-99/marketplace/sellerprofile/?verification_status__exact=pending" class="list-row" style="padding: 8px 12px; text-decoration: none; color: inherit;">
+                                <span>NIN Verifications</span>
+                                <strong id="pendingKycCounter" style="color: #2563eb;">{{ pending_kyc_count }}</strong>
                             </a>
-
-                            <!-- UNRESOLVED SAFETY REPORTS -->
-                            <a href="/portal-management-99/marketplace/reportedlisting/?is_resolved__exact=0" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: #fef2f2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
-                                        <i class="fa-solid fa-flag"></i>
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 0.82rem; color: #1e293b;">Fraud Reports</div>
-                                        <div style="font-size: 0.72rem; color: #64748b;">User dispute complaints</div>
-                                    </div>
-                                </div>
-                                <span id="unresolvedReportsCounter" style="font-weight: 800; font-size: 0.85rem; color: #ef4444;">{{ unresolved_reports_count }}</span>
+                            <a href="/portal-management-99/marketplace/reportedlisting/?is_resolved__exact=0" class="list-row" style="padding: 8px 12px; text-decoration: none; color: inherit;">
+                                <span>Fraud Reports</span>
+                                <strong id="unresolvedReportsCounter" style="color: #ef4444;">{{ unresolved_reports_count }}</strong>
                             </a>
                         </div>
                     </div>
@@ -711,350 +627,286 @@
 
                 <a href="/portal-management-99/auth/user/{{ request.user.id }}/change/" class="admin-profile-pill">
                     <div class="admin-avatar">{{ request.user.username|make_list|first|upper }}</div>
-                    <span style="font-size: 0.85rem; font-weight: 700;">{{ request.user.username }}</span>
-                    <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: #94a3b8;"></i>
+                    <span>{{ request.user.username }}</span>
                 </a>
             </div>
         </div>
 
-        <!-- 4 MAIN STAT CARDS -->
-        <div class="stats-grid">
-            <div class="stat-card blue">
-                <div class="stat-card-header">
-                    <div class="stat-icon-circle"><i class="fa-solid fa-users"></i></div>
-                    <div>
-                        <div class="stat-val-num">{{ total_groups }}</div>
-                        <div class="stat-val-lbl">Groups</div>
-                    </div>
+        <!-- ROW 1: COMPACT 5-CARD EXECUTIVE KPI & TREASURY STRIP -->
+        <div class="kpi-strip">
+            <!-- Treasury Balance Card -->
+            <div class="kpi-card treasury">
+                <div class="kpi-top">
+                    <span class="kpi-label"><i class="fa-solid fa-building-columns"></i> Available Balance (NGN)</span>
+                    <a href="/portal-management-99/marketplace/paymenttransaction/" class="kpi-link">Ledger &rarr;</a>
                 </div>
-                <a href="/portal-management-99/auth/group/" class="stat-btn">Manage <i class="fa-solid fa-arrow-right"></i></a>
+                <div class="kpi-value">₦<span id="liveRevenueBalance">{{ total_revenue|floatformat:2|intcomma }}</span></div>
+                <div class="kpi-meta">
+                    <span>Today: <strong>₦{{ today_revenue|floatformat:2|intcomma }}</strong></span>
+                    <span>Paid: <strong>{{ successful_tx_count }}</strong> &bull; Pending: <strong>{{ pending_tx_count }}</strong></span>
+                </div>
             </div>
 
-            <div class="stat-card green">
-                <div class="stat-card-header">
-                    <div class="stat-icon-circle"><i class="fa-solid fa-user-check"></i></div>
-                    <div>
-                        <div class="stat-val-num">{{ total_users }}</div>
-                        <div class="stat-val-lbl">Users</div>
-                    </div>
+            <!-- Total Listings -->
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-label"><i class="fa-solid fa-box-open" style="color: #059669;"></i> Total Listings</span>
+                    <a href="/portal-management-99/marketplace/listing/" class="kpi-link">All &rarr;</a>
                 </div>
-                <a href="/portal-management-99/auth/user/" class="stat-btn">Manage <i class="fa-solid fa-arrow-right"></i></a>
+                <div class="kpi-value">{{ total_listings }}</div>
+                <div class="kpi-meta">
+                    <span>Pending Review: <strong id="pendingListingsRingVal" style="color: #ea580c;">{{ pending_listings_count }}</strong></span>
+                    <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="kpi-link">Review</a>
+                </div>
             </div>
 
-            <div class="stat-card purple">
-                <div class="stat-card-header">
-                    <div class="stat-icon-circle"><i class="fa-solid fa-shield-halved"></i></div>
-                    <div>
-                        <div class="stat-val-num">{{ total_axes_attempts }}</div>
-                        <div class="stat-val-lbl">Access Attempts</div>
-                    </div>
+            <!-- Registered Users -->
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-label"><i class="fa-solid fa-users" style="color: #2563eb;"></i> Registered Users</span>
+                    <a href="/portal-management-99/auth/user/" class="kpi-link">Manage &rarr;</a>
                 </div>
-                <a href="/portal-management-99/axes/accessattempt/" class="stat-btn">View <i class="fa-solid fa-arrow-right"></i></a>
+                <div class="kpi-value">{{ total_users }}</div>
+                <div class="kpi-meta">
+                    <span>Groups: <strong>{{ total_groups }}</strong></span>
+                    <span>KYC Pending: <strong style="color: #2563eb;">{{ pending_kyc_count }}</strong></span>
+                </div>
             </div>
 
-            <div class="stat-card orange">
-                <div class="stat-card-header">
-                    <div class="stat-icon-circle"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div>
-                        <div class="stat-val-num">{{ total_axes_failures }}</div>
-                        <div class="stat-val-lbl">Access Failures</div>
-                    </div>
+            <!-- Total Ad Views -->
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-label"><i class="fa-solid fa-eye" style="color: #7c3aed;"></i> Marketplace Views</span>
+                    <a href="/portal-management-99/marketplace/conversation/" class="kpi-link">Chats &rarr;</a>
                 </div>
-                <a href="/portal-management-99/axes/accessfailurelog/" class="stat-btn">View <i class="fa-solid fa-arrow-right"></i></a>
+                <div class="kpi-value">{{ total_views|intcomma }}</div>
+                <div class="kpi-meta">
+                    <span>Chats: <strong>{{ total_conversations }}</strong></span>
+                    <span>Saves: <strong>{{ total_favorites }}</strong></span>
+                </div>
+            </div>
+
+            <!-- Security & Reports -->
+            <div class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-label"><i class="fa-solid fa-shield-halved" style="color: #ea580c;"></i> Security & AXES</span>
+                    <a href="/portal-management-99/axes/accesslog/" class="kpi-link">Logs &rarr;</a>
+                </div>
+                <div class="kpi-value">{{ total_axes_attempts }}</div>
+                <div class="kpi-meta">
+                    <span>Failures: <strong style="color: #ef4444;">{{ total_axes_failures }}</strong></span>
+                    <span>Reports: <strong>{{ unresolved_reports_count }}</strong></span>
+                </div>
             </div>
         </div>
 
-        <!-- MIDDLE 3 PANELS -->
-        <div class="mid-grid">
-            <!-- 1. AUTHENTICATION & AUTHORIZATION -->
+        <!-- ROW 2: LIVE TRANSACTIONS + RECENT USERS + TOP CATEGORIES & ACCESS -->
+        <div class="workspace-grid">
+
+            <!-- 1. RECENT BOOST PAYMENTS TABLE -->
             <div class="panel-card">
                 <div class="panel-header">
-                    <div class="panel-header-left">
-                        <i class="fa-solid fa-shield-cat" style="color: #10b981; font-size: 1.25rem;"></i>
-                        <div>
-                            <div class="panel-title">Authentication & Authorization</div>
-                            <div class="panel-sub">Manage user groups and permissions</div>
-                        </div>
-                    </div>
-                    <a href="/portal-management-99/auth/user/" class="btn-pill-manage">Manage All <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="item-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fa-solid fa-users"></i></div>
-                        <div>
-                            <div class="item-name">Groups</div>
-                            <div class="item-sub">{{ total_groups }} groups available</div>
-                        </div>
+                    <div class="panel-title">
+                        <i class="fa-solid fa-receipt" style="color: #059669;"></i> Recent Boost Transactions
                     </div>
                     <div style="display: flex; gap: 6px;">
-                        <a href="/portal-management-99/auth/group/add/" class="row-action-btn"><i class="fa-solid fa-plus"></i> Add</a>
-                        <a href="/portal-management-99/auth/group/" class="row-action-btn" style="background: #f1f5f9; color: #475569; border-color: #e2e8f0;"><i class="fa-solid fa-pen"></i></a>
+                        <a href="/portal-management-99/marketplace/promotionplan/" class="pill-btn">Edit Plans</a>
+                        <a href="/portal-management-99/marketplace/paymenttransaction/" class="pill-btn">View All</a>
                     </div>
                 </div>
 
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="item-icon" style="background: #eff6ff; color: #2563eb;"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <div class="item-name">Users</div>
-                            <div class="item-sub">{{ total_users }} registered users</div>
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 6px;">
-                        <a href="/portal-management-99/auth/user/add/" class="row-action-btn"><i class="fa-solid fa-plus"></i> Add</a>
-                        <a href="/portal-management-99/auth/user/" class="row-action-btn" style="background: #f1f5f9; color: #475569; border-color: #e2e8f0;"><i class="fa-solid fa-pen"></i></a>
-                    </div>
-                </div>
+                <table class="compact-table">
+                    <thead>
+                        <tr>
+                            <th>Ref / User</th>
+                            <th>Ad / Plan</th>
+                            <th>Gateway</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in recent_transactions %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; font-size: 0.72rem;">{{ tx.reference }}</div>
+                                <div style="font-size: 0.66rem; color: #64748b;">{{ tx.user.username }}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ tx.listing.title }}</div>
+                                <div style="font-size: 0.66rem; color: #64748b;">{{ tx.plan.name|default:"Boost" }}</div>
+                            </td>
+                            <td style="font-size: 0.68rem; font-weight: 700; color: #475569;">{{ tx.gateway }}</td>
+                            <td style="font-weight: 800; color: #0f172a;">₦{{ tx.amount_paid|intcomma }}</td>
+                            <td>
+                                {% if tx.status == 'SUCCESSFUL' %}
+                                    <span class="badge-paid">PAID</span>
+                                {% else %}
+                                    <span class="badge-pending">{{ tx.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 1.5rem 0; color: #94a3b8;">
+                                No payment transactions recorded yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
 
-            <!-- 2. AXES SECURITY -->
+            <!-- 2. RECENT REGISTERED USERS -->
             <div class="panel-card">
                 <div class="panel-header">
-                    <div class="panel-header-left">
-                        <i class="fa-solid fa-lock" style="color: #8b5cf6; font-size: 1.25rem;"></i>
-                        <div>
-                            <div class="panel-title">AXES Security</div>
-                            <div class="panel-sub">Monitor security issues</div>
-                        </div>
+                    <div class="panel-title">
+                        <i class="fa-solid fa-user-plus" style="color: #2563eb;"></i> Recent Users
                     </div>
-                    <a href="/portal-management-99/axes/accesslog/" class="btn-pill-purple">View Details <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="item-icon" style="background: #faf5ff; color: #8b5cf6;"><i class="fa-solid fa-bolt"></i></div>
-                        <div class="item-name">Access Attempts</div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-weight: 800; color: #6366f1;">{{ total_axes_attempts }}</span>
-                        <a href="/portal-management-99/axes/accessattempt/" style="color: #94a3b8;"><i class="fa-regular fa-eye"></i></a>
-                    </div>
-                </div>
-
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="item-icon" style="background: #fef2f2; color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <div class="item-name">Access Failures</div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-weight: 800; color: #ef4444;">{{ total_axes_failures }}</span>
-                        <a href="/portal-management-99/axes/accessfailurelog/" style="color: #94a3b8;"><i class="fa-regular fa-eye"></i></a>
-                    </div>
-                </div>
-
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="item-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fa-solid fa-list-check"></i></div>
-                        <div class="item-name">Access Logs</div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-weight: 800; color: #3b82f6;">{{ total_axes_logs }}</span>
-                        <a href="/portal-management-99/axes/accesslog/" style="color: #94a3b8;"><i class="fa-regular fa-eye"></i></a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. RECENT USERS -->
-            <div class="panel-card">
-                <div class="panel-header">
-                    <div class="panel-header-left">
-                        <i class="fa-solid fa-user-group" style="color: #10b981; font-size: 1.25rem;"></i>
-                        <div class="panel-title">Recent Users</div>
-                    </div>
-                    <a href="/portal-management-99/auth/user/" class="btn-pill-manage">View All <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="/portal-management-99/auth/user/" class="pill-btn">All Users</a>
                 </div>
 
                 {% for u in recent_users %}
-                <div class="list-row-item">
-                    <div class="item-info">
-                        <div class="user-avatar-mini"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <div class="item-name" style="font-size: 0.82rem; font-weight: 700;">
+                <div class="list-row">
+                    <div class="row-left">
+                        <div class="row-dot-icon" style="background: #eff6ff; color: #2563eb;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div style="min-width: 0;">
+                            <div class="row-title">
                                 <a href="/portal-management-99/auth/user/{{ u.id }}/change/" style="color: inherit; text-decoration: none;">
                                     {{ u.email|default:u.username }}
                                 </a>
                                 {% if u.seller_profile.is_nin_verified %}
-                                <i class="fa-solid fa-circle-check" style="color: #0284c7; font-size: 0.75rem;"></i>
+                                    <i class="fa-solid fa-circle-check" style="color: #0284c7; font-size: 0.68rem;"></i>
                                 {% endif %}
                             </div>
-                            <div class="item-sub">Seller</div>
+                            <div class="row-sub">Joined {{ u.date_joined|timesince }} ago</div>
                         </div>
                     </div>
-                    <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">
-                        {{ u.date_joined|timesince }} ago
-                    </div>
+                    <a href="/portal-management-99/auth/user/{{ u.id }}/change/" class="mini-action">Edit</a>
                 </div>
                 {% empty %}
-                <p style="font-size: 0.8rem; color: #94a3b8; text-align: center; padding: 1rem;">No registered users yet.</p>
+                <p style="color: #94a3b8; text-align: center; padding: 1rem;">No users yet.</p>
                 {% endfor %}
             </div>
-        </div>
 
-        <!-- BOTTOM GRID (CHART & QUICK ACTIONS) -->
-        <div class="bottom-grid">
-            <!-- MARKETPLACE OVERVIEW WITH REAL CHART -->
+            <!-- 3. TOP CATEGORIES & SECURITY SUMMARY -->
             <div class="panel-card">
                 <div class="panel-header">
-                    <div>
-                        <div class="panel-title">Marketplace Overview</div>
-                        <div class="panel-sub">Manage your marketplace features</div>
+                    <div class="panel-title">
+                        <i class="fa-solid fa-trophy" style="color: #d97706;"></i> Top Categories
                     </div>
-                    <div style="background: #f1f5f9; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; color: #475569;">
-                        Last 30 Days <i class="fa-solid fa-chevron-down" style="margin-left: 4px;"></i>
-                    </div>
+                    <a href="/portal-management-99/marketplace/category/" class="pill-btn">Manage</a>
                 </div>
 
-                <div class="chart-container-wrapper">
+                {% for cat in top_categories %}
+                <div class="list-row">
+                    <div class="row-left">
+                        <div class="row-dot-icon" style="background: #ecfdf5; color: #059669;">
+                            <i class="fa-solid fa-folder"></i>
+                        </div>
+                        <div class="row-title">{{ cat.name }}</div>
+                    </div>
+                    <span style="background: #f1f5f9; color: #0f172a; font-weight: 800; font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px;">
+                        {{ cat.listing_count }} ads
+                    </span>
+                </div>
+                {% empty %}
+                <p style="color: #94a3b8; text-align: center; padding: 1rem;">No categories yet.</p>
+                {% endfor %}
+
+                <div style="margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b;">
+                    <span>AXES Logs: <strong style="color: #0f172a;">{{ total_axes_logs }}</strong></span>
+                    <a href="/portal-management-99/axes/accesslog/" class="kpi-link">Inspect Security &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROW 3: TRAFFIC CHART + QUICK ACTIONS & DIRECTORY COUNTS -->
+        <div class="bottom-workspace">
+            <!-- Traffic Overview -->
+            <div class="panel-card">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-chart-area" style="color: #10b981;"></i> Weekly Traffic Pulse
+                    </div>
+                    <span style="font-size: 0.68rem; color: #64748b; font-weight: 700;">Last 7 Days</span>
+                </div>
+                <div class="chart-box">
                     <canvas id="marketViewsChart"></canvas>
                 </div>
-
-                <div class="circles-row">
-                    <!-- ALL LISTINGS -->
-                    <a href="/portal-management-99/marketplace/listing/" class="circle-metric">
-                        <div class="circle-ring">
-                            <i class="fa-solid fa-box-open" style="color: #10b981; font-size: 0.85rem; margin-bottom: 2px;"></i>
-                            <div class="circle-val">{{ total_listings }}</div>
-                        </div>
-                        <div class="circle-lbl">Total Listings</div>
-                    </a>
-
-                    <!-- PENDING APPROVAL QUEUE -->
-                    <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="circle-metric">
-                        <div class="circle-ring orange">
-                            <i class="fa-solid fa-hourglass-half" style="color: #ea580c; font-size: 0.85rem; margin-bottom: 2px;"></i>
-                            <div id="pendingListingsRingVal" class="circle-val" style="color: #ea580c;">{{ pending_listings_count }}</div>
-                        </div>
-                        <div class="circle-lbl" style="color: #ea580c; font-weight: 700;">Pending Review</div>
-                    </a>
-
-                    <!-- CONVERSATIONS -->
-                    <a href="/portal-management-99/marketplace/conversation/" class="circle-metric">
-                        <div class="circle-ring blue">
-                            <i class="fa-solid fa-comments" style="color: #3b82f6; font-size: 0.85rem; margin-bottom: 2px;"></i>
-                            <div class="circle-val">{{ total_conversations }}</div>
-                        </div>
-                        <div class="circle-lbl">Conversations</div>
-                    </a>
-
-                    <!-- FAVORITES -->
-                    <a href="/portal-management-99/marketplace/favorite/" class="circle-metric">
-                        <div class="circle-ring purple">
-                            <i class="fa-solid fa-heart" style="color: #8b5cf6; font-size: 0.85rem; margin-bottom: 2px;"></i>
-                            <div class="circle-val">{{ total_favorites }}</div>
-                        </div>
-                        <div class="circle-lbl">Favorites</div>
-                    </a>
-                </div>
             </div>
 
-            <!-- RIGHT COLUMN: QUICK ACTIONS + TOP CATEGORIES -->
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                <!-- QUICK ACTIONS -->
-                <div class="panel-card" style="padding: 1.25rem;">
-                    <div style="font-size: 0.95rem; font-weight: 800; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Quick Actions
+            <!-- Quick Actions & Directory Counts -->
+            <div class="panel-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Quick Shortcuts
+                        </div>
                     </div>
 
-                    <div class="quick-actions-grid">
-                        <a href="/portal-management-99/marketplace/category/add/" class="quick-action-btn">
-                            <div class="qa-icon-wrap" style="background: #ecfdf5; color: #10b981;"><i class="fa-solid fa-table-cells-large"></i></div>
-                            <span>Add Category</span>
+                    <div class="quick-grid">
+                        <a href="/portal-management-99/marketplace/listing/add/" class="quick-tile">
+                            <i class="fa-solid fa-plus" style="color: #2563eb;"></i> Add Listing
                         </a>
-
-                        <a href="/portal-management-99/marketplace/listing/add/" class="quick-action-btn">
-                            <div class="qa-icon-wrap" style="background: #eff6ff; color: #3b82f6;"><i class="fa-solid fa-tags"></i></div>
-                            <span>Add Listing</span>
+                        <a href="/portal-management-99/marketplace/promotionplan/add/" class="quick-tile">
+                            <i class="fa-solid fa-rocket" style="color: #d97706;"></i> Add Boost Plan
                         </a>
-
-                        <a href="/portal-management-99/marketplace/staticpage/add/" class="quick-action-btn">
-                            <div class="qa-icon-wrap" style="background: #faf5ff; color: #8b5cf6;"><i class="fa-solid fa-file-circle-plus"></i></div>
-                            <span>Add Page</span>
+                        <a href="/portal-management-99/marketplace/category/add/" class="quick-tile">
+                            <i class="fa-solid fa-tags" style="color: #059669;"></i> Add Category
                         </a>
-
-                        <a href="/portal-management-99/marketplace/favorite/add/" class="quick-action-btn">
-                            <div class="qa-icon-wrap" style="background: #fff7ed; color: #f97316;"><i class="fa-solid fa-star"></i></div>
-                            <span>Add Favorite</span>
+                        <a href="/portal-management-99/auth/user/add/" class="quick-tile">
+                            <i class="fa-solid fa-user-plus" style="color: #7c3aed;"></i> Add User
+                        </a>
+                        <a href="/portal-management-99/marketplace/staticpage/add/" class="quick-tile">
+                            <i class="fa-solid fa-file-circle-plus" style="color: #0284c7;"></i> Add Page
+                        </a>
+                        <a href="/portal-management-99/marketplace/sitesetting/" class="quick-tile">
+                            <i class="fa-solid fa-gear" style="color: #475569;"></i> Site Settings
                         </a>
                     </div>
                 </div>
 
-                <!-- TOP CATEGORIES -->
-                <div class="panel-card" style="padding: 1.25rem; flex: 1;">
-                    <div class="panel-header" style="margin-bottom: 0.85rem; padding-bottom: 0.5rem;">
-                        <div style="font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Top Categories
-                        </div>
-                        <a href="/portal-management-99/marketplace/category/" class="btn-pill-manage" style="font-size: 0.72rem;">View All <i class="fa-solid fa-arrow-right"></i></a>
-                    </div>
-
-                    {% for cat in top_categories %}
-                    <div class="list-row-item" style="padding: 0.5rem 0;">
-                        <div class="item-info">
-                            <i class="fa-solid fa-folder" style="color: #3b82f6; font-size: 0.9rem;"></i>
-                            <div class="item-name" style="font-size: 0.85rem;">{{ cat.name }}</div>
-                        </div>
-                        <span style="background: #ecfdf5; color: #059669; font-weight: 800; font-size: 0.8rem; padding: 2px 8px; border-radius: 9999px;">
-                            {{ cat.listing_count }}
-                        </span>
-                    </div>
-                    {% empty %}
-                    <p style="font-size: 0.8rem; color: #94a3b8; text-align: center; padding: 0.5rem;">No categories yet.</p>
-                    {% endfor %}
+                <!-- Micro Directory Counters -->
+                <div class="micro-stats-bar">
+                    <a href="/portal-management-99/marketplace/area/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_areas }}</div>
+                        <div class="micro-stat-lbl">Areas</div>
+                    </a>
+                    <a href="/portal-management-99/marketplace/category/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_categories }}</div>
+                        <div class="micro-stat-lbl">Categories</div>
+                    </a>
+                    <a href="/portal-management-99/marketplace/conversation/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_conversations }}</div>
+                        <div class="micro-stat-lbl">Chats</div>
+                    </a>
+                    <a href="/portal-management-99/marketplace/favorite/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_favorites }}</div>
+                        <div class="micro-stat-lbl">Favorites</div>
+                    </a>
+                    <a href="/portal-management-99/marketplace/staticpage/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_pages }}</div>
+                        <div class="micro-stat-lbl">Pages</div>
+                    </a>
+                    <a href="/portal-management-99/auth/group/" class="micro-stat">
+                        <div class="micro-stat-num">{{ total_groups }}</div>
+                        <div class="micro-stat-lbl">Groups</div>
+                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- BOTTOM MINI 4 STATS -->
-        <div class="bottom-mini-stats">
-            <div class="mini-stat-card">
-                <div class="mini-stat-icon" style="background: #ecfdf5; color: #10b981;"><i class="fa-solid fa-map-location-dot"></i></div>
-                <div>
-                    <div class="mini-stat-val">{{ total_areas }}</div>
-                    <div class="mini-stat-lbl">Areas</div>
-                </div>
-            </div>
-
-            <div class="mini-stat-card">
-                <div class="mini-stat-icon" style="background: #eff6ff; color: #3b82f6;"><i class="fa-solid fa-table-cells-large"></i></div>
-                <div>
-                    <div class="mini-stat-val">{{ total_categories }}</div>
-                    <div class="mini-stat-lbl">Categories</div>
-                </div>
-            </div>
-
-            <div class="mini-stat-card">
-                <div class="mini-stat-icon" style="background: #faf5ff; color: #8b5cf6;"><i class="fa-solid fa-comments"></i></div>
-                <div>
-                    <div class="mini-stat-val">{{ total_conversations }}</div>
-                    <div class="mini-stat-lbl">Conversations</div>
-                </div>
-            </div>
-
-            <div class="mini-stat-card">
-                <div class="mini-stat-icon" style="background: #fff7ed; color: #f97316;"><i class="fa-solid fa-file-lines"></i></div>
-                <div>
-                    <div class="mini-stat-val">{{ total_pages }}</div>
-                    <div class="mini-stat-lbl">Custom Pages</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- FOOTER -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 0; border-top: 1px solid #e2e8f0; font-size: 0.82rem; color: #64748b;">
-            <div><i class="fa-solid fa-heart" style="color: #ef4444;"></i> <strong>NaijaSale</strong> &ndash; Buy, Sell, Trade Smarter!</div>
-            <div>&copy; 2026 NaijaSale. All rights reserved.</div>
-        </div>
     </main>
 
-    <!-- NOTIFICATION DROPDOWN JAVASCRIPT & CHART -->
     <script>
         function toggleNotifDropdown() {
             const menu = document.getElementById('notifDropdownMenu');
             menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'block' : 'none';
         }
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const btn = document.getElementById('notifBellBtn');
             const menu = document.getElementById('notifDropdownMenu');
@@ -1063,7 +915,7 @@
             }
         });
 
-        // REAL-TIME AUTO-UPDATE WITHOUT PAGE REFRESH (Runs every 5 seconds)
+        // Live 5-second background polling
         function pollLiveStats() {
             fetch('/portal-management-99/live-stats-ping/')
                 .then(response => {
@@ -1071,13 +923,12 @@
                     return response.json();
                 })
                 .then(data => {
-                    // 1. Update online visitors count
-                    const onlineCounter = document.getElementById('liveOnlineCounter');
-                    if (onlineCounter && data.online_count !== undefined) {
-                        onlineCounter.innerText = data.online_count;
-                    }
+                    const revEl = document.getElementById('liveRevenueBalance');
+                    if (revEl && data.total_revenue !== undefined) revEl.innerText = data.total_revenue;
 
-                    // 2. Update bell badge count
+                    const onlineCounter = document.getElementById('liveOnlineCounter');
+                    if (onlineCounter && data.online_count !== undefined) onlineCounter.innerText = data.online_count;
+
                     const badge = document.getElementById('notifBadgeCounter');
                     const dropPill = document.getElementById('dropdownPendingPill');
                     if (badge && data.total_notifications !== undefined) {
@@ -1088,38 +939,25 @@
                         dropPill.innerText = data.total_notifications + ' Pending';
                     }
 
-                    // 3. Update pending listings counts
                     const pendingAds = document.getElementById('pendingListingsCounter');
                     const pendingRing = document.getElementById('pendingListingsRingVal');
-                    if (pendingAds && data.pending_listings !== undefined) {
-                        pendingAds.innerText = data.pending_listings;
-                    }
-                    if (pendingRing && data.pending_listings !== undefined) {
-                        pendingRing.innerText = data.pending_listings;
-                    }
+                    if (pendingAds && data.pending_listings !== undefined) pendingAds.innerText = data.pending_listings;
+                    if (pendingRing && data.pending_listings !== undefined) pendingRing.innerText = data.pending_listings;
 
-                    // 4. Update KYC & Reports counters
                     const pendingKyc = document.getElementById('pendingKycCounter');
-                    if (pendingKyc && data.pending_kyc !== undefined) {
-                        pendingKyc.innerText = data.pending_kyc;
-                    }
+                    if (pendingKyc && data.pending_kyc !== undefined) pendingKyc.innerText = data.pending_kyc;
+
                     const reports = document.getElementById('unresolvedReportsCounter');
-                    if (reports && data.unresolved_reports !== undefined) {
-                        reports.innerText = data.unresolved_reports;
-                    }
+                    if (reports && data.unresolved_reports !== undefined) reports.innerText = data.unresolved_reports;
                 })
-                .catch(err => {
-                    // Silent catch to prevent console spam
-                });
+                .catch(() => {});
         }
 
-        // Trigger polling every 5 seconds
         setInterval(pollLiveStats, 5000);
 
-        // Chart rendering
         const ctx = document.getElementById('marketViewsChart').getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 140);
+        gradient.addColorStop(0, 'rgba(16, 185, 129, 0.22)');
         gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
         new Chart(ctx, {
@@ -1130,13 +968,12 @@
                     label: 'Market Views',
                     data: [800, 1500, 1200, 2100, 1800, 3250, 2400],
                     borderColor: '#10b981',
-                    borderWidth: 3,
+                    borderWidth: 2,
                     fill: true,
                     backgroundColor: gradient,
                     tension: 0.4,
                     pointBackgroundColor: '#10b981',
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: 3
                 }]
             },
             options: {
@@ -1148,14 +985,14 @@
                         beginAtZero: true,
                         grid: { color: '#f1f5f9' },
                         ticks: {
-                            callback: function(val) { return val >= 1000 ? (val/1000) + 'K' : val; },
+                            callback: val => val >= 1000 ? (val / 1000) + 'K' : val,
                             color: '#94a3b8',
-                            font: { size: 11 }
+                            font: { size: 10 }
                         }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { size: 11 } }
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
                     }
                 }
             }

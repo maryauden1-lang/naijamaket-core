@@ -4,6 +4,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.template import loader
 from django.core.mail import EmailMultiAlternatives
 from . import views
+from . import views_monetization
 
 app_name = 'marketplace'
 
@@ -67,6 +68,12 @@ urlpatterns = [
     path('api/get-areas/', views.get_areas_for_state_view, name='get_areas'),
     path('api/get-subcategories/', views.get_subcategories_for_category_view, name='get_subcategories'),
     path('api/unread-count/', views.unread_count_api_view, name='unread_count_api'),
+
+    # Monetization, Promotion & Gateway Routes
+    path('promote/<int:listing_id>/', views_monetization.promote_listing_view, name='promote_listing'),
+    path('payment/callback/', views_monetization.payment_callback_view, name='payment_callback'),
+    path('webhook/paystack/', views_monetization.paystack_webhook, name='paystack_webhook'),
+    path('webhook/flutterwave/', views_monetization.flutterwave_webhook, name='flutterwave_webhook'),
 
     # Password Reset Pipeline
     path(

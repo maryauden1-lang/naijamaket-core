@@ -6,9 +6,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
-from django.http import HttpResponse
 
-# If you have custom sitemaps defined in marketplace:
+# Sitemaps configuration
 try:
     from marketplace.sitemaps import ListingSitemap, StaticViewSitemap
     sitemaps = {
@@ -25,11 +24,14 @@ urlpatterns = [
     # XML Sitemap for SEO & Search Console
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 
+    # Dedicated Staff & Moderation Workspace
+    path('workspace/', include('marketplace.workspace_urls', namespace='workspace')),
+
     # Marketplace core application
     path('', include('marketplace.urls', namespace='marketplace')),
 ]
 
-# Serve local media files during development
+# Serve local media & static files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

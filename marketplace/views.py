@@ -82,7 +82,7 @@ def index_view(request):
         listings_queryset = listings_queryset.filter(condition=selected_condition)
 
     # =========================================================================
-    # WEIGHTED LISTING RANKING ALGORITHM
+    # WEIGHTED LISTING RANKING ALGORITHM (WITH EXPIRY & TIER PRIORITY)
     # =========================================================================
     now = timezone.now()
     day_1 = now - timedelta(days=1)
@@ -90,9 +90,13 @@ def index_view(request):
     day_7 = now - timedelta(days=7)
     day_14 = now - timedelta(days=14)
 
+    active_boost_q = Q(is_featured=True) & (Q(featured_until__isnull=True) | Q(featured_until__gt=now))
+
     listings_queryset = listings_queryset.annotate(
         vip_score=Case(
-            When(is_featured=True, then=Value(100)),
+            When(active_boost_q & Q(promotion_badge='TOP_DEAL'), then=Value(300)),
+            When(active_boost_q & Q(promotion_badge='URGENT'), then=Value(200)),
+            When(active_boost_q, then=Value(150)),
             default=Value(0),
             output_field=IntegerField()
         ),

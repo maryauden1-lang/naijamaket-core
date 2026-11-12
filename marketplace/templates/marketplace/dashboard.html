@@ -187,6 +187,12 @@
                   </span>
                 {% endif %}
 
+                {% if item.is_featured %}
+                  <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                    ★ Featured
+                  </span>
+                {% endif %}
+
                 <span class="text-[10px] text-slate-400 font-semibold">{{ item.created_at|naturaltime }}</span>
               </div>
 
@@ -207,8 +213,8 @@
             </div>
           </div>
 
-          <!-- Actions Buttons (Edit Ad, Mark Sold, Delete) -->
-          <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+          <!-- Actions Buttons (View, Boost Ad, Edit Ad, Mark Sold, Delete) -->
+          <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-wrap">
             
             <!-- View Live Ad Link (Only if Active) -->
             {% if item.status == 'active' %}
@@ -219,6 +225,16 @@
               >
                 <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                 <span class="hidden sm:inline">View</span>
+              </a>
+
+              <!-- Boost / Promote Ad Button -->
+              <a 
+                href="{% url 'marketplace:promote_listing' item.id %}" 
+                class="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold text-xs flex items-center gap-1 border border-amber-300 transition-all shadow-2xs"
+                title="Promote this listing"
+              >
+                <i data-lucide="rocket" class="w-3.5 h-3.5 text-amber-700"></i>
+                <span>{% if item.is_featured %}Extend Boost{% else %}Boost Ad{% endif %}</span>
               </a>
             {% endif %}
 

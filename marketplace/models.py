@@ -1,3 +1,5 @@
+import uuid
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
@@ -236,6 +238,34 @@ class SellerReview(models.Model):
 # ==========================================
 # 5. LISTINGS & MULTI-IMAGE MANAGEMENT
 # ==========================================
+class ListingQuerySet(models.QuerySet):
+    def live_and_promoted_first(self):
+        """
+        Orders results so that active promoted listings sit at the top.
+        Expired promotions transparently demote to standard chronological order.
+        """
+        now = timezone.now()
+        return self.annotate(
+            active_boost=models.Case(
+                models.When(
+                    is_featured=True,
+                    featured_until__gt=now,
+                    then=models.Value(1)
+                ),
+                default=models.Value(0),
+                output_field=models.IntegerField(),
+            )
+        ).order_by('-active_boost', '-created_at')
+
+
+class ListingManager(models.Manager):
+    def get_queryset(self):
+        return ListingQuerySet(self.model, using=self._db)
+
+    def live_and_promoted_first(self):
+        return self.get_queryset().live_and_promoted_first()
+
+
 class Listing(models.Model):
     CONDITION_CHOICES = (
         ("brand_new", "Brand New"),
@@ -248,6 +278,12 @@ class Listing(models.Model):
         ("pending", "Pending Moderation"),
         ("rejected", "Rejected"),
         ("sold", "Sold"),
+    )
+
+    PROMOTION_BADGE_CHOICES = (
+        ("TOP_AD", "Top Ad"),
+        ("FEATURED", "Featured"),
+        ("URGENT", "Urgent"),
     )
 
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="listings")
@@ -267,8 +303,17 @@ class Listing(models.Model):
     # Status & Management
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     rejection_reason = models.CharField(max_length=255, blank=True, null=True)
-    is_featured = models.BooleanField(default=False)
-    featured_until = models.DateTimeField(blank=True, null=True)
+    
+    # Monetization & Top Promotion Placement
+    is_featured = models.BooleanField(default=False, db_index=True)
+    featured_until = models.DateTimeField(blank=True, null=True, db_index=True)
+    promotion_badge = models.CharField(
+        max_length=20, 
+        choices=PROMOTION_BADGE_CHOICES, 
+        default="FEATURED", 
+        blank=True
+    )
+
     views_count = models.PositiveIntegerField(default=0)
     
     # Automated Staff Queue Locking System
@@ -279,6 +324,8 @@ class Listing(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = ListingManager()
 
     class Meta:
         ordering = ["-is_featured", "-created_at"]
@@ -304,6 +351,13 @@ class Listing(models.Model):
         """Check if listing is currently locked by a staff member for less than 10 minutes"""
         if self.locked_by and self.locked_at:
             return (timezone.now() - self.locked_at).total_seconds() < 600
+        return False
+
+    @property
+    def is_currently_featured(self) -> bool:
+        """Determines active status against real-time clock without database write locks"""
+        if self.is_featured and self.featured_until:
+            return timezone.now() < self.featured_until
         return False
 
     @property
@@ -379,6 +433,7 @@ class Conversation(models.Model):
     def __str__(self):
         item_title = self.listing.title if self.listing else "Support & System Message"
         return f"Chat for {item_title} ({self.buyer.username} & {self.seller.username})"
+
 
 class Message(models.Model):
     MESSAGE_TYPES = (
@@ -485,3 +540,126 @@ class StaffActivityLog(models.Model):
 
     def __str__(self):
         return f"{self.staff.username} -> {self.get_action_display()} on {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
+
+# ==========================================
+# 10. MONETIZATION, TOP ADS & PAYMENT LEDGER
+# ==========================================
+class PromotionPlan(models.Model):
+    """
+    Tiered promotion plans for sellers to boost their ads to the top.
+    """
+    BADGE_CHOICES = (
+        ("TOP_AD", "Top Ad"),
+        ("FEATURED", "Featured"),
+        ("URGENT", "Urgent"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, help_text="e.g. 7-Day Top Placement")
+    duration_days = models.PositiveIntegerField(help_text="Duration in days (e.g. 3, 7, 30)")
+    price_ngn = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Price in Nigerian Naira"
+    )
+    price_usd = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Price in USD (for international/crypto payments)"
+    )
+    badge_type = models.CharField(max_length=20, choices=BADGE_CHOICES, default="FEATURED")
+    description = models.TextField(blank=True, help_text="Short description of benefits")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["price_ngn"]
+        verbose_name = "Promotion Plan"
+        verbose_name_plural = "Promotion Plans"
+
+    def __str__(self):
+        return f"{self.name} - ₦{self.price_ngn:,.2f} ({self.duration_days} Days)"
+
+
+class PaymentTransaction(models.Model):
+    """
+    Audit-proof transaction ledger tracking every single monetization payment.
+    """
+    GATEWAY_CHOICES = (
+        ("PAYSTACK", "Paystack"),
+        ("FLUTTERWAVE", "Flutterwave"),
+        ("NOWPAYMENTS", "NowPayments (Crypto)"),
+    )
+
+    STATUS_CHOICES = (
+        ("PENDING", "Pending"),
+        ("SUCCESSFUL", "Successful"),
+        ("FAILED", "Failed"),
+        ("EXPIRED", "Expired"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    reference = models.CharField(
+        max_length=120,
+        unique=True,
+        db_index=True,
+        help_text="Our unique merchant reference code"
+    )
+    gateway_reference = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Reference returned by the payment gateway"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="monetization_transactions"
+    )
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.CASCADE,
+        related_name="payments",
+        help_text="The listing being promoted"
+    )
+    plan = models.ForeignKey(
+        PromotionPlan,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="transactions"
+    )
+    amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=10, default="NGN")
+    gateway = models.CharField(max_length=30, choices=GATEWAY_CHOICES, default="PAYSTACK")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="PENDING", db_index=True)
+    
+    # Gateway response storage & audit
+    gateway_response = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Full JSON payload received from payment gateway webhook/verification"
+    )
+    customer_email = models.EmailField(blank=True)
+    customer_phone = models.CharField(max_length=32, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["gateway", "status"]),
+        ]
+        verbose_name = "Payment Transaction"
+        verbose_name_plural = "Payment Transactions"
+
+    def __str__(self):
+        return f"[{self.gateway}] {self.reference} - {self.currency} {self.amount_paid:,.2f} ({self.status})"

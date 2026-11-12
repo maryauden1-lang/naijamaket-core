@@ -1,0 +1,334 @@
+{% load static humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F172A">
+  <title>Elevate Listing — {{ listing.title }} | NaijaSale</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #F4F5F8;
+      background-image: radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, rgba(217, 119, 6, 0.06) 0px, transparent 50%);
+    }
+    .plan-card {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .plan-card:hover {
+      transform: translateY(-2px);
+    }
+    .pay-btn-gradient {
+      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #4C1D95 100%);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35);
+      transition: all 0.25s ease;
+    }
+    .pay-btn-gradient:hover {
+      box-shadow: 0 14px 30px -5px rgba(76, 29, 149, 0.45);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body class="text-slate-900 antialiased min-h-screen flex flex-col overflow-x-hidden">
+
+  <!-- Minimalist Top Bar -->
+  <header class="bg-white/85 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="{% url 'marketplace:dashboard' %}" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 flex items-center justify-center text-slate-700 transition-colors">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        <div class="flex items-center gap-2">
+          <span class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900">Promote Listing</span>
+          <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-amber-400/30">
+            Executive Placement
+          </span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200/60">
+          <i data-lucide="lock" class="w-3.5 h-3.5"></i> 256-bit SSL
+        </span>
+        <a href="{% url 'marketplace:dashboard' %}" class="text-xs font-bold text-slate-500 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+          Cancel
+        </a>
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-5 w-full">
+      {% for message in messages %}
+        <div class="p-4 rounded-2xl text-xs font-semibold flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
+            <span>{{ message }}</span>
+          </div>
+          <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-rose-700 p-1">✕</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Checkout Grid -->
+  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+    <form method="POST" id="boostForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {% csrf_token %}
+
+      <!-- LEFT COLUMN: Status Tier & Payment Selection -->
+      <div class="lg:col-span-7 min-w-0 space-y-8">
+
+        <!-- Section 1: Boost Tiers -->
+        <section>
+          <div class="mb-4">
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">1. Choose Visibility Tier</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Higher tiers pin above standard listings and display your 3D badge next to the price.</p>
+          </div>
+
+          <div class="space-y-3">
+            {% for plan in plans %}
+              <label class="block cursor-pointer group">
+                <input 
+                  type="radio" 
+                  name="plan_id" 
+                  value="{{ plan.id }}" 
+                  data-name="{{ plan.name }}"
+                  data-days="{{ plan.duration_days }}"
+                  data-price="{{ plan.price_ngn|intcomma }}"
+                  class="peer sr-only plan-radio" 
+                  {% if forloop.first %}checked{% endif %} 
+                  required
+                >
+                <div class="plan-card relative bg-white rounded-2xl p-5 border-2 border-slate-200/90 peer-checked:border-amber-500 peer-checked:bg-amber-50/20 peer-checked:shadow-lg peer-checked:shadow-slate-900/5">
+                  <div class="flex items-center justify-between gap-4">
+                    
+                    <div class="flex items-center gap-3.5">
+                      <!-- Custom Radio Dot -->
+                      <div class="w-5 h-5 rounded-full border-2 border-slate-300 group-hover:border-amber-500 flex items-center justify-center transition-colors shrink-0">
+                        <div class="w-2.5 h-2.5 rounded-full bg-slate-900 opacity-0 scale-50 transition-all duration-200 radio-dot"></div>
+                      </div>
+
+                      <!-- Real 3D Tier Emblem -->
+                      <div class="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0 p-1 shadow-2xs">
+                        {% if plan.badge_type == 'TOP_DEAL' %}
+                          <img src="{% static 'badges/crown.jpg' %}" alt="VIP Crown" class="w-10 h-10 object-contain mix-blend-multiply">
+                        {% elif plan.badge_type == 'URGENT' %}
+                          <img src="{% static 'badges/diamond.jpg' %}" alt="Premium Diamond" class="w-9 h-9 object-contain mix-blend-multiply">
+                        {% else %}
+                          <img src="{% static 'badges/star.jpg' %}" alt="Featured Star" class="w-9 h-9 object-contain mix-blend-multiply">
+                        {% endif %}
+                      </div>
+
+                      <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="font-extrabold text-slate-900 text-sm sm:text-base">{{ plan.name }}</span>
+                        </div>
+
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                          {% if plan.badge_type == 'TOP_DEAL' %}
+                            #1 Supreme feed priority + <strong class="text-slate-800">VIP Gold Crown</strong> badge for {{ plan.duration_days }} days.
+                          {% elif plan.badge_type == 'URGENT' %}
+                            High-tier search boost + <strong class="text-slate-800">Sapphire Diamond</strong> badge for {{ plan.duration_days }} days.
+                          {% else %}
+                            Curated top placement + <strong class="text-slate-800">3D Gold Star</strong> badge for {{ plan.duration_days }} days.
+                          {% endif %}
+                        </p>
+
+                        <div class="flex items-center gap-3 mt-2 text-[11px] font-semibold text-slate-500">
+                          <span class="inline-flex items-center gap-1 text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                            <i data-lucide="calendar" class="w-3 h-3 text-slate-700"></i> {{ plan.duration_days }} Days
+                          </span>
+                          <span class="inline-flex items-center gap-1 text-emerald-700">
+                            <i data-lucide="trending-up" class="w-3 h-3"></i>
+                            {% if plan.badge_type == 'TOP_DEAL' %}3x Rank Score{% elif plan.badge_type == 'URGENT' %}2x Rank Score{% else %}1.5x Rank Score{% endif %}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-right shrink-0">
+                      <div class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                        ₦{{ plan.price_ngn|intcomma }}
+                      </div>
+                      <div class="text-[10px] font-semibold text-slate-400">one-time</div>
+                    </div>
+
+                  </div>
+                </div>
+              </label>
+            {% empty %}
+              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-xs font-semibold text-amber-900 flex items-center gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0"></i>
+                <span>No active boost plans are currently configured in Admin.</span>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <!-- Section 2: Payment Gateway -->
+        <section>
+          <div class="mb-4">
+            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">2. Payment Method</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Instant activation immediately after payment confirmation.</p>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <label class="cursor-pointer group">
+              <input type="radio" name="gateway" value="PAYSTACK" data-gateway="Paystack" class="peer sr-only gateway-radio" checked>
+              <div class="plan-card bg-white rounded-2xl p-4 border-2 border-slate-200/90 peer-checked:border-sky-500 peer-checked:bg-sky-50/25 peer-checked:shadow-md flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
+                    <i data-lucide="credit-card" class="w-5 h-5 text-sky-600"></i>
+                  </div>
+                  <div>
+                    <span class="font-extrabold text-slate-900 text-sm">Paystack</span>
+                    <p class="text-[11px] text-slate-500">Card, Transfer, USSD</p>
+                  </div>
+                </div>
+                <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0">
+                  <div class="w-2.5 h-2.5 rounded-full bg-sky-500 opacity-0 scale-50 transition-all duration-200 radio-dot"></div>
+                </div>
+              </div>
+            </label>
+
+            <label class="cursor-pointer group">
+              <input type="radio" name="gateway" value="FLUTTERWAVE" data-gateway="Flutterwave" class="peer sr-only gateway-radio">
+              <div class="plan-card bg-white rounded-2xl p-4 border-2 border-slate-200/90 peer-checked:border-amber-500 peer-checked:bg-amber-50/25 peer-checked:shadow-md flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                    <i data-lucide="wallet" class="w-5 h-5 text-amber-600"></i>
+                  </div>
+                  <div>
+                    <span class="font-extrabold text-slate-900 text-sm">Flutterwave</span>
+                    <p class="text-[11px] text-slate-500">Card, Bank, Mobile Money</p>
+                  </div>
+                </div>
+                <div class="w-5 h-5 rounded-full border-2 border-slate-300 flex items-center justify-center shrink-0">
+                  <div class="w-2.5 h-2.5 rounded-full bg-amber-500 opacity-0 scale-50 transition-all duration-200 radio-dot"></div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Sticky Order Summary -->
+      <div class="lg:col-span-5 min-w-0 lg:sticky lg:top-24">
+        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 overflow-hidden">
+          
+          <div class="p-5 bg-slate-950 text-white">
+            <div class="text-[10px] font-bold uppercase tracking-widest text-amber-400/90 mb-3">Ad Being Elevated</div>
+            <div class="flex items-center gap-3.5">
+              <div class="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
+                {% if listing.images.first %}
+                  <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover">
+                {% else %}
+                  <div class="w-full h-full flex items-center justify-center text-slate-500">
+                    <i data-lucide="image" class="w-5 h-5"></i>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="min-w-0 flex-1">
+                <h3 class="font-bold text-sm text-white truncate">{{ listing.title }}</h3>
+                <p class="text-xs font-extrabold text-amber-300 mt-0.5">₦{{ listing.price|intcomma }}</p>
+                <p class="text-[11px] text-slate-400 truncate mt-0.5">{{ listing.state.name|default:"Nigeria" }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-5">
+            <div class="space-y-3 text-xs">
+              <div class="flex items-center justify-between text-slate-500">
+                <span>Selected Tier</span>
+                <span id="summaryPlanName" class="font-bold text-slate-900">—</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-500">
+                <span>Active Duration</span>
+                <span id="summaryDuration" class="font-bold text-slate-900">—</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-500">
+                <span>Payment Gateway</span>
+                <span id="summaryGateway" class="font-bold text-slate-900">Paystack</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-500">
+                <span>Activation</span>
+                <span class="font-bold text-emerald-600 flex items-center gap-1">
+                  <i data-lucide="zap" class="w-3 h-3"></i> Instant
+                </span>
+              </div>
+            </div>
+
+            <div class="border-t border-dashed border-slate-200 pt-4 flex items-baseline justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Due</span>
+              <span id="summaryTotal" class="text-2xl font-extrabold text-slate-900 tracking-tight">₦0</span>
+            </div>
+
+            <button type="submit" id="submitBtn" class="pay-btn-gradient w-full py-4 px-6 rounded-2xl text-white font-extrabold text-sm tracking-wide flex items-center justify-center gap-2 cursor-pointer">
+              <i data-lucide="shield-check" class="w-4 h-4 text-amber-300"></i>
+              <span id="submitBtnText">Pay Securely</span>
+              <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </button>
+
+            <p class="text-[11px] text-center text-slate-400 leading-relaxed">
+              Your 3D status emblem and priority placement go live immediately upon payment confirmation.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </form>
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    function updateCheckoutUI() {
+      document.querySelectorAll('input[type="radio"]').forEach(input => {
+        const card = input.closest('label').querySelector('.plan-card');
+        const dot = card.querySelector('.radio-dot');
+        if (input.checked) {
+          dot.classList.remove('opacity-0', 'scale-50');
+          dot.classList.add('opacity-100', 'scale-100');
+        } else {
+          dot.classList.add('opacity-0', 'scale-50');
+          dot.classList.remove('opacity-100', 'scale-100');
+        }
+      });
+
+      const selectedPlan = document.querySelector('.plan-radio:checked');
+      if (selectedPlan) {
+        document.getElementById('summaryPlanName').textContent = selectedPlan.dataset.name;
+        document.getElementById('summaryDuration').textContent = selectedPlan.dataset.days + ' Days';
+        document.getElementById('summaryTotal').textContent = '₦' + selectedPlan.dataset.price;
+        document.getElementById('submitBtnText').textContent = 'Pay ₦' + selectedPlan.dataset.price + ' Now';
+      }
+
+      const selectedGateway = document.querySelector('.gateway-radio:checked');
+      if (selectedGateway) {
+        document.getElementById('summaryGateway').textContent = selectedGateway.dataset.gateway;
+      }
+    }
+
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', updateCheckoutUI);
+    });
+
+    document.getElementById('boostForm').addEventListener('submit', function() {
+      const btn = document.getElementById('submitBtn');
+      const txt = document.getElementById('submitBtnText');
+      btn.disabled = true;
+      btn.classList.add('opacity-75', 'cursor-not-allowed');
+      txt.textContent = 'Connecting to Gateway...';
+    });
+
+    updateCheckoutUI();
+  </script>
+</body>
+</html>

@@ -15,7 +15,7 @@ SECRET_KEY = os.environ.get(
     'django-insecure-naijasale-prod-hardened-key-x889210-change-in-coolify'
 )
 
-# DEBUG: Defaults to False in production. Evaluates True only if explicitly set to 'true', '1', or 'yes'.
+# DEBUG: Strictly False in production unless DJANGO_DEBUG=True is explicitly set.
 DEBUG = os.environ.get('DJANGO_DEBUG', os.environ.get('DEBUG', 'False')).strip().lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = [
@@ -36,6 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 # ==============================================================================
 # PRODUCTION SSL, REVERSE PROXY & SECURITY HEADERS
+# (Only enforced when DEBUG is strictly False in production)
 # ==============================================================================
 if not DEBUG:
     # Tell Django it sits behind Cloudflare and Coolify's Traefik reverse proxy
@@ -235,3 +236,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_COOKIE_AGE = 86400 * 30
 SESSION_SAVE_EVERY_REQUEST = True
+
+# ==============================================================================
+# MONETIZATION & PAYMENT GATEWAYS
+# ==============================================================================
+PAYSTACK_SECRET_KEY = os.environ.get('PAYSTACK_SECRET_KEY', 'sk_test_placeholder')
+PAYSTACK_PUBLIC_KEY = os.environ.get('PAYSTACK_PUBLIC_KEY', 'pk_test_placeholder')
+
+FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY', 'FLWSECK_TEST-placeholder')
+FLUTTERWAVE_PUBLIC_KEY = os.environ.get('FLUTTERWAVE_PUBLIC_KEY', 'FLWPUBK_TEST-placeholder')
+FLUTTERWAVE_SECRET_HASH = os.environ.get('FLUTTERWAVE_SECRET_HASH', 'naijasale-flw-secret-hash')
+
+NOWPAYMENTS_API_KEY = os.environ.get('NOWPAYMENTS_API_KEY', '')
+NOWPAYMENTS_IPN_SECRET = os.environ.get('NOWPAYMENTS_IPN_SECRET', '')
+
+# ==============================================================================
+# AUTHENTICATION & PORTAL REDIRECTS
+# ==============================================================================
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = '/login/'

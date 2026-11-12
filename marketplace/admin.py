@@ -43,6 +43,8 @@ from .models import (
     ReportedListing,
     StaffProfile,
     StaffActivityLog,
+    PromotionPlan,
+    PaymentTransaction,
 )
 
 
@@ -50,10 +52,6 @@ from .models import (
 # REAL-TIME POLLING JSON ENDPOINT FOR BACKGROUND FETCH
 # ==============================================================================
 def live_online_stats_view(request):
-    """
-    Returns the real-time online visitor count and pending review queues
-    as JSON for automatic background polling without page refresh.
-    """
     if not (request.user.is_staff or request.user.is_superuser):
         return JsonResponse({'error': 'Unauthorized'}, status=403)
 
@@ -71,12 +69,18 @@ def live_online_stats_view(request):
     unresolved_reports = ReportedListing.objects.filter(is_resolved=False).count()
     total_notifications = pending_listings + pending_kyc + unresolved_reports
 
+    total_revenue = (
+        PaymentTransaction.objects.filter(status='SUCCESSFUL').aggregate(total=Sum('amount_paid'))['total']
+        or 0
+    )
+
     return JsonResponse({
         'online_count': online_count,
         'pending_listings': pending_listings,
         'pending_kyc': pending_kyc,
         'unresolved_reports': unresolved_reports,
         'total_notifications': total_notifications,
+        'total_revenue': f"{total_revenue:,.2f}",
     })
 
 
@@ -103,7 +107,6 @@ def custom_admin_index(request, extra_context=None):
     pending_kyc_count = SellerProfile.objects.filter(verification_status='pending').count()
     unresolved_reports_count = ReportedListing.objects.filter(is_resolved=False).count()
 
-    # Total combined pending actions for CEO alerts
     total_notifications = pending_listings_count + pending_kyc_count + unresolved_reports_count
 
     total_conversations = Conversation.objects.count()
@@ -114,19 +117,26 @@ def custom_admin_index(request, extra_context=None):
     total_categories = Category.objects.count()
     total_pages = StaticPage.objects.count()
 
-    # 3. Recent Registered Users (Latest 5)
+    # 3. Live Account Balance & Payment Revenue Metrics
+    successful_txs = PaymentTransaction.objects.filter(status='SUCCESSFUL')
+    total_revenue = successful_txs.aggregate(total=Sum('amount_paid'))['total'] or 0
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_revenue = successful_txs.filter(created_at__gte=today_start).aggregate(total=Sum('amount_paid'))['total'] or 0
+    successful_tx_count = successful_txs.count()
+    pending_tx_count = PaymentTransaction.objects.filter(status='PENDING').count()
+    recent_transactions = PaymentTransaction.objects.select_related('user', 'listing', 'plan').order_by('-created_at')[:5]
+
+    # 4. Recent Registered Users (Latest 5)
     recent_users = User.objects.select_related('seller_profile').order_by('-date_joined')[:5]
 
-    # 4. Top Categories with listing counts
+    # 5. Top Categories with listing counts
     top_categories = Category.objects.annotate(
         listing_count=Count('listings')
     ).order_by('-listing_count')[:4]
 
-    # 5. Real-Time Online Visitors (active within the last 5 minutes across shared routers)
+    # 6. Real-Time Online Visitors
     now_ts = time.time()
     active_registry = cache.get('active_visitor_registry') or {}
-
-    # Count distinct active devices/sessions seen within the last 300 seconds
     live_devices = [
         device_id for device_id, ts in active_registry.items()
         if (now_ts - ts) < 300
@@ -154,18 +164,22 @@ def custom_admin_index(request, extra_context=None):
         'recent_users': recent_users,
         'top_categories': top_categories,
         'admin_prefix': 'portal-management-99',
+        # Bank-style balance variables
+        'total_revenue': total_revenue,
+        'today_revenue': today_revenue,
+        'successful_tx_count': successful_tx_count,
+        'pending_tx_count': pending_tx_count,
+        'recent_transactions': recent_transactions,
     })
 
     return _original_admin_index(request, extra_context=extra_context)
 
 
-# Apply custom index and branding to default admin site
 admin.site.index = custom_admin_index
 admin.site.site_header = "NaijaSale Admin"
 admin.site.site_title = "NaijaSale Management"
 admin.site.index_title = "Admin Dashboard"
 
-# Hook the background ping URL into Django admin's URL dispatcher
 _original_get_urls = admin.site.get_urls
 
 
@@ -488,3 +502,45 @@ class StaffActivityLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# ==============================================================================
+# MONETIZATION: PROMOTION PLANS & PAYMENT TRANSACTIONS
+# ==============================================================================
+
+@admin.register(PromotionPlan)
+class PromotionPlanAdmin(admin.ModelAdmin):
+    list_display = ("name", "badge_type", "duration_days", "price_ngn", "is_active")
+    list_editable = ("price_ngn", "is_active")
+    list_filter = ("badge_type", "is_active")
+    search_fields = ("name",)
+
+
+@admin.register(PaymentTransaction)
+class PaymentTransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        "reference",
+        "user",
+        "listing",
+        "plan",
+        "formatted_amount",
+        "gateway",
+        "status_badge",
+        "created_at",
+    )
+    list_filter = ("status", "gateway", "created_at")
+    search_fields = ("reference", "gateway_reference", "user__username", "customer_email", "listing__title")
+    readonly_fields = ("reference", "gateway_reference", "created_at", "updated_at")
+    date_hierarchy = "created_at"
+
+    def formatted_amount(self, obj):
+        return format_html('<strong>₦{}</strong>', f"{obj.amount_paid:,.2f}")
+    formatted_amount.short_description = "Amount"
+
+    def status_badge(self, obj):
+        if obj.status == "SUCCESSFUL":
+            return mark_safe('<span style="padding: 3px 9px; font-size: 11px; font-weight: 700; border-radius: 9999px; background: #DCFCE7; color: #166534;">● PAID</span>')
+        elif obj.status == "PENDING":
+            return mark_safe('<span style="padding: 3px 9px; font-size: 11px; font-weight: 700; border-radius: 9999px; background: #FEF3C7; color: #92400E;">● PENDING</span>')
+        return mark_safe('<span style="padding: 3px 9px; font-size: 11px; font-weight: 700; border-radius: 9999px; background: #FEE2E2; color: #991B1B;">● FAILED</span>')
+    status_badge.short_description = "Status"

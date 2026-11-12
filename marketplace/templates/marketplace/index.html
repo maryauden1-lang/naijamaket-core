@@ -1,4 +1,4 @@
-{% load humanize %}
+{% load static humanize %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -104,17 +104,13 @@
 </head>
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-24 sm:pb-0 selection:bg-purple-600 selection:text-white relative">
 
-  <!-- ========================================================= -->
-  <!-- ADD TO HOME SCREEN MODAL (CENTERED & PROMINENT LOGO)      -->
-  <!-- ========================================================= -->
+  <!-- ADD TO HOME SCREEN MODAL -->
   <div id="pwaExitModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4 transition-all">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-center relative mx-auto my-auto animate-in fade-in zoom-in duration-200">
-      
       <button type="button" onclick="closePwaExitModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <!-- Prominent Enlarged Badge Display -->
       <div class="w-20 h-20 rounded-2xl mx-auto mb-3.5 flex items-center justify-center overflow-hidden drop-shadow-md">
         {% if settings.logo %}
           <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="w-full h-full object-contain">
@@ -165,8 +161,6 @@
   <!-- 1. TOP WHITE HEADER BAR -->
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between gap-3 sm:gap-6">
-      
-      <!-- Brand Logo (Enlarged with proper clearance) -->
       <a href="{% url 'marketplace:home' %}" class="flex items-center gap-3 group shrink-0 py-1">
         {% if settings.logo %}
           <img 
@@ -184,9 +178,7 @@
         {% endif %}
       </a>
 
-      <!-- Right Controls -->
       <div class="flex items-center gap-2.5 sm:gap-6">
-        
         <!-- Language Selector -->
         <div class="relative">
           <button 
@@ -224,7 +216,6 @@
         </div>
 
         {% if user.is_authenticated %}
-          <!-- Desktop Inbox Icon Link -->
           <a href="{% url 'marketplace:inbox' %}" class="hidden sm:flex items-center gap-1.5 text-slate-700 hover:text-purple-700 py-1.5 px-2.5 rounded-xl hover:bg-slate-100 transition relative" title="Messages">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -235,7 +226,6 @@
             </span>
           </a>
 
-          <!-- User Profile & Logout -->
           <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-800">
             <a href="{% url 'marketplace:dashboard' %}" class="hover:text-purple-700 flex items-center gap-1.5 max-w-[85px] sm:max-w-[140px] truncate">
               <span class="truncate">{{ user.first_name|default:user.username }}</span>
@@ -251,7 +241,6 @@
           </div>
         {% endif %}
 
-        <!-- Orange SELL Button -->
         <a 
           href="{% url 'marketplace:post_ad' %}" 
           class="sell-btn-orange text-white text-xs sm:text-sm font-black px-4 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
@@ -259,22 +248,17 @@
           SELL
         </a>
       </div>
-
     </div>
   </header>
 
   <!-- 2. PURPLE HERO CANVAS -->
   <section class="jiji-purple-canvas text-white py-7 sm:py-12 shadow-inner">
     <div class="max-w-4xl mx-auto px-3 sm:px-6 text-center">
-      
       <h2 id="heroQuestionTitle" class="text-lg sm:text-3xl font-extrabold tracking-tight text-white mb-3 sm:mb-6">
         What are you looking for?
       </h2>
 
-      <!-- Search Row with Dynamic 'Near Me' Button -->
       <div class="flex flex-row items-stretch gap-1.5 sm:gap-3 max-w-3xl mx-auto relative">
-        
-        <!-- Left: States Dropdown -->
         <div class="relative shrink-0 w-[110px] sm:w-44">
           <button 
             type="button" 
@@ -288,7 +272,6 @@
             </svg>
           </button>
 
-          <!-- Dropdown List of States -->
           <div id="stateDropdownMenu" class="hidden absolute left-0 top-[calc(100%+6px)] w-64 sm:w-72 bg-white text-slate-800 rounded-2xl p-2 shadow-2xl border border-slate-100 z-50 max-h-72 sm:max-h-80 overflow-y-auto text-left">
             <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}" class="flex items-center justify-between px-3 py-2 text-xs font-extrabold text-purple-700 hover:bg-purple-50 rounded-xl">
               <span>All Nigeria (Entire Feed)</span>
@@ -307,7 +290,6 @@
           </div>
         </div>
 
-        <!-- Middle: Modern Pulsing 'Near Me' Location Button -->
         <button 
           type="button" 
           id="nearMeBtn" 
@@ -315,22 +297,16 @@
           class="relative inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 h-11 sm:h-14 rounded-xl sm:rounded-2xl bg-white hover:bg-purple-50 text-slate-800 hover:text-purple-700 border border-slate-200/90 hover:border-purple-300 shadow-md transition-all duration-200 active:scale-95 shrink-0 group focus:outline-hidden"
           title="Find verified deals near my location"
         >
-          <!-- Active Radar Ping Indicator -->
           <span class="relative flex h-2.5 w-2.5 sm:h-3 sm:w-3 items-center justify-center shrink-0">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-
-          <!-- Pin Icon -->
           <i data-lucide="map-pin" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-600 group-hover:scale-110 transition-transform shrink-0"></i>
-
-          <!-- Dynamic Label -->
           <span id="nearMeText" class="text-[11px] sm:text-xs font-black tracking-tight whitespace-nowrap">
             Near Me
           </span>
         </button>
 
-        <!-- Right: Non-Zooming Search Input -->
         <div class="flex-1 relative min-w-0">
           <form action="{% url 'marketplace:home' %}" method="GET" class="w-full h-full">
             {% if selected_state %}
@@ -360,9 +336,7 @@
 
           <div id="liveSearchResults" class="hidden absolute left-0 right-0 top-[calc(100%+6px)] bg-white rounded-2xl p-2 shadow-2xl border border-slate-100 z-50 max-h-80 overflow-y-auto text-left text-slate-800"></div>
         </div>
-
       </div>
-
     </div>
   </section>
 
@@ -381,21 +355,14 @@
   <!-- MOBILE ONLY: CATEGORY GRID -->
   <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-4 px-2.5 sm:px-4 shadow-2xs">
     <div class="flex items-center justify-between mb-3 px-1.5">
-      <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">
-        All Categories
-      </h2>
+      <h2 class="text-xs font-black text-slate-900 uppercase tracking-wider">All Categories</h2>
       {% if selected_category %}
-        <a href="{% url 'marketplace:home' %}" class="text-[11px] font-bold text-purple-600 hover:underline">
-          View All
-        </a>
+        <a href="{% url 'marketplace:home' %}" class="text-[11px] font-bold text-purple-600 hover:underline">View All</a>
       {% endif %}
     </div>
 
     <div class="grid grid-cols-4 gap-2 sm:gap-3">
-      <a 
-        href="{% url 'marketplace:home' %}" 
-        class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group"
-      >
+      <a href="{% url 'marketplace:home' %}" class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group">
         <div class="w-13 h-13 rounded-2xl flex items-center justify-center transition-all {% if not selected_category %}bg-purple-700 text-white shadow-md{% else %}bg-purple-50 text-purple-700 border border-purple-100{% endif %}">
           <i data-lucide="layout-grid" class="w-6 h-6 stroke-[2]"></i>
         </div>
@@ -405,10 +372,7 @@
       </a>
 
       {% for cat in categories %}
-      <a 
-        href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" 
-        class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group"
-      >
+      <a href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group">
         <div class="w-13 h-13 rounded-2xl flex items-center justify-center p-2.5 overflow-hidden transition-all {% if selected_category == cat.slug %}bg-purple-700 text-white shadow-md ring-2 ring-purple-600/30{% else %}bg-purple-50/70 border border-purple-100/80 group-hover:bg-purple-100 text-purple-700{% endif %}">
           {% if cat.icon %}
             <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" class="w-full h-full object-contain">
@@ -424,7 +388,7 @@
     </div>
   </section>
 
-  <!-- MAIN LAYOUT: Sidebar (Left) + Grid (Right) -->
+  <!-- MAIN LAYOUT -->
   <main id="listings-section" class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 py-4 sm:py-8 flex-1 w-full scroll-mt-24">
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-8 items-start">
       
@@ -438,10 +402,7 @@
         <nav aria-label="Category Directory" class="mt-2.5 space-y-1">
           {% for cat in categories %}
           <div class="group relative">
-            <a 
-              href="?category={{ cat.slug }}{% if selected_state %}&state={{ selected_state }}{% endif %}" 
-              class="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-purple-50/70 transition-all text-left {% if selected_category == cat.slug %}bg-purple-50 border border-purple-500/30{% endif %}"
-            >
+            <a href="?category={{ cat.slug }}{% if selected_state %}&state={{ selected_state }}{% endif %}" class="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-purple-50/70 transition-all text-left {% if selected_category == cat.slug %}bg-purple-50 border border-purple-500/30{% endif %}">
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 overflow-hidden border border-purple-100 group-hover:border-purple-300 text-purple-700">
                   {% if cat.icon %}
@@ -475,10 +436,7 @@
 
               <div class="space-y-1 max-h-[380px] overflow-y-auto pr-1">
                 {% for sub in cat.subcategories.all %}
-                <a 
-                  href="?category={{ cat.slug }}&subcategory={{ sub.slug }}" 
-                  class="flex items-center justify-between p-2 rounded-xl hover:bg-purple-50 transition-colors text-left"
-                >
+                <a href="?category={{ cat.slug }}&subcategory={{ sub.slug }}" class="flex items-center justify-between p-2 rounded-xl hover:bg-purple-50 transition-colors text-left">
                   <span class="text-xs font-bold text-slate-700 hover:text-purple-600">{{ sub.name }}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7 7h10v10"/><path d="M7 17 17 7"/>
@@ -523,10 +481,10 @@
           {% endif %}
         </div>
 
-        <!-- 2 COLUMNS ON MOBILE & 3 ON DESKTOP -->
+        <!-- LISTINGS GRID -->
         <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 w-full">
           {% for item in listings %}
-          <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group border border-slate-200 relative">
+          <div class="w-full min-w-0 bg-white rounded-xl sm:rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col group relative {% if item.is_featured and item.promotion_badge == 'TOP_DEAL' %}border border-amber-400/90 shadow-md shadow-amber-900/5{% elif item.is_featured %}border border-purple-300/90 shadow-sm{% else %}border border-slate-200{% endif %}">
             
             <a href="{% url 'marketplace:listing_detail' item.slug %}" class="absolute inset-0 z-10" aria-label="View {{ item.title }}"></a>
 
@@ -547,7 +505,7 @@
                 </div>
               {% endif %}
 
-              <!-- VERIFIED BADGE -->
+              <!-- VERIFIED BADGE (CLEAN TOP-LEFT) -->
               {% if item.seller.seller_profile.is_nin_verified %}
                 <div class="absolute top-2 left-2 z-20 flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full shadow-md border border-blue-200">
                   <span class="text-[10px] sm:text-[11px] font-black text-blue-700 tracking-tight leading-none">Verified</span>
@@ -556,10 +514,6 @@
                     <path d="M6 7.99992L7.33333 9.33325L10.3333 6.33325" stroke="white" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
-              {% elif item.is_featured %}
-                <span class="absolute top-2 left-2 z-20 bg-purple-700 text-white text-[9px] font-black tracking-wider px-2 py-0.5 rounded-md uppercase">
-                  VIP
-                </span>
               {% endif %}
 
               <!-- Favorite Button -->
@@ -596,13 +550,28 @@
                   {{ item.title }}
                 </h3>
 
-                <p class="text-sm sm:text-base font-black text-slate-900 tracking-tight">
-                  ₦{{ item.price|intcomma }}
-                </p>
+                <!-- PRICE ROW + 3D BOOST TIER EMBLEM ON RIGHT -->
+                <div class="flex items-center justify-between gap-1.5 min-h-[28px]">
+                  <p class="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">
+                    ₦{{ item.price|intcomma }}
+                  </p>
+
+                  {% if item.is_featured %}
+                    <div class="shrink-0 flex items-center justify-center" title="{% if item.promotion_badge == 'TOP_DEAL' %}VIP Prestige Ad{% elif item.promotion_badge == 'URGENT' %}Premium Diamond Ad{% else %}Featured Star Ad{% endif %}">
+                      {% if item.promotion_badge == 'TOP_DEAL' %}
+                        <img src="{% static 'badges/crown.jpg' %}" alt="VIP" class="w-8 h-8 sm:w-9 sm:h-9 object-contain mix-blend-multiply drop-shadow-2xs">
+                      {% elif item.promotion_badge == 'URGENT' %}
+                        <img src="{% static 'badges/diamond.jpg' %}" alt="Premium" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
+                      {% else %}
+                        <img src="{% static 'badges/star.jpg' %}" alt="Featured" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
               </div>
 
               <!-- Seller Row -->
-              <div class="pt-2 border-t border-slate-100 mt-2.5 flex items-center justify-between relative z-20">
+              <div class="pt-2 border-t border-slate-100 mt-2 flex items-center justify-between relative z-20">
                 <div class="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1">
                   <div class="relative w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
                     {% if item.seller.seller_profile.avatar %}
@@ -826,9 +795,6 @@
       }
     }
 
-    // =========================================================
-    // MAPBOX 'NEAR ME' LOCATION DETECTOR
-    // =========================================================
     const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoibWFyeWF1ZGVuMS1sYW5nIiwiYSI6ImNtdzhpNnR4YzE2cGUzMHM3dWxocDVtMTIifQ.qROOftrPRELrOYALOmDblg';
 
     function detectUserLocation() {
@@ -882,12 +848,9 @@
                 }
               }
 
-              // Clean slug creation for Nigerian states
               const stateSlug = detectedState.toLowerCase().replace(/\s+/g, '-');
-
               textSpan.innerText = detectedArea || detectedState || 'Found!';
 
-              // Redirect directly to the detected state feed, wiping any old search query
               setTimeout(() => {
                 if (stateSlug) {
                   window.location.href = `/?state=${encodeURIComponent(stateSlug)}`;
@@ -927,9 +890,6 @@
       );
     }
 
-    // =========================================================
-    // AUTO-SCROLL TO LISTINGS WHEN FILTERED OR SEARCHED
-    // =========================================================
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
       const isFiltered = params.has('q') || params.has('state') || params.has('category') || params.has('subcategory');
@@ -1006,9 +966,6 @@
       });
     }
 
-    // =========================================================
-    // ADD TO HOME SCREEN / EXIT PROMPT LOGIC
-    // =========================================================
     let deferredPrompt = null;
     const pwaModal = document.getElementById('pwaExitModal');
     const pwaBtn = document.getElementById('pwaInstallBtn');
@@ -1060,9 +1017,6 @@
       }
     }, 20000);
 
-    // =========================================================
-    // GLOBAL SOUND & UNREAD BADGE POLLING ENGINE
-    // =========================================================
     {% if user.is_authenticated %}
     function playGlobalChime() {
       try {
