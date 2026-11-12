@@ -251,6 +251,25 @@ NOWPAYMENTS_API_KEY = os.environ.get('NOWPAYMENTS_API_KEY', '')
 NOWPAYMENTS_IPN_SECRET = os.environ.get('NOWPAYMENTS_IPN_SECRET', '')
 
 # ==============================================================================
+# BREVO TRANSACTIONAL SMTP EMAIL CONFIGURATION (OTP & PASSWORD RESET)
+# ==============================================================================
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp-relay.brevo.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = (
+    os.environ.get('EMAIL_HOST_USER')
+    or os.environ.get('BREVO_SMTP_LOGIN')
+    or ''
+)
+EMAIL_HOST_PASSWORD = (
+    os.environ.get('EMAIL_HOST_PASSWORD')
+    or os.environ.get('BREVO_SMTP_KEY')
+    or ''
+)
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Naijasale <support@naijasale.com>')
+
+# ==============================================================================
 # AUTHENTICATION & PORTAL REDIRECTS
 # ==============================================================================
 LOGIN_URL = '/login/'
