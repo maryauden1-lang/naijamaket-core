@@ -21,14 +21,72 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from .models import (
-    SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing, 
+    SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing,
     ListingImage, SellerProfile, Favorite, Conversation, Message,
     ReportedListing, SellerReview
 )
 from .forms import (
-    UserRegisterForm, ListingForm, ProfileUpdateForm, 
+    UserRegisterForm, ListingForm, ProfileUpdateForm,
     ReportListingForm, SellerReviewForm
 )
+
+
+def apply_jiji_ranking(queryset):
+    """
+    Enterprise Jiji-Style Marketplace Ranking Engine:
+    1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
+    2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
+       so a lower tier never outranks a higher-paying tier.
+    3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
+       so every paying customer gets fair #1 top-slot visibility without cron jobs.
+    4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
+    """
+    now = timezone.now()
+    day_1 = now - timedelta(days=1)
+    day_3 = now - timedelta(days=3)
+    day_7 = now - timedelta(days=7)
+    day_14 = now - timedelta(days=14)
+    hour_bucket = int(now.timestamp() // 10800)  # Rotates fairly every 3 hours
+
+    active_boost_q = Q(is_featured=True) & (Q(featured_until__isnull=True) | Q(featured_until__gt=now))
+
+    return queryset.annotate(
+        vip_score=Case(
+            When(active_boost_q & Q(promotion_badge='TOP_DEAL'), then=Value(1000)),
+            When(active_boost_q & Q(promotion_badge='URGENT'), then=Value(600)),
+            When(active_boost_q, then=Value(300)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        rotation_slot=Case(
+            When(active_boost_q, then=(Value(hour_bucket) + F('id')) % 10),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        trust_score=Case(
+            When(seller__seller_profile__is_nin_verified=True, then=Value(30)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        freshness_score=Case(
+            When(created_at__gte=day_1, then=Value(25)),
+            When(created_at__gte=day_3, then=Value(18)),
+            When(created_at__gte=day_7, then=Value(10)),
+            When(created_at__gte=day_14, then=Value(5)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+        engagement_score=Case(
+            When(views_count__gte=125, then=Value(25)),
+            When(views_count__gte=50, then=Value(15)),
+            When(views_count__gte=20, then=Value(8)),
+            When(views_count__gte=5, then=Value(3)),
+            default=Value(0),
+            output_field=IntegerField()
+        ),
+    ).annotate(
+        total_rank_score=F('vip_score') + F('trust_score') + F('freshness_score') + F('engagement_score')
+    ).order_by('-vip_score', '-rotation_slot', '-total_rank_score', '-created_at')
 
 
 def index_view(request):
@@ -81,49 +139,8 @@ def index_view(request):
     if selected_condition:
         listings_queryset = listings_queryset.filter(condition=selected_condition)
 
-    # =========================================================================
-    # WEIGHTED LISTING RANKING ALGORITHM (WITH EXPIRY & TIER PRIORITY)
-    # =========================================================================
-    now = timezone.now()
-    day_1 = now - timedelta(days=1)
-    day_3 = now - timedelta(days=3)
-    day_7 = now - timedelta(days=7)
-    day_14 = now - timedelta(days=14)
-
-    active_boost_q = Q(is_featured=True) & (Q(featured_until__isnull=True) | Q(featured_until__gt=now))
-
-    listings_queryset = listings_queryset.annotate(
-        vip_score=Case(
-            When(active_boost_q & Q(promotion_badge='TOP_DEAL'), then=Value(300)),
-            When(active_boost_q & Q(promotion_badge='URGENT'), then=Value(200)),
-            When(active_boost_q, then=Value(150)),
-            default=Value(0),
-            output_field=IntegerField()
-        ),
-        trust_score=Case(
-            When(seller__seller_profile__is_nin_verified=True, then=Value(30)),
-            default=Value(0),
-            output_field=IntegerField()
-        ),
-        freshness_score=Case(
-            When(created_at__gte=day_1, then=Value(25)),
-            When(created_at__gte=day_3, then=Value(18)),
-            When(created_at__gte=day_7, then=Value(10)),
-            When(created_at__gte=day_14, then=Value(5)),
-            default=Value(0),
-            output_field=IntegerField()
-        ),
-        engagement_score=Case(
-            When(views_count__gte=125, then=Value(25)),
-            When(views_count__gte=50, then=Value(15)),
-            When(views_count__gte=20, then=Value(8)),
-            When(views_count__gte=5, then=Value(3)),
-            default=Value(0),
-            output_field=IntegerField()
-        ),
-    ).annotate(
-        total_rank_score=F('vip_score') + F('trust_score') + F('freshness_score') + F('engagement_score')
-    ).order_by('-total_rank_score', '-created_at')
+    # Apply Jiji-style VIP tier + 3-hour fair rotation ranking
+    listings_queryset = apply_jiji_ranking(listings_queryset)
 
     # Pagination and Total Found Count
     paginator = Paginator(listings_queryset, 20)
@@ -205,19 +222,19 @@ def listing_detail_view(request, slug):
         ).prefetch_related('images'),
         slug=slug
     )
-    
+
     session_key = f'viewed_ad_{listing.id}'
     if not request.session.get(session_key, False):
         Listing.objects.filter(pk=listing.pk).update(views_count=F('views_count') + 1)
         listing.refresh_from_db(fields=['views_count'])
         request.session[session_key] = True
         request.session.set_expiry(86400)
-    
-    similar_qs = Listing.objects.filter(
-        status='active'
-    ).exclude(id=listing.id).select_related(
-        'seller', 'seller__seller_profile', 'area', 'state'
-    ).prefetch_related('images')
+
+    similar_qs = apply_jiji_ranking(
+        Listing.objects.filter(status='active').exclude(id=listing.id).select_related(
+            'seller', 'seller__seller_profile', 'area', 'state'
+        ).prefetch_related('images')
+    )
 
     if listing.subcategory:
         related_items = list(similar_qs.filter(subcategory=listing.subcategory)[:6])
@@ -260,7 +277,7 @@ def toggle_favorite_view(request, listing_id):
     else:
         Favorite.objects.create(user=request.user, listing=listing)
         messages.success(request, "Item saved to your favorites!")
-    
+
     next_url = request.META.get('HTTP_REFERER', 'marketplace:home')
     return redirect(next_url)
 
@@ -291,6 +308,7 @@ def dashboard_view(request):
         'pending_count': pending_count,
         'sold_count': sold_count,
         'total_views': total_views,
+        'now': timezone.now(),
     })
 
 
@@ -345,7 +363,7 @@ def inbox_view(request):
     raw_conversations = Conversation.objects.filter(
         Q(buyer=request.user) | Q(seller=request.user)
     ).select_related(
-        'listing', 'buyer', 'seller', 
+        'listing', 'buyer', 'seller',
         'buyer__seller_profile', 'seller__seller_profile'
     ).prefetch_related('messages').order_by('-updated_at')
 
@@ -388,10 +406,10 @@ def delete_message_view(request, message_id):
     message = get_object_or_404(Message, id=message_id, sender=request.user)
     conversation_id = message.conversation_id
     message.delete()
-    
+
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({'status': 'success', 'message_id': message_id})
-    
+
     return redirect('marketplace:chat_detail', conversation_id=conversation_id)
 
 
@@ -426,7 +444,7 @@ def typing_status_api_view(request, conversation_id):
 def chat_detail_view(request, conversation_id):
     conversation = get_object_or_404(
         Conversation.objects.select_related(
-            'listing', 'buyer', 'seller', 
+            'listing', 'buyer', 'seller',
             'seller__seller_profile', 'buyer__seller_profile'
         ),
         id=conversation_id
@@ -447,13 +465,13 @@ def chat_detail_view(request, conversation_id):
         raw_phone = ''
         if seller_prof:
             raw_phone = seller_prof.whatsapp_number or seller_prof.phone_number or ''
-        
+
         clean_phone = ''.join(ch for ch in str(raw_phone) if ch.isdigit())
         if clean_phone.startswith('0') and len(clean_phone) == 11:
             clean_phone = '234' + clean_phone[1:]
         elif clean_phone.startswith('234'):
             pass
-        
+
         if clean_phone:
             chat_link = request.build_absolute_uri(request.path)
             listing_title = conversation.listing.title if conversation.listing else "your listing"
@@ -475,7 +493,7 @@ def chat_detail_view(request, conversation_id):
         if action == 'make_offer':
             offer_raw = request.POST.get('offer_amount', '').strip().replace(',', '')
             note = request.POST.get('note', '').strip()
-            
+
             try:
                 offer_amount = Decimal(offer_raw)
                 if offer_amount <= 0:
@@ -677,7 +695,7 @@ def post_ad_view(request):
                 )
 
             messages.info(
-                request, 
+                request,
                 "Your ad has been submitted successfully and is currently under review. "
                 "Our moderation team will verify the details and activate it shortly to ensure platform quality and buyer safety."
             )
@@ -794,7 +812,7 @@ def verify_email_view(request):
 
             if 'reg_user' in request.session:
                 del request.session['reg_user']
-                
+
             login(request, user)
             messages.success(request, f"🎉 Welcome to Naijasale, {full_name}! Your account is verified. A welcome message has been sent to your Inbox.")
             return redirect('marketplace:home')
@@ -937,13 +955,15 @@ def ajax_search_view(request):
     query = request.GET.get('q', '').strip()
     results = []
     if len(query) >= 2:
-        matches = Listing.objects.filter(
-            Q(title__icontains=query) |
-            Q(description__icontains=query) |
-            Q(area__name__icontains=query) |
-            Q(category__name__icontains=query),
-            status='active'
-        ).select_related('area', 'state').prefetch_related('images')[:6]
+        matches = apply_jiji_ranking(
+            Listing.objects.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(area__name__icontains=query) |
+                Q(category__name__icontains=query),
+                status='active'
+            ).select_related('area', 'state').prefetch_related('images')
+        )[:6]
 
         for item in matches:
             first_img = item.images.first()
