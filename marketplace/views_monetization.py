@@ -43,6 +43,16 @@ def _activate_listing_boost(transaction):
     transaction.save(update_fields=["status"])
 
 
+def _paystack_headers(secret_key):
+    """Browser-like User-Agent prevents Paystack's Cloudflare WAF from returning 403 Forbidden."""
+    return {
+        "Authorization": f"Bearer {secret_key.strip()}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "NaijaSale-Marketplace/1.0 (+https://naijasale.com)",
+    }
+
+
 @login_required
 def promote_listing_view(request, listing_id):
     listing = get_object_or_404(Listing, id=listing_id, seller=request.user)
@@ -71,11 +81,11 @@ def promote_listing_view(request, listing_id):
         callback_url = request.build_absolute_uri('/payment/callback/')
 
         # --- LOCAL DEV SANDBOX FALLBACK (When real keys aren't set yet) ---
-        paystack_key = getattr(settings, "PAYSTACK_SECRET_KEY", "")
-        flw_key = getattr(settings, "FLUTTERWAVE_SECRET_KEY", "")
+        paystack_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").strip()
+        flw_key = getattr(settings, "FLUTTERWAVE_SECRET_KEY", "").strip()
 
-        if (gateway == "PAYSTACK" and "placeholder" in paystack_key) or (
-            gateway == "FLUTTERWAVE" and "placeholder" in flw_key
+        if (gateway == "PAYSTACK" and (not paystack_key or "placeholder" in paystack_key)) or (
+            gateway == "FLUTTERWAVE" and (not flw_key or "placeholder" in flw_key)
         ):
             _activate_listing_boost(transaction)
             messages.success(
@@ -95,10 +105,7 @@ def promote_listing_view(request, listing_id):
             req = urllib.request.Request(
                 "https://api.paystack.co/transaction/initialize",
                 data=json.dumps(payload).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {paystack_key}",
-                    "Content-Type": "application/json",
-                },
+                headers=_paystack_headers(paystack_key),
                 method="POST"
             )
             try:
@@ -106,6 +113,14 @@ def promote_listing_view(request, listing_id):
                     res_data = json.loads(res.read().decode("utf-8"))
                     if res_data.get("status"):
                         return redirect(res_data["data"]["authorization_url"])
+                    messages.error(request, f"Paystack error: {res_data.get('message', 'Unable to initialize payment')}")
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode("utf-8", errors="ignore")
+                try:
+                    err_msg = json.loads(err_body).get("message", f"HTTP {e.code}")
+                except Exception:
+                    err_msg = f"HTTP {e.code}: {e.reason}"
+                messages.error(request, f"Paystack connection error: {err_msg}")
             except Exception as e:
                 messages.error(request, f"Paystack connection error: {e}")
 
@@ -131,6 +146,7 @@ def promote_listing_view(request, listing_id):
                 headers={
                     "Authorization": f"Bearer {flw_key}",
                     "Content-Type": "application/json",
+                    "User-Agent": "NaijaSale-Marketplace/1.0 (+https://naijasale.com)",
                 },
                 method="POST"
             )
@@ -162,10 +178,10 @@ def payment_callback_view(request):
 
     # Verify Paystack
     if transaction.gateway == "PAYSTACK":
-        secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "")
+        secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").strip()
         req = urllib.request.Request(
             f"https://api.paystack.co/transaction/verify/{reference}",
-            headers={"Authorization": f"Bearer {secret_key}"},
+            headers=_paystack_headers(secret_key),
             method="GET"
         )
         try:
@@ -180,10 +196,13 @@ def payment_callback_view(request):
 
     # Verify Flutterwave
     elif transaction.gateway == "FLUTTERWAVE" and transaction_id:
-        secret_key = getattr(settings, "FLUTTERWAVE_SECRET_KEY", "")
+        secret_key = getattr(settings, "FLUTTERWAVE_SECRET_KEY", "").strip()
         req = urllib.request.Request(
             f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify",
-            headers={"Authorization": f"Bearer {secret_key}"},
+            headers={
+                "Authorization": f"Bearer {secret_key}",
+                "User-Agent": "NaijaSale-Marketplace/1.0 (+https://naijasale.com)",
+            },
             method="GET"
         )
         try:
@@ -209,7 +228,7 @@ def payment_callback_view(request):
 @csrf_exempt
 @require_POST
 def paystack_webhook(request):
-    secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").encode("utf-8")
+    secret_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").strip().encode("utf-8")
     signature = request.headers.get("x-paystack-signature", "")
 
     computed_hmac = hmac.new(secret_key, request.body, hashlib.sha512).hexdigest()
