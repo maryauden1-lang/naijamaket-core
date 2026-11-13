@@ -398,6 +398,65 @@
         }
       });
     }
+
+    // ========================================================
+    // Dependent State -> Area Dropdown Filtering
+    // ========================================================
+    document.addEventListener('DOMContentLoaded', function() {
+      const stateSelect = document.getElementById('id_state');
+      const areaSelect = document.getElementById('id_area');
+
+      if (stateSelect && areaSelect) {
+        const initialArea = areaSelect.value;
+
+        function loadAreas(stateId, restoreVal) {
+          if (!stateId) {
+            areaSelect.innerHTML = '<option value="">Select a state first</option>';
+            areaSelect.disabled = true;
+            return;
+          }
+
+          areaSelect.disabled = true;
+          areaSelect.innerHTML = '<option value="">Loading locations...</option>';
+
+          fetch(`/api/get-areas/?state_id=${encodeURIComponent(stateId)}`)
+            .then(res => res.json())
+            .then(data => {
+              areaSelect.innerHTML = '<option value="">Select Area / Commercial Hub</option>';
+              if (data.areas && data.areas.length > 0) {
+                data.areas.forEach(area => {
+                  const opt = document.createElement('option');
+                  opt.value = area.id;
+                  opt.textContent = area.name;
+                  if (restoreVal && String(restoreVal) === String(area.id)) {
+                    opt.selected = true;
+                  }
+                  areaSelect.appendChild(opt);
+                });
+                areaSelect.disabled = false;
+              } else {
+                areaSelect.innerHTML = '<option value="">No areas listed</option>';
+                areaSelect.disabled = false;
+              }
+            })
+            .catch(() => {
+              areaSelect.innerHTML = '<option value="">Error loading</option>';
+              areaSelect.disabled = false;
+            });
+        }
+
+        if (stateSelect.value) {
+          loadAreas(stateSelect.value, initialArea);
+        } else {
+          areaSelect.innerHTML = '<option value="">Select a state first</option>';
+          areaSelect.disabled = true;
+        }
+
+        stateSelect.addEventListener('change', function() {
+          loadAreas(this.value, null);
+        });
+      }
+    });
   </script>
 </body>
 </html>
