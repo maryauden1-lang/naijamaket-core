@@ -24,7 +24,6 @@ ALLOWED_HOSTS = [
     'naijasale.com',
     'www.naijasale.com',
     '.naijasale.com',
-    '*',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
