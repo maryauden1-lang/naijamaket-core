@@ -394,8 +394,9 @@
             
             <!-- WhatsApp Button -->
             <a 
-              href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}." 
+              href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
               target="_blank" 
+              rel="noopener noreferrer"
               class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all"
             >
               <i data-lucide="message-circle" class="w-5 h-5"></i>
@@ -477,8 +478,9 @@
             </span>
             <div class="flex items-center gap-2">
               <a 
-                href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}" 
+                href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
                 target="_blank" 
+                rel="noopener noreferrer"
                 class="w-10 h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
                 title="WhatsApp"
               >
