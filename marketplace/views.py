@@ -1006,3 +1006,37 @@ def unread_count_api_view(request):
         is_read=False
     ).exclude(sender=request.user).count()
     return JsonResponse({'unread_count': count})
+
+
+def pwa_manifest_view(request):
+    site_setting = SiteSetting.objects.first()
+    site_name = site_setting.site_name if site_setting and site_setting.site_name else "Naijasale"
+    icon_url = (
+        request.build_absolute_uri(site_setting.logo.url)
+        if site_setting and site_setting.logo
+        else "https://naijasale.com/static/badges/crown.jpg"
+    )
+
+    manifest = {
+        "name": site_name,
+        "short_name": site_name,
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#6D28D9",
+        "icons": [
+            {"src": icon_url, "sizes": "192x192", "type": "image/png"},
+            {"src": icon_url, "sizes": "512x512", "type": "image/png"},
+        ],
+    }
+    return JsonResponse(manifest, content_type="application/manifest+json")
+
+
+def pwa_service_worker_view(request):
+    from django.http import HttpResponse
+    js = """
+    self.addEventListener('install', (event) => { self.skipWaiting(); });
+    self.addEventListener('activate', (event) => { event.waitUntil(clients.claim()); });
+    self.addEventListener('fetch', (event) => {});
+    """
+    return HttpResponse(js, content_type="application/javascript")

@@ -32,6 +32,8 @@ class NaijasalePasswordResetForm(PasswordResetForm):
 
 urlpatterns = [
     path('', views.index_view, name='home'),
+    path('manifest.json', views.pwa_manifest_view, name='pwa_manifest'),
+    path('sw.js', views.pwa_service_worker_view, name='pwa_sw'),
     path('item/<slug:slug>/', views.listing_detail_view, name='listing_detail'),
     path('favorite/<int:listing_id>/', views.toggle_favorite_view, name='toggle_favorite'),
     path('saved/', views.saved_items_view, name='saved_items'),

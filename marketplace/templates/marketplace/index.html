@@ -14,6 +14,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6D28D9">
+  <link rel="manifest" href="{% url 'marketplace:pwa_manifest' %}">
   <title>{{ settings.site_name|default:"Naijasale" }} - {{ settings.tagline|default:"Verified Marketplace" }}</title>
   
   <!-- FAVICON & APP ICONS (DIRECT FROM YOUR UPLOADED LOGO) -->
@@ -975,6 +976,10 @@
       });
     }
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
     let deferredPrompt = null;
     const pwaModal = document.getElementById('pwaExitModal');
     const pwaBtn = document.getElementById('pwaInstallBtn');
@@ -1005,10 +1010,11 @@
       pwaBtn.addEventListener('click', async () => {
         if (deferredPrompt) {
           deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
+          await deferredPrompt.userChoice;
           deferredPrompt = null;
           closePwaExitModal();
         } else {
+          alert('To install: Tap your browser menu (⋮ or Share) at the top/bottom of your screen and select "Add to Home screen" or "Install app".');
           closePwaExitModal();
         }
       });
