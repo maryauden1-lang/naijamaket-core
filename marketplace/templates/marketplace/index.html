@@ -552,7 +552,7 @@
                     <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <span class="truncate">
-                    {% if item.area %}{{ item.area.name }}{% elif item.state %}{{ item.state.name }}{% else %}Nigeria{% endif %}
+                    {% if item.state and item.area %}{{ item.state.name }}, {{ item.area.name }}{% elif item.state %}{{ item.state.name }}{% elif item.area %}{{ item.area.name }}{% else %}Nigeria{% endif %}
                   </span>
                 </p>
 
