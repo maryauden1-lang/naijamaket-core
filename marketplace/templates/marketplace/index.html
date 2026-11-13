@@ -598,7 +598,7 @@
                 </div>
 
                 <a 
-                  href="https://wa.me/{{ item.seller.seller_profile.whatsapp_number|default:item.seller.seller_profile.phone_number }}?text=Hello%20{{ item.seller.first_name|default:item.seller.username }},%20I%20am%20interested%20in%20'{{ item.title }}'%20listed%20on%20{{ settings.site_name|default:'Naijasale' }}." 
+                  href="https://wa.me/{{ item.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ item.seller.first_name|default:item.seller.username|urlencode }},%20I%20am%20interested%20in%20{{ item.title|urlencode }}%20listed%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}." 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[10px] flex items-center gap-1 shadow-2xs"

@@ -217,6 +217,16 @@ class SellerProfile(models.Model):
     response_time = models.CharField(max_length=50, default="Replies typically within 1 hour")
     is_banned = models.BooleanField(default=False)
 
+    @property
+    def clean_whatsapp_number(self):
+        raw = str(self.whatsapp_number or self.phone_number or '').strip()
+        digits = ''.join(ch for ch in raw if ch.isdigit())
+        if digits.startswith('0') and len(digits) == 11:
+            return '234' + digits[1:]
+        if len(digits) == 10 and digits[0] in ('7', '8', '9'):
+            return '234' + digits
+        return digits
+
     def __str__(self):
         return f"{self.user.username} ({'Verified' if self.is_nin_verified else self.get_verification_status_display()})"
 
@@ -559,14 +569,14 @@ class PromotionPlan(models.Model):
     name = models.CharField(max_length=100, help_text="e.g. 7-Day Top Placement")
     duration_days = models.PositiveIntegerField(help_text="Duration in days (e.g. 3, 7, 30)")
     price_ngn = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
+        max_digits=12, 
+        decimal_places=2, 
         default=Decimal("0.00"),
         help_text="Price in Nigerian Naira"
     )
     price_usd = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        max_digits=10, 
+        decimal_places=2, 
         default=Decimal("0.00"),
         help_text="Price in USD (for international/crypto payments)"
     )
@@ -603,36 +613,36 @@ class PaymentTransaction(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     reference = models.CharField(
-        max_length=120,
-        unique=True,
+        max_length=120, 
+        unique=True, 
         db_index=True,
         help_text="Our unique merchant reference code"
     )
     gateway_reference = models.CharField(
-        max_length=150,
-        blank=True,
-        null=True,
+        max_length=150, 
+        blank=True, 
+        null=True, 
         db_index=True,
         help_text="Reference returned by the payment gateway"
     )
     user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
         related_name="monetization_transactions"
     )
     listing = models.ForeignKey(
-        Listing,
-        on_delete=models.CASCADE,
+        Listing, 
+        on_delete=models.CASCADE, 
         related_name="payments",
         help_text="The listing being promoted"
     )
     plan = models.ForeignKey(
-        PromotionPlan,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        PromotionPlan, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
         related_name="transactions"
     )
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
@@ -642,7 +652,7 @@ class PaymentTransaction(models.Model):
     
     # Gateway response storage & audit
     gateway_response = models.JSONField(
-        default=dict,
+        default=dict, 
         blank=True,
         help_text="Full JSON payload received from payment gateway webhook/verification"
     )

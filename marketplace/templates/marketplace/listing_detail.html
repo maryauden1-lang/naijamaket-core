@@ -8,7 +8,7 @@
   <title>{{ listing.title }} - ₦{{ listing.price|intcomma }} | {{ settings.site_name|default:"Naijasale" }}</title>
   
   <!-- ========================================================= -->
-  <!-- OPEN GRAPH / SOCIAL SHARING PREVIEWS (WhatsApp, FB, X)     -->
+  <!-- OPEN GRAPH / SOCIAL SHARING PREVIEWS (WhatsApp, FB, X)    -->
   <!-- ========================================================= -->
   <meta name="description" content="Buy {{ listing.title }} for ₦{{ listing.price|intcomma }} in {% if listing.area %}{{ listing.area.name }}, {% endif %}{% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %} on {{ settings.site_name|default:'Naijasale' }}.">
   
@@ -394,7 +394,7 @@
             
             <!-- WhatsApp Button -->
             <a 
-              href="https://wa.me/{{ listing.seller.seller_profile.whatsapp_number|default:listing.seller.seller_profile.phone_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username }},%20I%20saw%20your%20listing%20'{{ listing.title }}'%20on%20{{ settings.site_name|default:'Naijasale' }}." 
+              href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}." 
               target="_blank" 
               class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all"
             >
@@ -477,7 +477,7 @@
             </span>
             <div class="flex items-center gap-2">
               <a 
-                href="https://wa.me/{{ listing.seller.seller_profile.whatsapp_number|default:listing.seller.seller_profile.phone_number }}" 
+                href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}" 
                 target="_blank" 
                 class="w-10 h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
                 title="WhatsApp"
@@ -627,7 +627,7 @@
   </main>
 
   <!-- ======================================================== -->
-  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                     -->
+  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                    -->
   <!-- ======================================================== -->
   <div id="reportModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
