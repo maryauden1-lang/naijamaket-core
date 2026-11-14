@@ -396,7 +396,7 @@
             <a 
               href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
               target="_blank" 
-              rel="noopener noreferrer"
+              rel="noopener noreferrer" 
               class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all"
             >
               <i data-lucide="message-circle" class="w-5 h-5"></i>
@@ -480,7 +480,7 @@
               <a 
                 href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
                 target="_blank" 
-                rel="noopener noreferrer"
+                rel="noopener noreferrer" 
                 class="w-10 h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
                 title="WhatsApp"
               >
@@ -753,6 +753,27 @@
         closeReportModal();
       }
     });
+
+    // Persistent Device Memory: Record viewed ad in localStorage
+    (function recordRecentlyViewedAd() {
+      try {
+        const STORAGE_KEY = 'naijasale_recent_ads_v1';
+        const currentAd = {
+          id: "{{ listing.id }}",
+          title: "{{ listing.title|escapejs }}",
+          price: "{{ listing.price|intcomma }}",
+          url: "{% url 'marketplace:listing_detail' listing.slug %}",
+          image: "{% if listing.images.first %}{{ listing.images.first.image.url|escapejs }}{% endif %}",
+          location: "{% if listing.state %}{{ listing.state.name|escapejs }}{% else %}Nigeria{% endif %}",
+          viewedAt: Date.now()
+        };
+
+        let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        history = history.filter(item => String(item.id) !== String(currentAd.id));
+        history.unshift(currentAd);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, 6)));
+      } catch (e) {}
+    })();
   </script>
 </body>
 </html>

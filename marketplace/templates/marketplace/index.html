@@ -522,6 +522,20 @@
 
       <!-- RIGHT COLUMN: Grid of Listings -->
       <div class="lg:col-span-3 space-y-4 sm:space-y-6 min-w-0 w-full">
+
+        <!-- RETURNING VISITOR MEMORY: CONTINUE WHERE YOU LEFT OFF -->
+        <div id="recentlyViewedSection" class="hidden bg-white rounded-2xl p-3.5 sm:p-4 border border-purple-200/80 shadow-xs">
+          <div class="flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+              <h3 class="text-xs sm:text-sm font-black text-slate-900 tracking-tight">Continue Where You Left Off</h3>
+            </div>
+            <button type="button" onclick="clearRecentHistory()" class="text-[10px] sm:text-[11px] font-bold text-slate-400 hover:text-rose-600 transition">
+              Clear history
+            </button>
+          </div>
+          <div id="recentlyViewedList" class="flex gap-2.5 overflow-x-auto no-scrollbar pb-1"></div>
+        </div>
         
         <div class="flex items-center justify-between px-1">
           <div>
@@ -1093,6 +1107,68 @@
         showPwaExitModal();
       }
     }, 20000);
+
+    // --- DEVICE PERSISTENT MEMORY (RECENTLY VIEWED & SAVED STATE) ---
+    function escapeSafe(str) {
+      const d = document.createElement('div');
+      d.textContent = str || '';
+      return d.innerHTML;
+    }
+
+    function clearRecentHistory() {
+      localStorage.removeItem('naijasale_recent_ads_v1');
+      const sec = document.getElementById('recentlyViewedSection');
+      if (sec) sec.classList.add('hidden');
+    }
+
+    (function initDeviceMemory() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const STATE_KEY = 'naijasale_preferred_state_v1';
+
+        // 1. Save or restore visitor's preferred Nigerian state
+        if (params.has('state')) {
+          const st = params.get('state').trim();
+          if (st) {
+            localStorage.setItem(STATE_KEY, st);
+          } else {
+            localStorage.removeItem(STATE_KEY);
+          }
+        } else if (!params.has('q') && !params.has('category') && !params.has('subcategory') && !params.has('page')) {
+          const isExplicitReset = document.referrer && new URL(document.referrer).origin === window.location.origin && document.referrer.includes('state=');
+          if (isExplicitReset) {
+            localStorage.removeItem(STATE_KEY);
+          } else {
+            const savedState = localStorage.getItem(STATE_KEY);
+            if (savedState) {
+              window.location.replace(`/?state=${encodeURIComponent(savedState)}`);
+              return;
+            }
+          }
+        }
+
+        // 2. Render "Continue Where You Left Off" strip if device remembers viewed ads
+        const recentAds = JSON.parse(localStorage.getItem('naijasale_recent_ads_v1') || '[]');
+        const section = document.getElementById('recentlyViewedSection');
+        const listEl = document.getElementById('recentlyViewedList');
+
+        if (section && listEl && Array.isArray(recentAds) && recentAds.length > 0) {
+          listEl.innerHTML = recentAds.map(ad => `
+            <a href="${escapeSafe(ad.url)}" class="shrink-0 w-36 sm:w-44 bg-slate-50 hover:bg-purple-50/70 border border-slate-200/80 hover:border-purple-300 rounded-xl p-2 transition flex flex-col gap-1.5 group">
+              <div class="w-full h-20 sm:h-24 rounded-lg bg-slate-200 overflow-hidden">
+                ${ad.image ? `<img src="${escapeSafe(ad.image)}" alt="${escapeSafe(ad.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>`}
+              </div>
+              <p class="text-[11px] font-bold text-slate-800 truncate group-hover:text-purple-700">${escapeSafe(ad.title)}</p>
+              <div class="flex items-center justify-between gap-1">
+                <span class="text-xs font-black text-purple-700 truncate">₦${escapeSafe(ad.price)}</span>
+                <span class="text-[9px] font-semibold text-slate-400 truncate">${escapeSafe(ad.location)}</span>
+              </div>
+            </a>
+          `).join('');
+          section.classList.remove('hidden');
+        }
+      } catch (e) {}
+    })();
 
     {% if user.is_authenticated %}
     // Unlock audio engine on the user's first tap/click anywhere on the page
