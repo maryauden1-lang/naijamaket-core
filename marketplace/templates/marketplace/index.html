@@ -226,6 +226,61 @@
         </div>
 
         {% if user.is_authenticated %}
+          <!-- OFFICIAL CEO & SYSTEM NOTIFICATIONS BELL -->
+          <div class="relative" id="systemNotifWrapper">
+            <button 
+              type="button" 
+              id="systemNotifBtn"
+              onclick="toggleSystemNotifications()"
+              class="relative p-2 text-slate-700 hover:text-purple-700 rounded-xl hover:bg-slate-100 transition"
+              title="Official Naijasale Announcements"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+              </svg>
+              {% if unread_notif_count > 0 %}
+                <span id="systemNotifBadge" class="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
+                  {{ unread_notif_count }}
+                </span>
+              {% endif %}
+            </button>
+
+            <div id="systemNotifDropdown" class="hidden absolute right-0 top-[calc(100%+8px)] w-80 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+              <div class="px-4 py-3 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-black tracking-wide">Official Announcements</span>
+                </div>
+                <span class="text-[10px] font-extrabold bg-white/20 px-2 py-0.5 rounded-full">CEO / Admin</span>
+              </div>
+
+              <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                {% for notif in system_notifications %}
+                  <div class="p-3.5 transition-colors {% if not notif.is_read %}bg-purple-50/70{% else %}hover:bg-slate-50{% endif %}">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-xs font-extrabold text-slate-900 leading-snug">{{ notif.title }}</p>
+                      {% if not notif.is_read %}
+                        <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 mt-1"></span>
+                      {% endif %}
+                    </div>
+                    <p class="text-[11px] text-slate-600 mt-1 leading-relaxed whitespace-pre-line">{{ notif.message }}</p>
+                    {% if notif.link %}
+                      <a href="{{ notif.link }}" class="inline-flex items-center gap-1 mt-2 text-[11px] font-extrabold text-purple-700 hover:text-purple-800 hover:underline">
+                        <span>View details</span>
+                        <span>→</span>
+                      </a>
+                    {% endif %}
+                    <p class="text-[10px] text-slate-400 font-semibold mt-1.5">{{ notif.created_at|timesince }} ago</p>
+                  </div>
+                {% empty %}
+                  <div class="p-6 text-center">
+                    <p class="text-xs font-bold text-slate-500">No announcements yet</p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Official updates from Naijasale will appear here.</p>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
           <a href="{% url 'marketplace:inbox' %}" class="hidden sm:flex items-center gap-1.5 text-slate-700 hover:text-purple-700 py-1.5 px-2.5 rounded-xl hover:bg-slate-100 transition relative" title="Messages">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -603,7 +658,6 @@
                   rel="noopener noreferrer" 
                   class="p-1.5 sm:px-2.5 sm:py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-600 hover:text-white transition-all shrink-0 font-bold text-[10px] flex items-center gap-1 shadow-2xs"
                   title="WhatsApp"
-                  
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
@@ -974,6 +1028,11 @@
         if (langDropdown && !langDropdown.contains(e.target) && !e.target.closest('button[onclick*="langDropdown"]')) {
           langDropdown.classList.add('hidden');
         }
+        const notifWrapper = document.getElementById('systemNotifWrapper');
+        const notifDropdown = document.getElementById('systemNotifDropdown');
+        if (notifWrapper && notifDropdown && !notifWrapper.contains(e.target)) {
+          notifDropdown.classList.add('hidden');
+        }
       });
     }
 
@@ -1034,6 +1093,23 @@
     }, 20000);
 
     {% if user.is_authenticated %}
+    function toggleSystemNotifications() {
+      const dropdown = document.getElementById('systemNotifDropdown');
+      if (!dropdown) return;
+      dropdown.classList.toggle('hidden');
+
+      const badge = document.getElementById('systemNotifBadge');
+      if (badge) {
+        fetch("{% url 'marketplace:mark_notifications_read' %}", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest"
+          }
+        }).then(() => badge.remove()).catch(() => {});
+      }
+    }
+
     function playGlobalChime() {
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;

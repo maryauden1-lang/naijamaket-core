@@ -673,3 +673,46 @@ class PaymentTransaction(models.Model):
 
     def __str__(self):
         return f"[{self.gateway}] {self.reference} - {self.currency} {self.amount_paid:,.2f} ({self.status})"
+
+
+# ==========================================
+# 11. OFFICIAL SYSTEM & CEO ANNOUNCEMENTS
+# ==========================================
+class SystemNotification(models.Model):
+    """
+    Official CEO / Admin notification inbox for broadcasting announcements
+    to all users or sending official notices to individual accounts.
+    """
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="system_notifications",
+        null=True,
+        blank=True,
+        help_text="Select a single user, or leave blank if 'Send to all users' is checked."
+    )
+    send_to_all = models.BooleanField(
+        default=False,
+        help_text="Check this to broadcast this announcement to every active registered user."
+    )
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    link = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional URL (e.g. /post-ad/ or /dashboard/)"
+    )
+    is_read = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "is_read", "-created_at"]),
+        ]
+        verbose_name = "System Notification / Announcement"
+        verbose_name_plural = "System Notifications & Announcements"
+
+    def __str__(self):
+        target = "ALL USERS" if self.send_to_all else (self.recipient.username if self.recipient else "Unassigned")
+        return f"[{target}] {self.title}"

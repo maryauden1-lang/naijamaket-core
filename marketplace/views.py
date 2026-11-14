@@ -9,6 +9,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.core.files.base import ContentFile
 from django.db.models import Q, F, Count, Case, When, Value, IntegerField
@@ -23,7 +24,7 @@ from django.conf import settings
 from .models import (
     SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing,
     ListingImage, SellerProfile, Favorite, Conversation, Message,
-    ReportedListing, SellerReview
+    ReportedListing, SellerReview, SystemNotification
 )
 from .forms import (
     UserRegisterForm, ListingForm, ProfileUpdateForm,
@@ -1006,6 +1007,13 @@ def unread_count_api_view(request):
         is_read=False
     ).exclude(sender=request.user).count()
     return JsonResponse({'unread_count': count})
+
+
+@login_required(login_url='marketplace:login')
+@require_POST
+def mark_notifications_read_view(request):
+    SystemNotification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'status': 'ok'})
 
 
 def pwa_manifest_view(request):

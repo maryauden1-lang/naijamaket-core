@@ -45,6 +45,7 @@ from .models import (
     StaffActivityLog,
     PromotionPlan,
     PaymentTransaction,
+    SystemNotification,
 )
 
 
@@ -544,3 +545,54 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
             return mark_safe('<span style="padding: 3px 9px; font-size: 11px; font-weight: 700; border-radius: 9999px; background: #FEF3C7; color: #92400E;">● PENDING</span>')
         return mark_safe('<span style="padding: 3px 9px; font-size: 11px; font-weight: 700; border-radius: 9999px; background: #FEE2E2; color: #991B1B;">● FAILED</span>')
     status_badge.short_description = "Status"
+
+
+# ==============================================================================
+# OFFICIAL CEO & ADMIN NOTIFICATIONS / BROADCASTS
+# ==============================================================================
+
+@admin.register(SystemNotification)
+class SystemNotificationAdmin(admin.ModelAdmin):
+    list_display = ("title", "target_display", "send_to_all", "is_read", "created_at")
+    list_filter = ("send_to_all", "is_read", "created_at")
+    search_fields = ("title", "message", "recipient__username", "recipient__email")
+    autocomplete_fields = ("recipient",)
+    fieldsets = (
+        ("Audience (Choose Broadcast OR Single Account)", {
+            "fields": ("send_to_all", "recipient"),
+            "description": "Tick 'Send to all users' to broadcast to everyone, OR select a single user account to send an official CEO/Admin notice.",
+        }),
+        ("Announcement Content", {
+            "fields": ("title", "message", "link"),
+        }),
+    )
+
+    def target_display(self, obj):
+        if obj.send_to_all and not obj.recipient:
+            return "📢 All Registered Users"
+        if obj.recipient:
+            prefix = "📢 Broadcast → " if obj.send_to_all else "👤 Official DM → "
+            return f"{prefix}{obj.recipient.username}"
+        return "Unassigned"
+    target_display.short_description = "Recipient"
+
+    def save_model(self, request, obj, form, change):
+        if not change and obj.send_to_all:
+            active_users = User.objects.filter(is_active=True)
+            notifications = [
+                SystemNotification(
+                    recipient=u,
+                    send_to_all=True,
+                    title=obj.title,
+                    message=obj.message,
+                    link=obj.link,
+                )
+                for u in active_users
+            ]
+            SystemNotification.objects.bulk_create(notifications)
+            messages.success(
+                request,
+                f"📢 Official announcement '{obj.title}' sent to {len(notifications)} active user(s)!"
+            )
+        else:
+            super().save_model(request, obj, form, change)
