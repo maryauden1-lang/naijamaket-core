@@ -153,54 +153,54 @@
   </div>
 
   <!-- FLOATING GLOBAL TOAST ALERT -->
-  <div id="globalToast" class="fixed top-5 right-5 z-[80] transform -translate-y-24 opacity-0 transition-all duration-300 ease-out pointer-events-none max-w-sm w-full bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
+  <div id="globalToast" class="fixed top-4 left-3 right-3 sm:left-auto sm:right-5 sm:top-5 z-[80] transform -translate-y-28 opacity-0 transition-all duration-300 ease-out pointer-events-none sm:max-w-sm bg-slate-900/95 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700">
     <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
       <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
       </svg>
     </div>
-    <div class="flex-1 truncate">
-      <p class="text-xs font-bold text-emerald-400">New Message Received</p>
-      <p class="text-xs text-slate-300 truncate mt-0.5">You have unread messages in your inbox.</p>
+    <div class="flex-1 min-w-0">
+      <p id="globalToastTitle" class="text-xs font-bold text-emerald-400 truncate">New Message Received</p>
+      <p id="globalToastBody" class="text-xs text-slate-300 truncate mt-0.5">You have unread messages in your inbox.</p>
     </div>
-    <a href="{% url 'marketplace:inbox' %}" class="text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl transition pointer-events-auto">
+    <a id="globalToastLink" href="{% url 'marketplace:inbox' %}" class="text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl transition pointer-events-auto shrink-0">
       View
     </a>
   </div>
 
   <!-- 1. TOP WHITE HEADER BAR -->
   <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between gap-3 sm:gap-6">
-      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-3 group shrink-0 py-1">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 sm:h-24 flex items-center justify-between gap-2 sm:gap-6">
+      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2 sm:gap-3 group shrink-0 py-1">
         {% if settings.logo %}
           <img 
             src="{{ settings.logo.url }}" 
             alt="{{ settings.site_name }}" 
-            class="h-14 sm:h-18 w-auto max-w-[200px] sm:max-w-[300px] object-contain group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
+            class="h-12 sm:h-18 w-auto max-w-[130px] sm:max-w-[300px] object-contain group-hover:scale-105 transition-transform duration-200 drop-shadow-xs"
           >
         {% else %}
-          <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-md group-hover:scale-105 transition-transform">
+          <div class="w-11 h-11 sm:w-16 sm:h-16 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-xl sm:text-3xl shadow-md group-hover:scale-105 transition-transform">
             {{ settings.site_name|slice:":1"|upper|default:"N" }}
           </div>
-          <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+          <span class="text-xl sm:text-3xl font-black tracking-tight text-slate-900">
             {{ settings.site_name|default:"Naijasale" }}
           </span>
         {% endif %}
       </a>
 
-      <div class="flex items-center gap-2.5 sm:gap-6">
+      <div class="flex items-center gap-1.5 sm:gap-5">
         <!-- Language Selector -->
         <div class="relative">
           <button 
             type="button" 
             onclick="document.getElementById('langDropdown').classList.toggle('hidden')"
-            class="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-700 hover:text-purple-700 transition-colors py-1.5 px-2 rounded-xl hover:bg-slate-100"
+            class="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm font-bold text-slate-700 hover:text-purple-700 transition-colors py-1.5 px-1.5 sm:px-2 rounded-xl hover:bg-slate-100"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-purple-700 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>
             </svg>
             <span id="currentLangLabel">EN</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="m6 9 6 6 6-6"/>
             </svg>
           </button>
@@ -226,34 +226,36 @@
         </div>
 
         {% if user.is_authenticated %}
-          <!-- OFFICIAL CEO & SYSTEM NOTIFICATIONS BELL -->
-          <div class="relative" id="systemNotifWrapper">
+          <!-- OFFICIAL CEO & SYSTEM NOTIFICATIONS BELL (MOBILE-SAFE & HIGH-VISIBILITY) -->
+          <div class="relative shrink-0" id="systemNotifWrapper">
             <button 
               type="button" 
               id="systemNotifBtn"
               onclick="toggleSystemNotifications()"
-              class="relative p-2 text-slate-700 hover:text-purple-700 rounded-xl hover:bg-slate-100 transition"
+              class="relative p-2 sm:p-2.5 text-slate-800 hover:text-purple-700 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/80 rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-2xs"
               title="Official Naijasale Announcements"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 sm:w-7 sm:h-7 text-purple-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
               </svg>
-              {% if unread_notif_count > 0 %}
-                <span id="systemNotifBadge" class="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-black rounded-full min-w-4 h-4 px-1 flex items-center justify-center shadow-xs">
-                  {{ unread_notif_count }}
-                </span>
-              {% endif %}
+              <span id="systemNotifBadge" class="{% if unread_notif_count == 0 %}hidden{% endif %} absolute -top-1.5 -right-1.5 bg-rose-600 text-white text-[10px] sm:text-[11px] font-black rounded-full min-w-5 h-5 px-1.5 flex items-center justify-center shadow-md ring-2 ring-white">
+                {{ unread_notif_count }}
+              </span>
             </button>
 
-            <div id="systemNotifDropdown" class="hidden absolute right-0 top-[calc(100%+8px)] w-80 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden">
+            <!-- Fixed full-width card on mobile (left-3 right-3) so it NEVER cuts off screen; clean dropdown on desktop -->
+            <div id="systemNotifDropdown" class="hidden fixed left-3 right-3 top-[76px] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
               <div class="px-4 py-3 bg-gradient-to-r from-purple-700 to-indigo-700 text-white flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-black tracking-wide">Official Announcements</span>
                 </div>
-                <span class="text-[10px] font-extrabold bg-white/20 px-2 py-0.5 rounded-full">CEO / Admin</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-extrabold bg-white/20 px-2 py-0.5 rounded-full">CEO / Admin</span>
+                  <button type="button" onclick="document.getElementById('systemNotifDropdown').classList.add('hidden')" class="sm:hidden text-white/80 hover:text-white text-sm font-black px-1">✕</button>
+                </div>
               </div>
 
-              <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+              <div id="systemNotifList" class="max-h-[65vh] sm:max-h-80 overflow-y-auto divide-y divide-slate-100">
                 {% for notif in system_notifications %}
                   <div class="p-3.5 transition-colors {% if not notif.is_read %}bg-purple-50/70{% else %}hover:bg-slate-50{% endif %}">
                     <div class="flex items-start justify-between gap-2">
@@ -262,7 +264,7 @@
                         <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 mt-1"></span>
                       {% endif %}
                     </div>
-                    <p class="text-[11px] text-slate-600 mt-1 leading-relaxed whitespace-pre-line">{{ notif.message }}</p>
+                    <p class="text-[11px] text-slate-600 mt-1 leading-relaxed whitespace-pre-line break-words">{{ notif.message }}</p>
                     {% if notif.link %}
                       <a href="{{ notif.link }}" class="inline-flex items-center gap-1 mt-2 text-[11px] font-extrabold text-purple-700 hover:text-purple-800 hover:underline">
                         <span>View details</span>
@@ -291,8 +293,8 @@
             </span>
           </a>
 
-          <div class="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-800">
-            <a href="{% url 'marketplace:dashboard' %}" class="hover:text-purple-700 flex items-center gap-1.5 max-w-[85px] sm:max-w-[140px] truncate">
+          <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-extrabold text-slate-800">
+            <a href="{% url 'marketplace:dashboard' %}" class="hover:text-purple-700 flex items-center gap-1.5 max-w-[65px] sm:max-w-[140px] truncate">
               <span class="truncate">{{ user.first_name|default:user.username }}</span>
             </a>
             <span class="text-slate-300">|</span>
@@ -308,7 +310,7 @@
 
         <a 
           href="{% url 'marketplace:post_ad' %}" 
-          class="sell-btn-orange text-white text-xs sm:text-sm font-black px-4 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
+          class="sell-btn-orange text-white text-xs sm:text-sm font-black px-3.5 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
         >
           SELL
         </a>
@@ -1099,14 +1101,18 @@
       dropdown.classList.toggle('hidden');
 
       const badge = document.getElementById('systemNotifBadge');
-      if (badge) {
+      if (badge && !badge.classList.contains('hidden')) {
         fetch("{% url 'marketplace:mark_notifications_read' %}", {
           method: "POST",
           headers: {
             "X-CSRFToken": "{{ csrf_token }}",
             "X-Requested-With": "XMLHttpRequest"
           }
-        }).then(() => badge.remove()).catch(() => {});
+        }).then(() => {
+          badge.classList.add('hidden');
+          badge.textContent = '0';
+          previousNotifUnread = 0;
+        }).catch(() => {});
       }
     }
 
@@ -1122,7 +1128,7 @@
         osc.frequency.setValueAtTime(587.33, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
 
-        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.setValueAtTime(0.22, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
 
         osc.connect(gain);
@@ -1133,57 +1139,94 @@
       } catch(e) {}
     }
 
-    function showGlobalToast() {
+    function showGlobalToast(titleText, bodyText, linkUrl) {
       const toast = document.getElementById('globalToast');
       if (!toast) return;
-      toast.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+      const titleEl = document.getElementById('globalToastTitle');
+      const bodyEl = document.getElementById('globalToastBody');
+      const linkEl = document.getElementById('globalToastLink');
+
+      if (titleEl) titleEl.textContent = titleText || 'New Message Received';
+      if (bodyEl) bodyEl.textContent = bodyText || 'You have unread messages in your inbox.';
+      if (linkEl) linkEl.href = linkUrl || "{% url 'marketplace:inbox' %}";
+
+      toast.classList.remove('-translate-y-28', 'opacity-0', 'pointer-events-none');
       toast.classList.add('translate-y-0', 'opacity-100');
 
       setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
-      }, 5000);
+        toast.classList.add('-translate-y-28', 'opacity-0', 'pointer-events-none');
+      }, 5500);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str || '';
+      return div.innerHTML;
     }
 
     let previousUnread = {{ unread_messages_count|default:0 }};
+    let previousNotifUnread = {{ unread_notif_count|default:0 }};
 
     async function pollGlobalUnread() {
       try {
         const res = await fetch("{% url 'marketplace:unread_count_api' %}");
         if (!res.ok) return;
         const data = await res.json();
-        const count = data.unread_count;
 
+        // 1. Direct Chat Messages
+        const count = data.unread_count || 0;
         if (count > previousUnread) {
           playGlobalChime();
-          showGlobalToast();
+          showGlobalToast('New Message Received', 'You have unread messages in your inbox.', "{% url 'marketplace:inbox' %}");
         }
-
         previousUnread = count;
 
         const desktopBadge = document.getElementById('desktopUnreadBadge');
         if (desktopBadge) {
-          if (count > 0) {
-            desktopBadge.textContent = count;
-            desktopBadge.classList.remove('hidden');
-          } else {
-            desktopBadge.classList.add('hidden');
-          }
+          desktopBadge.textContent = count;
+          desktopBadge.classList.toggle('hidden', count === 0);
         }
 
         const mobileBadge = document.getElementById('mobileUnreadBadge');
         if (mobileBadge) {
-          if (count > 0) {
-            mobileBadge.textContent = count;
-            mobileBadge.classList.remove('hidden');
-          } else {
-            mobileBadge.classList.add('hidden');
-          }
+          mobileBadge.textContent = count;
+          mobileBadge.classList.toggle('hidden', count === 0);
+        }
+
+        // 2. Official CEO / Admin Announcements Live
+        const notifCount = data.notif_unread_count || 0;
+        const notifBadge = document.getElementById('systemNotifBadge');
+        if (notifBadge) {
+          notifBadge.textContent = notifCount;
+          notifBadge.classList.toggle('hidden', notifCount === 0);
+        }
+
+        if (notifCount > previousNotifUnread && data.notifications && data.notifications.length > 0) {
+          const newest = data.notifications[0];
+          playGlobalChime();
+          showGlobalToast('📢 ' + newest.title, newest.message, newest.link || '#');
+        }
+        previousNotifUnread = notifCount;
+
+        const notifList = document.getElementById('systemNotifList');
+        if (notifList && Array.isArray(data.notifications) && data.notifications.length > 0) {
+          notifList.innerHTML = data.notifications.map(n => `
+            <div class="p-3.5 transition-colors ${!n.is_read ? 'bg-purple-50/70' : 'hover:bg-slate-50'}">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-xs font-extrabold text-slate-900 leading-snug">${escapeHtml(n.title)}</p>
+                ${!n.is_read ? '<span class="w-2 h-2 rounded-full bg-purple-600 shrink-0 mt-1"></span>' : ''}
+              </div>
+              <p class="text-[11px] text-slate-600 mt-1 leading-relaxed whitespace-pre-line break-words">${escapeHtml(n.message)}</p>
+              ${n.link ? `<a href="${escapeHtml(n.link)}" class="inline-flex items-center gap-1 mt-2 text-[11px] font-extrabold text-purple-700 hover:text-purple-800 hover:underline"><span>View details</span><span>→</span></a>` : ''}
+              <p class="text-[10px] text-slate-400 font-semibold mt-1.5">${escapeHtml(n.time_ago)}</p>
+            </div>
+          `).join('');
         }
       } catch(e) {}
     }
 
-    setInterval(pollGlobalUnread, 5000);
+    setInterval(pollGlobalUnread, 3000);
     {% endif %}
   </script>
 </body>

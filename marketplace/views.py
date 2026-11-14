@@ -16,6 +16,7 @@ from django.db.models import Q, F, Count, Case, When, Value, IntegerField
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.utils import timezone
+from django.utils.timesince import timesince
 from django.core.cache import cache
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -1002,11 +1003,30 @@ def get_subcategories_for_category_view(request):
 
 @login_required(login_url='marketplace:login')
 def unread_count_api_view(request):
-    count = Message.objects.filter(
+    msg_count = Message.objects.filter(
         Q(conversation__buyer=request.user) | Q(conversation__seller=request.user),
         is_read=False
     ).exclude(sender=request.user).count()
-    return JsonResponse({'unread_count': count})
+
+    notif_qs = SystemNotification.objects.filter(recipient=request.user)
+    notif_unread_count = notif_qs.filter(is_read=False).count()
+    latest_notifs = [
+        {
+            'id': n.id,
+            'title': n.title,
+            'message': n.message,
+            'link': n.link,
+            'is_read': n.is_read,
+            'time_ago': f"{timesince(n.created_at)} ago",
+        }
+        for n in notif_qs[:10]
+    ]
+
+    return JsonResponse({
+        'unread_count': msg_count,
+        'notif_unread_count': notif_unread_count,
+        'notifications': latest_notifs,
+    })
 
 
 @login_required(login_url='marketplace:login')
