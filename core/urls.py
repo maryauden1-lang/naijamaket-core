@@ -27,6 +27,9 @@ urlpatterns = [
     # Dedicated Staff & Moderation Workspace
     path('workspace/', include('marketplace.workspace_urls', namespace='workspace')),
 
+    # Google OAuth / Django-Allauth authentication endpoints
+    path('accounts/', include('allauth.urls')),
+
     # Marketplace core application
     path('', include('marketplace.urls', namespace='marketplace')),
 ]
