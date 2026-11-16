@@ -442,7 +442,7 @@
       <a href="?category={{ cat.slug }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_state %}&state={{ selected_state }}{% endif %}" class="flex flex-col items-center text-center p-1.5 rounded-xl transition-all duration-150 active:scale-95 group">
         <div class="w-13 h-13 rounded-2xl flex items-center justify-center p-2.5 overflow-hidden transition-all {% if selected_category == cat.slug %}bg-purple-700 text-white shadow-md ring-2 ring-purple-600/30{% else %}bg-purple-50/70 border border-purple-100/80 group-hover:bg-purple-100 text-purple-700{% endif %}">
           {% if cat.icon %}
-            <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" class="w-full h-full object-contain">
+            <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" loading="lazy" class="w-full h-full object-contain">
           {% else %}
             <i data-lucide="{{ cat.icon_name|default:'tag' }}" class="w-6 h-6 stroke-[1.8]"></i>
           {% endif %}
@@ -473,7 +473,7 @@
               <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center shrink-0 overflow-hidden border border-purple-100 group-hover:border-purple-300 text-purple-700">
                   {% if cat.icon %}
-                    <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" class="w-5 h-5 object-contain">
+                    <img src="{{ cat.icon.url }}" alt="{{ cat.name }}" loading="lazy" class="w-5 h-5 object-contain">
                   {% else %}
                     <i data-lucide="{{ cat.icon_name|default:'tag' }}" class="w-4 h-4 stroke-[2]"></i>
                   {% endif %}
@@ -562,7 +562,8 @@
                   src="{{ item.images.first.image.url }}" 
                   alt="{{ item.title }}" 
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
+                  {% if forloop.counter <= 4 %}loading="eager" fetchpriority="high"{% else %}loading="lazy"{% endif %}
+                  decoding="async"
                 >
               {% else %}
                 <div class="w-full h-full flex flex-col items-center justify-center text-slate-300">
@@ -626,11 +627,11 @@
                   {% if item.is_featured %}
                     <div class="shrink-0 flex items-center justify-center" title="{% if item.promotion_badge == 'TOP_DEAL' %}VIP Prestige Ad{% elif item.promotion_badge == 'URGENT' %}Premium Diamond Ad{% else %}Featured Star Ad{% endif %}">
                       {% if item.promotion_badge == 'TOP_DEAL' %}
-                        <img src="{% static 'badges/crown.jpg' %}" alt="VIP" class="w-8 h-8 sm:w-9 sm:h-9 object-contain mix-blend-multiply drop-shadow-2xs">
+                        <img src="{% static 'badges/crown.jpg' %}" alt="VIP" loading="lazy" class="w-8 h-8 sm:w-9 sm:h-9 object-contain mix-blend-multiply drop-shadow-2xs">
                       {% elif item.promotion_badge == 'URGENT' %}
-                        <img src="{% static 'badges/diamond.jpg' %}" alt="Premium" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
+                        <img src="{% static 'badges/diamond.jpg' %}" alt="Premium" loading="lazy" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
                       {% else %}
-                        <img src="{% static 'badges/star.jpg' %}" alt="Featured" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
+                        <img src="{% static 'badges/star.jpg' %}" alt="Featured" loading="lazy" class="w-7 h-7 sm:w-8 sm:h-8 object-contain mix-blend-multiply drop-shadow-2xs">
                       {% endif %}
                     </div>
                   {% endif %}
@@ -642,7 +643,7 @@
                 <div class="flex items-center gap-1.5 truncate flex-1 min-w-0 pr-1">
                   <div class="relative w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
                     {% if item.seller.seller_profile.avatar %}
-                      <img src="{{ item.seller.seller_profile.avatar.url }}" alt="{{ item.seller.first_name|default:item.seller.username }}" class="w-full h-full object-cover">
+                      <img src="{{ item.seller.seller_profile.avatar.url }}" alt="{{ item.seller.first_name|default:item.seller.username }}" loading="lazy" class="w-full h-full object-cover">
                     {% else %}
                       <div class="w-full h-full bg-purple-700 flex items-center justify-center text-white text-[8px] sm:text-[9px] font-black">
                         {{ item.seller.first_name|default:item.seller.username|slice:":1"|upper }}
@@ -755,7 +756,7 @@
           <div class="col-span-2 space-y-3.5">
             <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5">
               {% if settings.logo %}
-                <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="h-12 w-auto object-contain">
+                <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" loading="lazy" class="h-12 w-auto object-contain">
               {% else %}
                 <div class="w-9 h-9 rounded-xl bg-white text-purple-900 font-black text-xl flex items-center justify-center shadow-md">
                   {{ settings.site_name|slice:":1"|upper|default:"N" }}
@@ -1012,7 +1013,7 @@
                   row.className = 'flex items-center gap-3 p-2.5 rounded-xl hover:bg-purple-50 transition-colors border-b border-slate-100 last:border-b-0';
                   row.innerHTML = `
                     <div class="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0">
-                      ${item.image ? `<img src="${item.image}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>`}
+                      ${item.image ? `<img src="${item.image}" loading="lazy" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>`}
                     </div>
                     <div class="flex-1 truncate">
                       <p class="text-xs font-bold text-slate-900 truncate">${item.title}</p>
@@ -1156,7 +1157,7 @@
           listEl.innerHTML = recentAds.map(ad => `
             <a href="${escapeSafe(ad.url)}" class="shrink-0 w-36 sm:w-44 bg-slate-50 hover:bg-purple-50/70 border border-slate-200/80 hover:border-purple-300 rounded-xl p-2 transition flex flex-col gap-1.5 group">
               <div class="w-full h-20 sm:h-24 rounded-lg bg-slate-200 overflow-hidden">
-                ${ad.image ? `<img src="${escapeSafe(ad.image)}" alt="${escapeSafe(ad.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>`}
+                ${ad.image ? `<img src="${escapeSafe(ad.image)}" alt="${escapeSafe(ad.title)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform">` : `<div class="w-full h-full flex items-center justify-center text-slate-400 text-xs">📦</div>`}
               </div>
               <p class="text-[11px] font-bold text-slate-800 truncate group-hover:text-purple-700">${escapeSafe(ad.title)}</p>
               <div class="flex items-center justify-between gap-1">
