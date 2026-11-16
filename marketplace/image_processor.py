@@ -37,7 +37,7 @@ def process_and_watermark_image(
     Enterprise Jiji-Grade Image Pipeline:
     1. Fixes sideways phone camera rotation (EXIF transpose).
     2. Resizes massive multi-MB photos to crisp 1200px max dimension.
-    3. Stamps a subtle, Jiji-style 'Posted on Naijasale / by Seller Name' watermark.
+    3. Stamps a subtle, centered Jiji-style 'Posted on Naijasale / by Seller Name' watermark.
     4. Compresses down to ultra-fast WebP (~85KB - 165KB) for instant page loads.
     """
     uploaded_file.seek(0)
@@ -62,15 +62,15 @@ def process_and_watermark_image(
         img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
         width, height = img.size
 
-    # 3. Subtle Jiji-Style Watermark ("Posted on Naijasale" + Seller Name)
+    # 3. Centered Jiji-Style Watermark ("Posted on Naijasale" + Seller Name)
     if add_watermark:
         base_rgba = img.convert("RGBA")
         overlay = Image.new("RGBA", base_rgba.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
-        # Proportional font sizing so watermark looks identical on all photo resolutions
-        primary_size = max(14, int(min(width, height) * 0.026))
-        secondary_size = max(11, int(primary_size * 0.80))
+        # Proportional font sizing so centered watermark looks clean and un-croppable
+        primary_size = max(18, int(min(width, height) * 0.036))
+        secondary_size = max(13, int(primary_size * 0.78))
 
         font_main = _load_watermark_font(primary_size)
         font_sub = _load_watermark_font(secondary_size)
@@ -90,25 +90,22 @@ def process_and_watermark_image(
         else:
             w2, h2 = 0, 0
 
-        pad_x = max(12, int(width * 0.022))
-        pad_y = max(10, int(height * 0.020))
-        line_gap = max(3, int(primary_size * 0.25))
-
-        block_w = max(w1, w2)
+        line_gap = max(4, int(primary_size * 0.28))
         block_h = h1 + (line_gap + h2 if line2 else 0)
 
-        x1 = max(8, width - pad_x - w1)
-        y1 = max(8, height - pad_y - block_h)
+        # Center horizontally and vertically in the exact middle of the image
+        x1 = max(8, (width - w1) // 2)
+        y1 = max(8, (height - block_h) // 2)
 
-        # Soft dark shadow + light semi-transparent white text (visible on any background)
-        shadow_alpha = 95
-        text_alpha = 145
+        # Subtle drop shadow + semi-transparent light white text (like Jiji)
+        shadow_alpha = 85
+        text_alpha = 135
 
         draw.text((x1 + 1, y1 + 1), line1, font=font_main, fill=(0, 0, 0, shadow_alpha))
         draw.text((x1, y1), line1, font=font_main, fill=(255, 255, 255, text_alpha))
 
         if line2:
-            x2 = max(8, width - pad_x - w2)
+            x2 = max(8, (width - w2) // 2)
             y2 = y1 + h1 + line_gap
             draw.text((x2 + 1, y2 + 1), line2, font=font_sub, fill=(0, 0, 0, shadow_alpha))
             draw.text((x2, y2), line2, font=font_sub, fill=(255, 255, 255, text_alpha))
