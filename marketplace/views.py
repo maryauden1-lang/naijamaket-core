@@ -101,6 +101,9 @@ def index_view(request):
     selected_subcategory = request.GET.get('subcategory', '')
     selected_state = request.GET.get('state', '').strip()
     selected_condition = request.GET.get('condition', '')
+    min_price_raw = request.GET.get('min_price', '').strip()
+    max_price_raw = request.GET.get('max_price', '').strip()
+    selected_sort = request.GET.get('sort', 'recommended').strip()
 
     # Base active listings
     listings_queryset = Listing.objects.filter(status='active').select_related(
@@ -141,8 +144,37 @@ def index_view(request):
     if selected_condition:
         listings_queryset = listings_queryset.filter(condition=selected_condition)
 
-    # Apply Jiji-style VIP tier + 3-hour fair rotation ranking
-    listings_queryset = apply_jiji_ranking(listings_queryset)
+    # Min / Max Naira Price Filter (Sanitizes commas and non-numeric input safely)
+    min_price_clean = ''
+    if min_price_raw:
+        try:
+            min_val = Decimal(min_price_raw.replace(',', '').replace('₦', '').strip())
+            if min_val >= 0:
+                listings_queryset = listings_queryset.filter(price__gte=min_val)
+                min_price_clean = str(int(min_val)) if min_val == int(min_val) else str(min_val)
+        except (InvalidOperation, ValueError):
+            pass
+
+    max_price_clean = ''
+    if max_price_raw:
+        try:
+            max_val = Decimal(max_price_raw.replace(',', '').replace('₦', '').strip())
+            if max_val >= 0:
+                listings_queryset = listings_queryset.filter(price__lte=max_val)
+                max_price_clean = str(int(max_val)) if max_val == int(max_val) else str(max_val)
+        except (InvalidOperation, ValueError):
+            pass
+
+    # Apply Sorting or Default Jiji VIP Ranking
+    if selected_sort == 'newest':
+        listings_queryset = listings_queryset.order_by('-created_at')
+    elif selected_sort == 'price_asc':
+        listings_queryset = listings_queryset.order_by('price', '-created_at')
+    elif selected_sort == 'price_desc':
+        listings_queryset = listings_queryset.order_by('-price', '-created_at')
+    else:
+        selected_sort = 'recommended'
+        listings_queryset = apply_jiji_ranking(listings_queryset)
 
     # Pagination and Total Found Count
     paginator = Paginator(listings_queryset, 20)
@@ -204,6 +236,9 @@ def index_view(request):
         'selected_state': selected_state,
         'selected_state_obj': selected_state_obj,
         'selected_condition': selected_condition,
+        'min_price': min_price_clean,
+        'max_price': max_price_clean,
+        'selected_sort': selected_sort,
         'current_profile': current_profile,
         'user_saved_ids': user_saved_ids,
         'unread_messages_count': unread_messages_count,
