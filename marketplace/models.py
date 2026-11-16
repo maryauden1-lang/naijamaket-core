@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
 from django.urls import reverse
+from .image_processor import process_and_watermark_image
 
 
 # ==========================================
@@ -217,6 +218,23 @@ class SellerProfile(models.Model):
     response_time = models.CharField(max_length=50, default="Replies typically within 1 hour")
     is_banned = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        if self.avatar and hasattr(self.avatar, 'file') and not getattr(self.avatar, '_committed', True):
+            try:
+                self.avatar = process_and_watermark_image(
+                    self.avatar.file, add_watermark=False, max_dimension=500, target_max_kb=80
+                )
+            except Exception:
+                pass
+        if self.store_banner and hasattr(self.store_banner, 'file') and not getattr(self.store_banner, '_committed', True):
+            try:
+                self.store_banner = process_and_watermark_image(
+                    self.store_banner.file, add_watermark=False, max_dimension=1400, target_max_kb=180
+                )
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
     @property
     def clean_whatsapp_number(self):
         raw = str(self.whatsapp_number or self.phone_number or '').strip()
@@ -406,6 +424,26 @@ class ListingImage(models.Model):
 
     class Meta:
         ordering = ["-is_cover", "id"]
+
+    def save(self, *args, **kwargs):
+        if self.image and hasattr(self.image, 'file') and not getattr(self.image, '_committed', True):
+            try:
+                seller = self.listing.seller
+                seller_display = (
+                    seller.get_full_name()
+                    or seller.first_name
+                    or seller.username.split('@')[0]
+                )
+                self.image = process_and_watermark_image(
+                    self.image.file,
+                    seller_name=seller_display,
+                    add_watermark=True,
+                    max_dimension=1200,
+                    target_max_kb=165,
+                )
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Image for {self.listing.title}"

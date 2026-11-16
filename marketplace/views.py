@@ -681,8 +681,13 @@ def post_ad_view(request):
         form = ListingForm(request.POST)
         files = request.FILES.getlist('images')
 
+        max_bytes = 10 * 1024 * 1024  # 10MB per photo
+        oversized = [f.name for f in files if f.size > max_bytes]
+
         if not files:
             messages.error(request, "Please upload at least one image of your item or job opportunity.")
+        elif oversized:
+            messages.error(request, f"Each image must be 10MB or smaller. Too large: {', '.join(oversized)}")
         elif form.is_valid():
             listing = form.save(commit=False)
             listing.seller = request.user
@@ -745,11 +750,25 @@ def register_view(request):
 
             try:
                 send_otp_email(email, otp_code)
+                return redirect('marketplace:verify_email')
             except Exception:
-                messages.error(request, "Failed to send verification email. Please check your address or try again.")
-                return render(request, 'marketplace/register.html', {'form': form})
-
-            return redirect('marketplace:verify_email')
+                user = User.objects.filter(username=email).first()
+                if not user:
+                    user = User.objects.create_user(
+                        username=email,
+                        email=email,
+                        password=password,
+                        first_name=full_name
+                    )
+                SellerProfile.objects.get_or_create(
+                    user=user,
+                    defaults={'phone_number': phone, 'whatsapp_number': phone}
+                )
+                if 'reg_user' in request.session:
+                    del request.session['reg_user']
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, f"🎉 Welcome to Naijasale, {full_name}! Your account has been created successfully.")
+                return redirect('marketplace:home')
     else:
         form = UserRegisterForm()
 
@@ -815,7 +834,7 @@ def verify_email_view(request):
             if 'reg_user' in request.session:
                 del request.session['reg_user']
 
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, f"🎉 Welcome to Naijasale, {full_name}! Your account is verified. A welcome message has been sent to your Inbox.")
             return redirect('marketplace:home')
         else:

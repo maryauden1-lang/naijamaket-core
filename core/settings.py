@@ -316,3 +316,9 @@ SOCIALACCOUNT_PROVIDERS = {
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# ==============================================================================
+# MEDIA UPLOAD LIMITS (10MB PER IMAGE / 100MB BATCH)
+# ==============================================================================
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024

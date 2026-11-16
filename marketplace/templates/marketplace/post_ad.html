@@ -56,10 +56,10 @@
       <!-- Multi-Photo Upload Area -->
       <div>
         <label class="block text-xs font-black text-slate-800 uppercase tracking-wider mb-1.5">
-          Upload Product Photos / Company Banner (Up to 10 photos)
+          Upload Product Photos / Company Banner (Up to 10 photos • Max 10MB each)
         </label>
         <p class="text-[11px] text-slate-400 mb-3">
-          Hold <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 font-bold text-[10px]">Ctrl</kbd> to select multiple photos. The first image will be your cover photo.
+          Hold <kbd class="px-1.5 py-0.5 bg-slate-200 rounded text-slate-700 font-bold text-[10px]">Ctrl</kbd> to select multiple photos. First image is your cover photo (auto-optimized for fast mobile loading).
         </p>
 
         <input 
@@ -71,6 +71,7 @@
           required
           class="block w-full text-xs text-slate-500 file:mr-4 file:py-3 file:px-5 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-dashed border-slate-300 rounded-2xl p-4 bg-slate-50"
         >
+        <p id="imageSizeError" class="hidden text-rose-600 text-xs font-bold mt-2"></p>
         
         <!-- Live Preview Thumbnail Grid -->
         <div id="imagePreviewContainer" class="hidden grid-cols-3 sm:grid-cols-6 gap-3 mt-4 p-3 bg-slate-50 rounded-2xl border border-slate-200"></div>
@@ -229,7 +230,7 @@
 
       <!-- Submit Button -->
       <div class="pt-4">
-        <button type="submit" class="w-full bg-purple-700 hover:bg-purple-800 text-white text-sm font-extrabold py-4 rounded-2xl shadow-lg shadow-purple-700/30 transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer">
+        <button type="submit" id="publishAdBtn" class="w-full bg-purple-700 hover:bg-purple-800 text-white text-sm font-extrabold py-4 rounded-2xl shadow-lg shadow-purple-700/30 transition-all hover:-translate-y-0.5 active:scale-95 cursor-pointer">
           Publish Listing Across Nigeria
         </button>
       </div>
@@ -238,14 +239,33 @@
   </div>
 
   <script>
-    // 1. Live Image Preview
+    // 1. Live Image Preview + 10MB Per-Photo Validation
     const fileInput = document.getElementById('id_images');
     const previewContainer = document.getElementById('imagePreviewContainer');
+    const sizeError = document.getElementById('imageSizeError');
+    const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
 
     if (fileInput) {
       fileInput.addEventListener('change', function() {
         previewContainer.innerHTML = '';
+        if (sizeError) {
+          sizeError.classList.add('hidden');
+          sizeError.textContent = '';
+        }
+
         const files = Array.from(this.files);
+        const oversized = files.filter(f => f.size > MAX_FILE_BYTES);
+
+        if (oversized.length > 0) {
+          if (sizeError) {
+            sizeError.textContent = `Each photo must be 10MB or smaller. "${oversized[0].name}" is ${(oversized[0].size / (1024 * 1024)).toFixed(1)}MB.`;
+            sizeError.classList.remove('hidden');
+          }
+          this.value = '';
+          previewContainer.classList.add('hidden');
+          previewContainer.classList.remove('grid');
+          return;
+        }
 
         if (files.length > 0) {
           previewContainer.classList.remove('hidden');
