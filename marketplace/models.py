@@ -1,6 +1,8 @@
 import uuid
 from decimal import Decimal
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils import timezone
@@ -754,3 +756,19 @@ class SystemNotification(models.Model):
     def __str__(self):
         target = "ALL USERS" if self.send_to_all else (self.recipient.username if self.recipient else "Unassigned")
         return f"[{target}] {self.title}"
+
+
+# ==========================================
+# 12. AUTO-LINK SELLER PROFILE SIGNAL (SAFETY NET)
+# ==========================================
+@receiver(post_save, sender=User)
+def ensure_seller_profile_exists(sender, instance, created, **kwargs):
+    """
+    Guarantees every User (whether created via Google OAuth, manual registration,
+    or Django Admin) automatically has a linked SellerProfile from day one.
+    """
+    if not (instance.is_staff or instance.is_superuser):
+        SellerProfile.objects.get_or_create(
+            user=instance,
+            defaults={'phone_number': '08000000000'}
+        )
