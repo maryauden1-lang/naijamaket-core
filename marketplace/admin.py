@@ -15,6 +15,7 @@ from django.db.models import Count, Sum
 from django.utils import timezone
 from django.core.management import call_command
 from django.core.cache import cache
+from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse
 
 # Optional import for AXES logs
@@ -548,7 +549,7 @@ class PaymentTransactionAdmin(admin.ModelAdmin):
 
 
 # ==============================================================================
-# OFFICIAL CEO & ADMIN NOTIFICATIONS / BROADCASTS
+# OFFICIAL CEO & ADMIN NOTIFICATIONS / BROADCASTS (IN-APP + BREVO EMAIL)
 # ==============================================================================
 
 @admin.register(SystemNotification)
@@ -560,7 +561,7 @@ class SystemNotificationAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Audience (Choose Broadcast OR Single Account)", {
             "fields": ("send_to_all", "recipient"),
-            "description": "Tick 'Send to all users' to broadcast to everyone, OR select a single user account to send an official CEO/Admin notice.",
+            "description": "Tick 'Send to all users' to broadcast to everyone (in-app + Gmail/email via Brevo), OR select a single user account to send an official CEO/Admin notice.",
         }),
         ("Announcement Content", {
             "fields": ("title", "message", "link"),
@@ -576,9 +577,68 @@ class SystemNotificationAdmin(admin.ModelAdmin):
         return "Unassigned"
     target_display.short_description = "Recipient"
 
+    def _send_brevo_broadcast_email(self, recipient_emails, title, message_body, link=None):
+        """Send branded HTML email in safe BCC batches of 50 via Brevo SMTP."""
+        valid_emails = [e.strip() for e in recipient_emails if e and '@' in e]
+        if not valid_emails:
+            return 0, None
+
+        action_url = "https://naijasale.com"
+        if link:
+            action_url = link if link.startswith("http") else f"https://naijasale.com{link if link.startswith('/') else '/' + link}"
+
+        formatted_body = "<br>".join(message_body.splitlines())
+        html_content = f"""
+        <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #F8FAFC; padding: 28px 16px;">
+          <div style="max-width: 560px; margin: 0 auto; background: #FFFFFF; border-radius: 18px; overflow: hidden; border: 1px solid #E2E8F0; box-shadow: 0 4px 16px rgba(15,23,42,0.06);">
+            <div style="background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 100%); padding: 22px 26px; color: #FFFFFF;">
+              <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #FDE68A; margin-bottom: 4px;">
+                Official Naijasale Update
+              </div>
+              <h1 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3;">
+                {title}
+              </h1>
+            </div>
+            <div style="padding: 26px; color: #1E293B; font-size: 14px; line-height: 1.65;">
+              <p style="margin-top: 0;">Hello,</p>
+              <div style="margin: 14px 0 22px 0; color: #334155;">
+                {formatted_body}
+              </div>
+              <a href="{action_url}" style="display: inline-block; background-color: #FF8A00; color: #FFFFFF; font-weight: 800; font-size: 13px; padding: 12px 22px; border-radius: 12px; text-decoration: none;">
+                Open Naijasale &rarr;
+              </a>
+            </div>
+            <div style="background-color: #F1F5F9; padding: 14px 26px; font-size: 11px; color: #64748B; text-align: center;">
+              You received this announcement because you have an active account on <strong>Naijasale.com</strong>.
+            </div>
+          </div>
+        </div>
+        """
+
+        from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "Naijasale <noreply@naijasale.com>")
+        sent_count = 0
+        batch_size = 50
+
+        try:
+            for i in range(0, len(valid_emails), batch_size):
+                batch = valid_emails[i:i + batch_size]
+                email = EmailMultiAlternatives(
+                    subject=f"{title} — Naijasale",
+                    body=f"{title}\n\n{message_body}\n\nVisit: {action_url}",
+                    from_email=from_email,
+                    to=[from_email],
+                    bcc=batch,
+                )
+                email.attach_alternative(html_content, "text/html")
+                email.send(fail_silently=False)
+                sent_count += len(batch)
+            return sent_count, None
+        except Exception as exc:
+            return sent_count, str(exc)
+
     def save_model(self, request, obj, form, change):
         if not change and obj.send_to_all:
-            active_users = User.objects.filter(is_active=True)
+            active_users = list(User.objects.filter(is_active=True))
             notifications = [
                 SystemNotification(
                     recipient=u,
@@ -590,9 +650,29 @@ class SystemNotificationAdmin(admin.ModelAdmin):
                 for u in active_users
             ]
             SystemNotification.objects.bulk_create(notifications)
-            messages.success(
-                request,
-                f"📢 Official announcement '{obj.title}' sent to {len(notifications)} active user(s)!"
+
+            emails = [u.email for u in active_users if u.email]
+            emailed_count, email_err = self._send_brevo_broadcast_email(
+                emails, obj.title, obj.message, obj.link
             )
+
+            if email_err:
+                messages.warning(
+                    request,
+                    f"📢 In-app notice sent to {len(notifications)} user(s), but Brevo email paused after {emailed_count} email(s): {email_err}"
+                )
+            else:
+                messages.success(
+                    request,
+                    f"📢 Official announcement '{obj.title}' sent in-app to {len(notifications)} user(s) AND emailed via Brevo to {emailed_count} Gmail/email address(es)!"
+                )
         else:
             super().save_model(request, obj, form, change)
+            if not change and obj.recipient and obj.recipient.email:
+                emailed_count, email_err = self._send_brevo_broadcast_email(
+                    [obj.recipient.email], obj.title, obj.message, obj.link
+                )
+                if email_err:
+                    messages.warning(request, f"In-app notice saved, but Brevo email failed: {email_err}")
+                else:
+                    messages.success(request, f"✉️ Official email also delivered via Brevo to {obj.recipient.email}!")
