@@ -4,6 +4,12 @@ import uuid
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from django.core.files.base import ContentFile
 
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    pass
+
 
 def _load_watermark_font(size: int):
     """Loads a clean TrueType font available in Linux/Docker or Windows, falling back gracefully."""
@@ -35,10 +41,11 @@ def process_and_watermark_image(
 ):
     """
     Enterprise Jiji-Grade Image Pipeline:
-    1. Fixes sideways phone camera rotation (EXIF transpose).
-    2. Resizes massive multi-MB photos to crisp 1200px max dimension.
-    3. Stamps a subtle, centered Jiji-style 'Posted on Naijasale / by Seller Name' watermark.
-    4. Compresses down to ultra-fast WebP (~85KB - 165KB) for instant page loads.
+1. Supports JPEG, PNG, WebP, and iPhone HEIC/HEIF photos automatically.
+2. Fixes sideways phone camera rotation (EXIF transpose).
+3. Resizes massive multi-MB photos to crisp 1200px max dimension.
+4. Stamps a subtle, centered Jiji-style 'Posted on Naijasale / by Seller Name' watermark.
+5. Compresses down to ultra-fast WebP (~85KB - 165KB) for instant page loads.
     """
     uploaded_file.seek(0)
     img = Image.open(uploaded_file)
