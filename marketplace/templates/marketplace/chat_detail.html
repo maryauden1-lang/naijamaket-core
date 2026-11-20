@@ -355,16 +355,16 @@
     }
     scrollToBottom();
 
-    // Automated Chat Sound Effects (Web Audio API - iOS Safari & Desktop compatible)
+    // Automated Chat Sound Effects (Web Audio API - synchronous unlock for iOS & Desktop)
     let chatAudioCtx = null;
-    async function unlockChatAudio() {
+    function unlockChatAudio() {
       try {
         if (!chatAudioCtx) {
           const AudioCtx = window.AudioContext || window.webkitAudioContext;
           if (AudioCtx) chatAudioCtx = new AudioCtx();
         }
         if (chatAudioCtx && chatAudioCtx.state === 'suspended') {
-          await chatAudioCtx.resume();
+          chatAudioCtx.resume();
           const silentBuf = chatAudioCtx.createBuffer(1, 1, 22050);
           const silentSrc = chatAudioCtx.createBufferSource();
           silentSrc.buffer = silentBuf;
@@ -377,10 +377,10 @@
       document.addEventListener(evt, unlockChatAudio, { passive: true });
     });
 
-    async function playChatSound(type) {
+    function playChatSound(type) {
       try {
-        await unlockChatAudio();
-        if (!chatAudioCtx || chatAudioCtx.state !== 'running') return;
+        unlockChatAudio();
+        if (!chatAudioCtx) return;
 
         const now = chatAudioCtx.currentTime;
         const osc = chatAudioCtx.createOscillator();
