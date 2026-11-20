@@ -355,6 +355,53 @@
     }
     scrollToBottom();
 
+    // Automated Chat Sound Effects (Web Audio API - zero external files needed)
+    let chatAudioCtx = null;
+    function unlockChatAudio() {
+      if (!chatAudioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) chatAudioCtx = new AudioCtx();
+      }
+      if (chatAudioCtx && chatAudioCtx.state === 'suspended') {
+        chatAudioCtx.resume().catch(() => {});
+      }
+    }
+    document.addEventListener('click', unlockChatAudio, { once: true });
+    document.addEventListener('keydown', unlockChatAudio, { once: true });
+
+    function playChatSound(type) {
+      try {
+        unlockChatAudio();
+        if (!chatAudioCtx) return;
+
+        const now = chatAudioCtx.currentTime;
+        const osc = chatAudioCtx.createOscillator();
+        const gain = chatAudioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(chatAudioCtx.destination);
+
+        if (type === 'send') {
+          // Crisp upward pop when sending a message
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+          osc.start(now);
+          osc.stop(now + 0.11);
+        } else {
+          // Warm two-note chime when receiving a message
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.setValueAtTime(880, now + 0.09);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        }
+      } catch (e) {}
+    }
+
     // Async Polling for New Messages
     let lastMsgId = 0;
     const existingRows = document.querySelectorAll('.message-row');
@@ -369,6 +416,7 @@
         const text = messageInput.value.trim();
         if (!text) return;
 
+        unlockChatAudio();
         messageInput.value = '';
 
         try {
@@ -411,6 +459,7 @@
 
             messagesContainer.insertBefore(row, typingIndicator);
             scrollToBottom();
+            playChatSound('send');
             lucide.createIcons();
 
             // Reveal the WhatsApp Ping Banner if available
@@ -437,9 +486,13 @@
           const emptyPlaceholder = document.getElementById('emptyPlaceholder');
           if (emptyPlaceholder) emptyPlaceholder.remove();
 
+          let hasIncoming = false;
+
           data.messages.forEach(msg => {
             if (msg.id > lastMsgId) lastMsgId = msg.id;
             if (document.querySelector(`[data-id="${msg.id}"]`)) return;
+
+            if (!msg.is_me) hasIncoming = true;
 
             const row = document.createElement('div');
             row.className = `message-row flex flex-col ${msg.is_me ? 'items-end' : 'items-start'} group`;
@@ -476,6 +529,7 @@
             messagesContainer.insertBefore(row, typingIndicator);
           });
           scrollToBottom();
+          if (hasIncoming) playChatSound('receive');
           lucide.createIcons();
         }
       } catch (e) {}
