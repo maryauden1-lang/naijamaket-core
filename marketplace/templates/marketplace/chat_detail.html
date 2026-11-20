@@ -357,22 +357,25 @@
 
     // Automated Chat Sound Effects (Web Audio API - zero external files needed)
     let chatAudioCtx = null;
-    function unlockChatAudio() {
-      if (!chatAudioCtx) {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) chatAudioCtx = new AudioCtx();
-      }
-      if (chatAudioCtx && chatAudioCtx.state === 'suspended') {
-        chatAudioCtx.resume().catch(() => {});
-      }
-    }
-    document.addEventListener('click', unlockChatAudio, { once: true });
-    document.addEventListener('keydown', unlockChatAudio, { once: true });
-
-    function playChatSound(type) {
+    async function unlockChatAudio() {
       try {
-        unlockChatAudio();
-        if (!chatAudioCtx) return;
+        if (!chatAudioCtx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) chatAudioCtx = new AudioCtx();
+        }
+        if (chatAudioCtx && chatAudioCtx.state === 'suspended') {
+          await chatAudioCtx.resume();
+        }
+      } catch (e) {}
+    }
+    ['click', 'touchstart', 'keydown'].forEach(evt => {
+      document.addEventListener(evt, unlockChatAudio, { passive: true });
+    });
+
+    async function playChatSound(type) {
+      try {
+        await unlockChatAudio();
+        if (!chatAudioCtx || chatAudioCtx.state !== 'running') return;
 
         const now = chatAudioCtx.currentTime;
         const osc = chatAudioCtx.createOscillator();
