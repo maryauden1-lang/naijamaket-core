@@ -1,6 +1,6 @@
 """
 Django settings for core project.
-Configured for NaijaSale production with Coolify, SQLite, and Backblaze B2.
+Configured for NaijaSale production with Coolify, SQLite (WAL High-Concurrency), and Backblaze B2.
 """
 
 from pathlib import Path
@@ -121,7 +121,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 # ==============================================================================
-# DATABASE CONFIGURATION
+# DATABASE CONFIGURATION (HIGH-CONCURRENCY SQLITE WAL MODE)
 # Automatically uses /app/data/db.sqlite3 on the server if present,
 # otherwise falls back to local db.sqlite3 on your laptop.
 # ==============================================================================
@@ -135,15 +135,30 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': DB_PATH,
+        'CONN_MAX_AGE': 60,
+        'OPTIONS': {
+            'timeout': 20,
+            'init_command': (
+                'PRAGMA journal_mode=WAL;'
+                'PRAGMA synchronous=NORMAL;'
+                'PRAGMA temp_store=MEMORY;'
+                'PRAGMA cache_size=-32000;'
+                'PRAGMA busy_timeout=5000;'
+            ),
+        },
     }
 }
 
-# Database cache for visitor tracking
+# Database cache for visitor tracking (tuned for high traffic)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
         'LOCATION': 'naijasale_cache_table',
         'TIMEOUT': 300,
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+            'CULL_FREQUENCY': 4,
+        },
     }
 }
 
@@ -217,6 +232,9 @@ if BUCKET_NAME and ACCESS_KEY and SECRET_KEY_B2:
     AWS_DEFAULT_ACL = None
     AWS_S3_FILE_OVERWRITE = False
     AWS_QUERYSTRING_AUTH = False
+    AWS_S3_OBJECT_PARAMETERS = {
+        'CacheControl': 'public, max-age=31536000, immutable',
+    }
 
     STORAGES = {
         "default": {
@@ -244,7 +262,7 @@ else:
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_COOKIE_AGE = 86400 * 30
-SESSION_SAVE_EVERY_REQUEST = True
+SESSION_SAVE_EVERY_REQUEST = False
 
 # ==============================================================================
 # MONETIZATION & PAYMENT GATEWAYS
