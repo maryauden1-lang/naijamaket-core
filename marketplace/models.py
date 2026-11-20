@@ -764,6 +764,61 @@ class SystemNotification(models.Model):
 
 
 # ==========================================
+# 11B. ADMIN RECTANGULAR PROMO BANNERS
+# ==========================================
+class PromoBanner(models.Model):
+    """
+    Admin-managed rectangular promotional banners displayed in a horizontal
+    left-to-right carousel on the homepage.
+    """
+    title = models.CharField(max_length=150, help_text="Internal label or banner headline")
+    banner_image = models.ImageField(
+        upload_to="promo_banners/",
+        help_text="Upload wide rectangular banner image (recommended 1200x360 or 16:5 ratio)"
+    )
+    link_url = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text="Optional URL when clicked (e.g. /post-ad/ or /?category=phones or https://...)"
+    )
+    badge_text = models.CharField(
+        max_length=30,
+        blank=True,
+        default="Sponsored",
+        help_text="Small corner pill label (leave blank to hide)"
+    )
+    order = models.PositiveIntegerField(default=0, help_text="Lower number appears first (0, 1, 2...)")
+    is_active = models.BooleanField(default=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "-created_at"]
+        verbose_name = "Promo Banner (Rectangular Ad)"
+        verbose_name_plural = "Promo Banners (Rectangular Ads)"
+
+    def save(self, *args, **kwargs):
+        if (
+            self.banner_image
+            and hasattr(self.banner_image, 'file')
+            and not getattr(self.banner_image, '_committed', True)
+            and not str(getattr(self.banner_image, 'name', '')).startswith('naijasale_')
+        ):
+            try:
+                self.banner_image = process_and_watermark_image(
+                    self.banner_image.file,
+                    add_watermark=False,
+                    max_dimension=1400,
+                    target_max_kb=180,
+                )
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.title} ({'Active' if self.is_active else 'Hidden'})"
+
+
+# ==========================================
 # 12. AUTO-LINK SELLER PROFILE SIGNAL (SAFETY NET)
 # ==========================================
 @receiver(post_save, sender=User)

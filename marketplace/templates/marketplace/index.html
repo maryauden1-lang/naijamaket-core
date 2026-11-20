@@ -428,6 +428,78 @@
     </div>
   {% endif %}
 
+  <!-- ADMIN RECTANGULAR PROMO BANNER SLIDER (LEFT TO RIGHT) -->
+  {% if promo_banners %}
+  <section aria-label="Featured Promotions" class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-3 sm:pt-5 w-full">
+    <div class="relative group rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-slate-200/90 bg-white">
+      <div
+        id="promoBannerTrack"
+        class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+      >
+        {% for banner in promo_banners %}
+          <div class="w-full shrink-0 snap-center relative aspect-[16/5] sm:aspect-[21/5] bg-slate-900 overflow-hidden">
+            {% if banner.link_url %}
+              <a href="{{ banner.link_url }}" {% if 'http' in banner.link_url %}target="_blank" rel="noopener noreferrer"{% endif %} class="block w-full h-full">
+                <img
+                  src="{{ banner.banner_image.url }}"
+                  alt="{{ banner.title }}"
+                  class="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-500"
+                  {% if forloop.first %}loading="eager"{% else %}loading="lazy"{% endif %}
+                >
+              </a>
+            {% else %}
+              <img
+                src="{{ banner.banner_image.url }}"
+                alt="{{ banner.title }}"
+                class="w-full h-full object-cover"
+                {% if forloop.first %}loading="eager"{% else %}loading="lazy"{% endif %}
+              >
+            {% endif %}
+
+            {% if banner.badge_text %}
+              <span class="absolute top-2.5 right-2.5 bg-slate-950/65 backdrop-blur-md text-white/90 text-[9px] sm:text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-white/15 pointer-events-none">
+                {{ banner.badge_text }}
+              </span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if promo_banners|length > 1 %}
+        <!-- Desktop Left / Right Arrows -->
+        <button
+          type="button"
+          onclick="slidePromoBanner(-1)"
+          aria-label="Previous Banner"
+          class="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-lg items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          onclick="slidePromoBanner(1)"
+          aria-label="Next Banner"
+          class="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 hover:bg-white text-slate-800 shadow-lg items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+        >
+          ›
+        </button>
+
+        <!-- Bottom Dot Indicators -->
+        <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-slate-950/40 backdrop-blur-xs px-2.5 py-1 rounded-full">
+          {% for banner in promo_banners %}
+            <button
+              type="button"
+              onclick="goToPromoBanner({{ forloop.counter0 }})"
+              aria-label="Slide {{ forloop.counter }}"
+              class="promo-dot h-1.5 rounded-full transition-all {% if forloop.first %}w-5 bg-white{% else %}w-1.5 bg-white/55{% endif %}"
+            ></button>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
   <!-- MOBILE ONLY: CATEGORY GRID -->
   <section aria-label="Mobile Categories" class="block lg:hidden bg-white border-b border-slate-200 py-4 px-2.5 sm:px-4 shadow-2xs">
     <div class="flex items-center justify-between mb-3 px-1.5">
@@ -927,6 +999,50 @@
   <script>
     if (window.lucide) {
       lucide.createIcons();
+    }
+
+    // --- PROMO BANNER LEFT-TO-RIGHT AUTO-SLIDER ---
+    const promoTrack = document.getElementById('promoBannerTrack');
+    const promoDots = document.querySelectorAll('.promo-dot');
+    let promoIndex = 0;
+
+    function updatePromoDots(idx) {
+      promoDots.forEach((dot, i) => {
+        if (i === idx) {
+          dot.classList.remove('w-1.5', 'bg-white/55');
+          dot.classList.add('w-5', 'bg-white');
+        } else {
+          dot.classList.remove('w-5', 'bg-white');
+          dot.classList.add('w-1.5', 'bg-white/55');
+        }
+      });
+    }
+
+    function goToPromoBanner(idx) {
+      if (!promoTrack || promoDots.length === 0) return;
+      promoIndex = (idx + promoDots.length) % promoDots.length;
+      promoTrack.scrollTo({ left: promoTrack.clientWidth * promoIndex, behavior: 'smooth' });
+      updatePromoDots(promoIndex);
+    }
+
+    function slidePromoBanner(step) {
+      goToPromoBanner(promoIndex + step);
+    }
+
+    if (promoTrack && promoDots.length > 1) {
+      promoTrack.addEventListener('scroll', () => {
+        const idx = Math.round(promoTrack.scrollLeft / promoTrack.clientWidth);
+        if (idx !== promoIndex && idx >= 0 && idx < promoDots.length) {
+          promoIndex = idx;
+          updatePromoDots(promoIndex);
+        }
+      }, { passive: true });
+
+      setInterval(() => {
+        if (!document.hidden) {
+          goToPromoBanner(promoIndex + 1);
+        }
+      }, 4500);
     }
 
     const translations = {

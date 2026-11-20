@@ -47,6 +47,7 @@ from .models import (
     PromotionPlan,
     PaymentTransaction,
     SystemNotification,
+    PromoBanner,
 )
 
 
@@ -213,7 +214,7 @@ class SiteSettingAdmin(admin.ModelAdmin):
     fieldsets = (
         ("Platform Storage & System Hygiene", {
             "fields": ("system_cleanup_card",),
-            "description": "Safe maintenance tool: clears expired sessions, vacuums database fragmentation, and deletes orphaned listing images.",
+            "description": "Safe maintenance tool: clears expired sessions, optimizes database fragmentation, and removes only unlinked local media files without touching Backblaze B2.",
         }),
         ("Branding & Identity", {
             "fields": ("site_name", "tagline", "logo", "logo_preview"),
@@ -245,10 +246,10 @@ class SiteSettingAdmin(admin.ModelAdmin):
                 ⚡ Safe Storage & Database Optimizer
             </div>
             <p style="font-size: 12px; line-height: 1.5; color: #C7D2FE; margin: 0 0 14px 0;">
-                Clears expired Django user sessions, vacuums database fragmentation to speed up SQL queries, and purges orphaned photos in media/listings that no longer belong to any active ad.
+                Clears expired Django user sessions and optimizes SQLite database fragmentation while keeping all Backblaze B2 files and live customer ads 100% untouched.
             </p>
             <a href="/portal-management-99/marketplace/sitesetting/system-cleanup/" 
-               onclick="return confirm('Run Safe System Optimization? Active listings and user files remain completely safe.');"
+               onclick="return confirm('Run Safe System Optimization? Active listings and Backblaze B2 customer files remain completely safe.');"
                style="display: inline-block; background-color: #059669; color: #FFFFFF; font-weight: 700; font-size: 12px; padding: 10px 18px; border-radius: 8px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px;">
                 🚀 Run Safe Maintenance
             </a>
@@ -269,75 +270,6 @@ class SiteSettingAdmin(admin.ModelAdmin):
             messages.error(request, "Permission Denied: Only staff members can run maintenance.")
             return redirect("admin:index")
 
-        deleted_files_count = 0
-        freed_bytes = 0
-        total_scanned_images = 0
-
-        VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
-        valid_db_filenames = set()
-
-        def register_field(field_file):
-            if field_file and hasattr(field_file, 'name') and field_file.name:
-                clean_name = str(field_file.name).replace('\\', '/').strip('/').lower()
-                if clean_name:
-                    valid_db_filenames.add(clean_name)
-                    valid_db_filenames.add(Path(clean_name).name)
-
-        for img in ListingImage.objects.all():
-            register_field(img.image)
-
-        for prof in SellerProfile.objects.all():
-            register_field(prof.avatar)
-            register_field(prof.store_banner)
-            register_field(prof.id_document)
-            register_field(prof.selfie_image)
-
-        for cat in Category.objects.all():
-            register_field(cat.icon)
-
-        for sub in SubCategory.objects.all():
-            register_field(sub.icon)
-
-        for setting in SiteSetting.objects.all():
-            register_field(setting.logo)
-
-        media_root = Path(settings.MEDIA_ROOT).resolve()
-        safe_target_subdirs = [
-            media_root / 'listings',
-            media_root / 'listing_images',
-            media_root / 'sellers',
-            media_root / 'uploads',
-        ]
-
-        for target_dir in safe_target_subdirs:
-            if not target_dir.exists():
-                continue
-
-            for root, dirs, files in os.walk(target_dir):
-                for file_name in files:
-                    file_path = Path(root) / file_name
-
-                    if file_path.suffix.lower() not in VALID_IMAGE_EXTENSIONS:
-                        continue
-
-                    try:
-                        file_path.relative_to(media_root)
-                    except ValueError:
-                        continue
-
-                    total_scanned_images += 1
-                    rel_path_str = str(file_path.relative_to(media_root)).replace('\\', '/').strip('/').lower()
-                    pure_name = file_name.lower()
-
-                    if (rel_path_str not in valid_db_filenames) and (pure_name not in valid_db_filenames):
-                        try:
-                            f_size = file_path.stat().st_size
-                            file_path.unlink()
-                            deleted_files_count += 1
-                            freed_bytes += f_size
-                        except Exception:
-                            pass
-
         sessions_purged = True
         try:
             call_command('clearsessions')
@@ -351,15 +283,11 @@ class SiteSettingAdmin(admin.ModelAdmin):
         except Exception:
             db_vacuumed = False
 
-        freed_mb = freed_bytes / (1024 * 1024)
-        active_db_count = len(valid_db_filenames)
-
         msg = (
             f"✅ System Optimization Complete! "
-            f"Scanned {total_scanned_images} uploaded image(s) in media folders against {active_db_count} active database reference(s). "
-            f"Purged {deleted_files_count} orphaned file(s) (freed {freed_mb:.2f} MB). "
             f"Expired Sessions: {'Cleared' if sessions_purged else 'N/A'}. "
-            f"Database Fragmentation: {'Vacuumed' if db_vacuumed else 'Skipped (Non-SQLite)'}."
+            f"SQLite Database Fragmentation: {'Vacuumed' if db_vacuumed else 'Skipped'}. "
+            f"All customer Backblaze B2 files remain untouched."
         )
         messages.success(request, msg)
         return redirect('/portal-management-99/marketplace/sitesetting/')
@@ -676,3 +604,34 @@ class SystemNotificationAdmin(admin.ModelAdmin):
                     messages.warning(request, f"In-app notice saved, but Brevo email failed: {email_err}")
                 else:
                     messages.success(request, f"✉️ Official email also delivered via Brevo to {obj.recipient.email}!")
+
+
+# ==============================================================================
+# ADMIN RECTANGULAR PROMO BANNERS (LEFT-TO-RIGHT HOMEPAGE SLIDER)
+# ==============================================================================
+
+@admin.register(PromoBanner)
+class PromoBannerAdmin(admin.ModelAdmin):
+    list_display = ("banner_preview", "title", "link_url", "order", "is_active", "created_at")
+    list_editable = ("order", "is_active")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("title", "link_url")
+    readonly_fields = ("banner_preview",)
+    fieldsets = (
+        ("Rectangular Promo Ad Details", {
+            "fields": ("title", "banner_image", "banner_preview", "link_url", "badge_text"),
+            "description": "Upload a wide rectangular ad banner. It will display in a left-to-right swipeable slider at the top of the homepage.",
+        }),
+        ("Display Order & Visibility", {
+            "fields": ("order", "is_active"),
+        }),
+    )
+
+    def banner_preview(self, obj):
+        if obj.banner_image:
+            return format_html(
+                '<img src="{}" style="height: 54px; width: 170px; object-fit: cover; border-radius: 8px; border: 1px solid #CBD5E1;" />',
+                obj.banner_image.url,
+            )
+        return "No image"
+    banner_preview.short_description = "Preview"

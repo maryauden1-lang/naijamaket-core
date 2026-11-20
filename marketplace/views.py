@@ -25,7 +25,7 @@ from django.conf import settings
 from .models import (
     SiteSetting, StaticPage, Category, SubCategory, State, Area, Listing,
     ListingImage, SellerProfile, Favorite, Conversation, Message,
-    ReportedListing, SellerReview, SystemNotification
+    ReportedListing, SellerReview, SystemNotification, PromoBanner
 )
 from .forms import (
     UserRegisterForm, ListingForm, ProfileUpdateForm,
@@ -224,8 +224,11 @@ def index_view(request):
             is_read=False
         ).exclude(sender=request.user).count()
 
+    promo_banners = PromoBanner.objects.filter(is_active=True).order_by('order', '-created_at')
+
     context = {
         'settings': site_settings,
+        'promo_banners': promo_banners,
         'listings': listings,
         'page_obj': listings,
         'total_found': total_found,
