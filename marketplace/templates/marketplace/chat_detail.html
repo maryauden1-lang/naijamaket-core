@@ -355,7 +355,7 @@
     }
     scrollToBottom();
 
-    // Automated Chat Sound Effects (Web Audio API - zero external files needed)
+    // Automated Chat Sound Effects (Web Audio API - iOS Safari & Desktop compatible)
     let chatAudioCtx = null;
     async function unlockChatAudio() {
       try {
@@ -365,10 +365,15 @@
         }
         if (chatAudioCtx && chatAudioCtx.state === 'suspended') {
           await chatAudioCtx.resume();
+          const silentBuf = chatAudioCtx.createBuffer(1, 1, 22050);
+          const silentSrc = chatAudioCtx.createBufferSource();
+          silentSrc.buffer = silentBuf;
+          silentSrc.connect(chatAudioCtx.destination);
+          silentSrc.start(0);
         }
       } catch (e) {}
     }
-    ['click', 'touchstart', 'keydown'].forEach(evt => {
+    ['click', 'touchend', 'keydown'].forEach(evt => {
       document.addEventListener(evt, unlockChatAudio, { passive: true });
     });
 
