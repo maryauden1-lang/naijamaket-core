@@ -182,8 +182,8 @@ STATICFILES_DIRS = [
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ==============================================================================
-# BACKBLAZE B2 STORAGE CONFIGURATION
-# Directly maps to bucket root without adding /media/ prefix
+# BACKBLAZE B2 STORAGE + CLOUDFLARE CDN CONFIGURATION
+# Uploads go directly to Backblaze B2; public image URLs serve via Cloudflare CDN
 # ==============================================================================
 BUCKET_NAME = (
     os.environ.get('AWS_STORAGE_BUCKET_NAME')
@@ -213,7 +213,7 @@ if BUCKET_NAME and ACCESS_KEY and SECRET_KEY_B2:
     AWS_STORAGE_BUCKET_NAME = BUCKET_NAME
     AWS_S3_ENDPOINT_URL = ENDPOINT_URL
 
-    AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.{AWS_S3_ENDPOINT_URL.replace('https://', '')}"
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', 'media.naijasale.com')
     AWS_DEFAULT_ACL = None
     AWS_S3_FILE_OVERWRITE = False
     AWS_QUERYSTRING_AUTH = False
