@@ -31,17 +31,18 @@ from .forms import (
     UserRegisterForm, ListingForm, ProfileUpdateForm,
     ReportListingForm, SellerReviewForm
 )
+from .image_processor import process_and_watermark_image
 
 
 def apply_jiji_ranking(queryset):
     """
     Enterprise Jiji-Style Marketplace Ranking Engine:
-    1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
-    2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
+1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
+2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
        so a lower tier never outranks a higher-paying tier.
-    3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
+3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
        so every paying customer gets fair #1 top-slot visibility without cron jobs.
-    4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
+4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
     """
     now = timezone.now()
     day_1 = now - timedelta(days=1)
@@ -729,10 +730,28 @@ def post_ad_view(request):
             listing.status = 'pending'
             listing.save()
 
+            seller_display = (
+                request.user.get_full_name()
+                or request.user.first_name
+                or request.user.username.split('@')[0]
+            )
+
             for idx, uploaded_file in enumerate(files):
+                final_image = uploaded_file
+                try:
+                    final_image = process_and_watermark_image(
+                        uploaded_file,
+                        seller_name=seller_display,
+                        add_watermark=True,
+                        max_dimension=1200,
+                        target_max_kb=165,
+                    )
+                except Exception as img_err:
+                    print(f"[IMAGE_WATERMARK_FALLBACK] {uploaded_file.name}: {img_err}")
+
                 ListingImage.objects.create(
                     listing=listing,
-                    image=uploaded_file,
+                    image=final_image,
                     is_cover=(idx == 0)
                 )
 

@@ -428,7 +428,12 @@ class ListingImage(models.Model):
         ordering = ["-is_cover", "id"]
 
     def save(self, *args, **kwargs):
-        if self.image and hasattr(self.image, 'file') and not getattr(self.image, '_committed', True):
+        if (
+            self.image
+            and hasattr(self.image, 'file')
+            and not getattr(self.image, '_committed', True)
+            and not str(getattr(self.image, 'name', '')).startswith('naijasale_')
+        ):
             try:
                 seller = self.listing.seller
                 seller_display = (
@@ -443,8 +448,8 @@ class ListingImage(models.Model):
                     max_dimension=1200,
                     target_max_kb=165,
                 )
-            except Exception:
-                pass
+            except Exception as img_err:
+                print(f"[MODEL_WATERMARK_FALLBACK] {img_err}")
         super().save(*args, **kwargs)
 
     def __str__(self):
