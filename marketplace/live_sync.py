@@ -1,276 +1,123 @@
-(function () {
-  if (window.__NAIJASALE_LIVE_PULSE_LOADED__) return;
-  window.__NAIJASALE_LIVE_PULSE_LOADED__ = true;
+from django.http import JsonResponse
+from django.db.models import Q
+from django.urls import reverse
 
-  const PULSE_URL = "/api/live-pulse/";
-  const POLL_INTERVAL_MS = 6000;
-  let baseline = null;
-  let pollTimer = null;
+from .models import (
+    Listing,
+    Message,
+    SystemNotification,
+    SellerProfile,
+    ReportedListing,
+)
 
-  function ensureToastContainer() {
-    let container = document.getElementById("ns-live-toast-container");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "ns-live-toast-container";
-      container.style.cssText = [
-        "position:fixed",
-        "top:16px",
-        "left:50%",
-        "transform:translateX(-50%)",
-        "z-index:99999",
-        "display:flex",
-        "flex-direction:column",
-        "gap:10px",
-        "width:min(92vw, 420px)",
-        "pointer-events:none",
-        "font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif"
-      ].join(";");
-      document.body.appendChild(container);
-    }
-    return container;
-  }
 
-  function showLiveToast({ badge, title, body, actionText, actionUrl, onAction }) {
-    const container = ensureToastContainer();
-    const card = document.createElement("div");
-    card.style.cssText = [
-      "pointer-events:auto",
-      "background:#1E1B4B",
-      "color:#FFFFFF",
-      "border:1px solid rgba(167,139,250,0.45)",
-      "border-radius:16px",
-      "padding:13px 15px",
-      "box-shadow:0 14px 30px rgba(15,23,42,0.28)",
-      "display:flex",
-      "align-items:center",
-      "justify-content:space-between",
-      "gap:12px",
-      "transition:all 0.25s ease",
-      "opacity:0",
-      "transform:translateY(-10px)"
-    ].join(";");
+def live_pulse_api_view(request):
+    """
+    Ultra-fast global heartbeat endpoint (< 2ms DB queries).
+    Returns the latest IDs/counts so the frontend detects changes immediately
+    and shows non-intrusive live toast notifications without page refresh.
+    """
+    # 1. Latest active listing on the marketplace (for all visitors)
+    latest_active = (
+        Listing.objects.filter(status='active')
+        .order_by('-id')
+        .values('id', 'title', 'slug')
+        .first()
+    )
 
-    const left = document.createElement("div");
-    left.style.cssText = "min-width:0;flex:1;";
-
-    const badgeEl = document.createElement("div");
-    badgeEl.textContent = badge;
-    badgeEl.style.cssText =
-      "font-size:10px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:#FBBF24;margin-bottom:2px;";
-
-    const titleEl = document.createElement("div");
-    titleEl.textContent = title;
-    titleEl.style.cssText =
-      "font-size:13px;font-weight:800;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
-
-    left.appendChild(badgeEl);
-    left.appendChild(titleEl);
-
-    if (body) {
-      const bodyEl = document.createElement("div");
-      bodyEl.textContent = body;
-      bodyEl.style.cssText =
-        "font-size:12px;color:#CBD5E1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
-      left.appendChild(bodyEl);
+    payload = {
+        'authenticated': request.user.is_authenticated,
+        'latest_listing_id': latest_active['id'] if latest_active else 0,
+        'latest_listing_title': latest_active['title'] if latest_active else '',
+        'latest_listing_url': (
+            reverse('marketplace:listing_detail', kwargs={'slug': latest_active['slug']})
+            if latest_active
+            else ''
+        ),
     }
 
-    const actions = document.createElement("div");
-    actions.style.cssText = "display:flex;align-items:center;gap:8px;flex-shrink:0;";
+    if not request.user.is_authenticated:
+        return JsonResponse(payload)
 
-    if (actionText) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = actionText;
-      btn.style.cssText = [
-        "background:#FF8A00",
-        "color:#FFFFFF",
-        "border:none",
-        "border-radius:10px",
-        "padding:7px 12px",
-        "font-size:12px",
-        "font-weight:800",
-        "cursor:pointer",
-        "white-space:nowrap"
-      ].join(";");
-      btn.addEventListener("click", function () {
-        if (typeof onAction === "function") {
-          onAction();
-        } else if (actionUrl) {
-          window.location.href = actionUrl;
-        }
-      });
-      actions.appendChild(btn);
-    }
+    # 2. Staff & Superuser Moderation Queues
+    if request.user.is_staff or request.user.is_superuser:
+        pending_ads = Listing.objects.filter(status='pending').count()
+        pending_kyc = SellerProfile.objects.filter(verification_status='pending').count()
+        unresolved_reports = ReportedListing.objects.filter(is_resolved=False).count()
 
-    const closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.innerHTML = "&times;";
-    closeBtn.setAttribute("aria-label", "Close notification");
-    closeBtn.style.cssText =
-      "background:transparent;border:none;color:#94A3B8;font-size:18px;line-height:1;cursor:pointer;padding:2px 4px;";
-    closeBtn.addEventListener("click", function () {
-      dismissToast(card);
-    });
-    actions.appendChild(closeBtn);
+        payload.update({
+            'is_staff': True,
+            'pending_ads_count': pending_ads,
+            'pending_kyc_count': pending_kyc,
+            'unresolved_reports_count': unresolved_reports,
+        })
+        return JsonResponse(payload)
 
-    card.appendChild(left);
-    card.appendChild(actions);
-    container.appendChild(card);
+    # 3. Regular Buyer / Seller Live Alerts
+    # A) Latest unread chat message or price offer
+    latest_msg = (
+        Message.objects.filter(
+            Q(conversation__buyer=request.user) | Q(conversation__seller=request.user),
+            is_read=False,
+        )
+        .exclude(sender=request.user)
+        .select_related('sender', 'conversation')
+        .order_by('-id')
+        .first()
+    )
 
-    requestAnimationFrame(function () {
-      card.style.opacity = "1";
-      card.style.transform = "translateY(0)";
-    });
+    unread_msg_count = (
+        Message.objects.filter(
+            Q(conversation__buyer=request.user) | Q(conversation__seller=request.user),
+            is_read=False,
+        )
+        .exclude(sender=request.user)
+        .count()
+    )
 
-    setTimeout(function () {
-      dismissToast(card);
-    }, 9000);
-  }
+    # B) Latest unread official CEO / system notification
+    latest_notif = (
+        SystemNotification.objects.filter(recipient=request.user, is_read=False)
+        .order_by('-id')
+        .first()
+    )
 
-  function dismissToast(el) {
-    if (!el || !el.parentNode) return;
-    el.style.opacity = "0";
-    el.style.transform = "translateY(-10px)";
-    setTimeout(function () {
-      if (el.parentNode) el.parentNode.removeChild(el);
-    }, 250);
-  }
+    # C) Seller's own approved ads count (detects instant approval while waiting)
+    my_active_ads = Listing.objects.filter(seller=request.user, status='active').count()
+    latest_my_approved = (
+        Listing.objects.filter(seller=request.user, status='active')
+        .order_by('-id')
+        .values('id', 'title', 'slug')
+        .first()
+    )
 
-  function updateDomBadges(data) {
-    if (typeof data.unread_msg_count === "number") {
-      document.querySelectorAll("[data-live-unread-messages]").forEach(function (el) {
-        el.textContent = data.unread_msg_count > 0 ? data.unread_msg_count : "";
-        el.style.display = data.unread_msg_count > 0 ? "" : "none";
-      });
-    }
-  }
+    payload.update({
+        'is_staff': False,
+        'unread_msg_count': unread_msg_count,
+        'latest_msg_id': latest_msg.id if latest_msg else 0,
+        'latest_msg_sender': (
+            (latest_msg.sender.first_name or latest_msg.sender.username)
+            if latest_msg
+            else ''
+        ),
+        'latest_msg_type': latest_msg.msg_type if latest_msg else 'text',
+        'latest_msg_text': (latest_msg.text[:75] if latest_msg else ''),
+        'latest_msg_url': (
+            reverse('marketplace:chat_detail', kwargs={'conversation_id': latest_msg.conversation_id})
+            if latest_msg
+            else reverse('marketplace:inbox')
+        ),
+        'latest_notif_id': latest_notif.id if latest_notif else 0,
+        'latest_notif_title': latest_notif.title if latest_notif else '',
+        'latest_notif_message': (latest_notif.message[:85] if latest_notif else ''),
+        'latest_notif_link': (latest_notif.link or '/dashboard/') if latest_notif else '/dashboard/',
+        'my_active_ads_count': my_active_ads,
+        'latest_my_approved_title': latest_my_approved['title'] if latest_my_approved else '',
+        'latest_my_approved_url': (
+            reverse('marketplace:listing_detail', kwargs={'slug': latest_my_approved['slug']})
+            if latest_my_approved
+            else '/dashboard/'
+        ),
+    })
 
-  async function checkPulse() {
-    if (document.hidden) return;
-
-    try {
-      const res = await fetch(PULSE_URL, {
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-        credentials: "same-origin"
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-
-      if (!baseline) {
-        baseline = data;
-        return;
-      }
-
-      // 1. New listing went live on the marketplace
-      if (
-        data.latest_listing_id &&
-        baseline.latest_listing_id &&
-        data.latest_listing_id > baseline.latest_listing_id
-      ) {
-        const isHome = window.location.pathname === "/";
-        showLiveToast({
-          badge: "✨ New Ad Just Posted",
-          title: data.latest_listing_title || "Fresh listing on Naijasale",
-          body: isHome ? "Tap refresh to see the newest listings at the top." : "Tap to view this new item now.",
-          actionText: isHome ? "Refresh" : "View",
-          actionUrl: data.latest_listing_url || "/",
-          onAction: isHome
-            ? function () {
-                window.location.reload();
-              }
-            : null
-        });
-      }
-
-      // 2. Staff / Admin instant moderation queue alerts
-      if (data.is_staff) {
-        if (data.pending_ads_count > (baseline.pending_ads_count || 0)) {
-          showLiveToast({
-            badge: "🛡️ Moderation Alert",
-            title: "New ad submitted for review",
-            body: data.pending_ads_count + " pending ad(s) waiting in queue.",
-            actionText: "Review",
-            actionUrl: "/workspace/"
-          });
-        }
-        if (data.pending_kyc_count > (baseline.pending_kyc_count || 0)) {
-          showLiveToast({
-            badge: "🪪 KYC Verification",
-            title: "New seller NIN verification submitted",
-            body: data.pending_kyc_count + " KYC request(s) pending.",
-            actionText: "Inspect",
-            actionUrl: "/workspace/"
-          });
-        }
-        if (data.unresolved_reports_count > (baseline.unresolved_reports_count || 0)) {
-          showLiveToast({
-            badge: "⚠️ Safety Report",
-            title: "New listing report submitted",
-            body: data.unresolved_reports_count + " unresolved report(s).",
-            actionText: "Open",
-            actionUrl: "/workspace/"
-          });
-        }
-      }
-
-      // 3. Regular user alerts (messages, offers, ad approvals, CEO broadcasts)
-      if (data.authenticated && !data.is_staff) {
-        updateDomBadges(data);
-
-        const isChatPage = window.location.pathname.startsWith("/chat/");
-        if (!isChatPage && data.latest_msg_id && data.latest_msg_id > (baseline.latest_msg_id || 0)) {
-          const isOffer = data.latest_msg_type === "offer";
-          showLiveToast({
-            badge: isOffer ? "🤝 New Price Offer" : "💬 New Message",
-            title: (data.latest_msg_sender || "Someone") + (isOffer ? " sent an offer" : " messaged you"),
-            body: data.latest_msg_text || "Tap to reply now",
-            actionText: "Reply",
-            actionUrl: data.latest_msg_url || "/inbox/"
-          });
-        }
-
-        if (data.latest_notif_id && data.latest_notif_id > (baseline.latest_notif_id || 0)) {
-          showLiveToast({
-            badge: "📢 Official Naijasale Notice",
-            title: data.latest_notif_title || "New announcement",
-            body: data.latest_notif_message || "",
-            actionText: "View",
-            actionUrl: data.latest_notif_link || "/dashboard/"
-          });
-        }
-
-        if (data.my_active_ads_count > (baseline.my_active_ads_count || 0)) {
-          showLiveToast({
-            badge: "🎉 Ad Approved & Live!",
-            title: data.latest_my_approved_title || "Your ad is now live on Naijasale",
-            body: "Buyers across Nigeria can now see and message you.",
-            actionText: "View Ad",
-            actionUrl: data.latest_my_approved_url || "/dashboard/"
-          });
-        }
-      }
-
-      baseline = data;
-    } catch (err) {
-      // Fail silently on temporary network drops
-    }
-  }
-
-  function startPulse() {
-    if (pollTimer) clearInterval(pollTimer);
-    checkPulse();
-    pollTimer = setInterval(checkPulse, POLL_INTERVAL_MS);
-  }
-
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) {
-      checkPulse();
-    }
-  });
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", startPulse);
-  } else {
-    startPulse();
-  }
-})();
+    return JsonResponse(payload)
