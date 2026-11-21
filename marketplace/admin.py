@@ -657,14 +657,14 @@ class PromoBannerAdmin(admin.ModelAdmin):
     banner_preview.short_description = "Preview"
 
     def formatted_views(self, obj):
-        return format_html('<span style="font-weight: 700; color: #334155;">{:,}</span>', obj.views_count)
+        return format_html('<span style="font-weight: 700; color: #334155;">{}</span>', f"{obj.views_count:,}")
     formatted_views.short_description = "Views"
     formatted_views.admin_order_field = "views_count"
 
     def formatted_clicks(self, obj):
         return format_html(
-            '<span style="padding: 3px 10px; font-size: 12px; font-weight: 800; border-radius: 9999px; background: #EDE9FE; color: #5B21B6;">{:,} clicks</span>',
-            obj.clicks_count,
+            '<span style="padding: 3px 10px; font-size: 12px; font-weight: 800; border-radius: 9999px; background: #EDE9FE; color: #5B21B6;">{} clicks</span>',
+            f"{obj.clicks_count:,}",
         )
     formatted_clicks.short_description = "Clicks"
     formatted_clicks.admin_order_field = "clicks_count"
