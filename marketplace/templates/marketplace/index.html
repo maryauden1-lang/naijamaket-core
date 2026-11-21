@@ -428,7 +428,7 @@
     </div>
   {% endif %}
 
-  <!-- ADMIN RECTANGULAR PROMO BANNER SLIDER (LEFT TO RIGHT) -->
+  <!-- ADMIN RECTANGULAR PROMO BANNER SLIDER (LEFT TO RIGHT + CLICK TRACKER) -->
   {% if promo_banners %}
   <section aria-label="Featured Promotions" class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 pt-3 sm:pt-5 w-full">
     <div class="relative group rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm border border-slate-200/90 bg-white">
@@ -439,7 +439,7 @@
         {% for banner in promo_banners %}
           <div class="w-full shrink-0 snap-center relative aspect-[16/5] sm:aspect-[21/5] bg-slate-900 overflow-hidden">
             {% if banner.link_url %}
-              <a href="{{ banner.link_url }}" {% if 'http' in banner.link_url %}target="_blank" rel="noopener noreferrer"{% endif %} class="block w-full h-full">
+              <a href="{% url 'marketplace:promo_banner_click' banner.id %}" {% if 'http' in banner.link_url %}target="_blank" rel="noopener noreferrer"{% endif %} class="block w-full h-full">
                 <img
                   src="{{ banner.banner_image.url }}"
                   alt="{{ banner.title }}"

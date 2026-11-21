@@ -224,7 +224,10 @@ def index_view(request):
             is_read=False
         ).exclude(sender=request.user).count()
 
-    promo_banners = PromoBanner.objects.filter(is_active=True).order_by('order', '-created_at')
+    promo_banners = list(PromoBanner.objects.filter(is_active=True).order_by('order', '-created_at'))
+    if promo_banners and not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
+        banner_ids = [b.id for b in promo_banners]
+        PromoBanner.objects.filter(id__in=banner_ids).update(views_count=F('views_count') + 1)
 
     context = {
         'settings': site_settings,
@@ -250,6 +253,28 @@ def index_view(request):
         'mapbox_token': getattr(settings, 'MAPBOX_PUBLIC_TOKEN', ''),
     }
     return render(request, 'marketplace/index.html', context)
+
+
+def promo_banner_click_view(request, banner_id):
+    """
+    Enterprise Banner Click Tracker:
+    Records 1 unique click per visitor session (ignoring admin/staff previews)
+    and redirects seamlessly to the sponsor's destination URL.
+    """
+    banner = get_object_or_404(PromoBanner, id=banner_id, is_active=True)
+
+    is_staff_user = request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
+    session_key = f"promo_clicked_{banner.id}"
+
+    if not is_staff_user and not request.session.get(session_key, False):
+        PromoBanner.objects.filter(pk=banner.pk).update(clicks_count=F('clicks_count') + 1)
+        request.session[session_key] = True
+        request.session.set_expiry(86400)
+
+    destination = (banner.link_url or '').strip()
+    if destination:
+        return redirect(destination)
+    return redirect('marketplace:home')
 
 
 def listing_detail_view(request, slug):

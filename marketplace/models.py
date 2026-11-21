@@ -764,14 +764,14 @@ class SystemNotification(models.Model):
 
 
 # ==========================================
-# 11B. ADMIN RECTANGULAR PROMO BANNERS
+# 11B. ADMIN RECTANGULAR PROMO BANNERS + CLICK/VIEW ANALYTICS
 # ==========================================
 class PromoBanner(models.Model):
     """
     Admin-managed rectangular promotional banners displayed in a horizontal
-    left-to-right carousel on the homepage.
+    left-to-right carousel on the homepage with enterprise impression & click tracking.
     """
-    title = models.CharField(max_length=150, help_text="Internal label or banner headline")
+    title = models.CharField(max_length=150, help_text="Sponsor name or banner headline")
     banner_image = models.ImageField(
         upload_to="promo_banners/",
         help_text="Upload wide rectangular banner image (recommended 1200x360 or 16:5 ratio)"
@@ -779,13 +779,23 @@ class PromoBanner(models.Model):
     link_url = models.CharField(
         max_length=300,
         blank=True,
-        help_text="Optional URL when clicked (e.g. /post-ad/ or /?category=phones or https://...)"
+        help_text="Destination URL when clicked (e.g. https://sponsor.com or /?category=phones)"
     )
     badge_text = models.CharField(
         max_length=30,
         blank=True,
         default="Sponsored",
         help_text="Small corner pill label (leave blank to hide)"
+    )
+    views_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Views (Impressions)",
+        help_text="Total times this banner was shown to visitors on the homepage"
+    )
+    clicks_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Clicks",
+        help_text="Total unique visitor clicks recorded on this banner"
     )
     order = models.PositiveIntegerField(default=0, help_text="Lower number appears first (0, 1, 2...)")
     is_active = models.BooleanField(default=True, db_index=True)
@@ -795,6 +805,12 @@ class PromoBanner(models.Model):
         ordering = ["order", "-created_at"]
         verbose_name = "Promo Banner (Rectangular Ad)"
         verbose_name_plural = "Promo Banners (Rectangular Ads)"
+
+    @property
+    def ctr_percentage(self):
+        if self.views_count <= 0:
+            return 0.0
+        return round((self.clicks_count / self.views_count) * 100, 2)
 
     def save(self, *args, **kwargs):
         if (
@@ -815,7 +831,7 @@ class PromoBanner(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title} ({'Active' if self.is_active else 'Hidden'})"
+        return f"{self.title} ({self.clicks_count} clicks / {self.views_count} views)"
 
 
 # ==========================================

@@ -607,20 +607,40 @@ class SystemNotificationAdmin(admin.ModelAdmin):
 
 
 # ==============================================================================
-# ADMIN RECTANGULAR PROMO BANNERS (LEFT-TO-RIGHT HOMEPAGE SLIDER)
+# ADMIN RECTANGULAR PROMO BANNERS + SPONSOR CLICK/VIEW ANALYTICS
 # ==============================================================================
+
+@admin.action(description="Reset Views & Clicks to 0 (Start Fresh Campaign)")
+def reset_banner_analytics(modeladmin, request, queryset):
+    updated = queryset.update(views_count=0, clicks_count=0)
+    messages.success(request, f"✅ Reset views and clicks to 0 for {updated} banner(s).")
+
 
 @admin.register(PromoBanner)
 class PromoBannerAdmin(admin.ModelAdmin):
-    list_display = ("banner_preview", "title", "link_url", "order", "is_active", "created_at")
+    list_display = (
+        "banner_preview",
+        "title",
+        "formatted_views",
+        "formatted_clicks",
+        "ctr_badge",
+        "order",
+        "is_active",
+        "created_at",
+    )
     list_editable = ("order", "is_active")
     list_filter = ("is_active", "created_at")
     search_fields = ("title", "link_url")
-    readonly_fields = ("banner_preview",)
+    readonly_fields = ("banner_preview", "views_count", "clicks_count", "ctr_badge")
+    actions = [reset_banner_analytics]
     fieldsets = (
         ("Rectangular Promo Ad Details", {
             "fields": ("title", "banner_image", "banner_preview", "link_url", "badge_text"),
-            "description": "Upload a wide rectangular ad banner. It will display in a left-to-right swipeable slider at the top of the homepage.",
+            "description": "Upload a wide rectangular ad banner. Every visitor click is tracked automatically before redirecting to the destination URL.",
+        }),
+        ("Sponsor Performance Analytics (Live)", {
+            "fields": ("views_count", "clicks_count", "ctr_badge"),
+            "description": "Real-time impressions, clicks, and Click-Through Rate (CTR) for sponsor reporting.",
         }),
         ("Display Order & Visibility", {
             "fields": ("order", "is_active"),
@@ -635,3 +655,28 @@ class PromoBannerAdmin(admin.ModelAdmin):
             )
         return "No image"
     banner_preview.short_description = "Preview"
+
+    def formatted_views(self, obj):
+        return format_html('<span style="font-weight: 700; color: #334155;">{:,}</span>', obj.views_count)
+    formatted_views.short_description = "Views"
+    formatted_views.admin_order_field = "views_count"
+
+    def formatted_clicks(self, obj):
+        return format_html(
+            '<span style="padding: 3px 10px; font-size: 12px; font-weight: 800; border-radius: 9999px; background: #EDE9FE; color: #5B21B6;">{:,} clicks</span>',
+            obj.clicks_count,
+        )
+    formatted_clicks.short_description = "Clicks"
+    formatted_clicks.admin_order_field = "clicks_count"
+
+    def ctr_badge(self, obj):
+        ctr = obj.ctr_percentage
+        bg = "#DCFCE7" if ctr >= 2.0 else "#F1F5F9"
+        color = "#166534" if ctr >= 2.0 else "#475569"
+        return format_html(
+            '<span style="padding: 3px 9px; font-size: 11px; font-weight: 800; border-radius: 9999px; background: {}; color: {};">{}% CTR</span>',
+            bg,
+            color,
+            f"{ctr:.2f}",
+        )
+    ctr_badge.short_description = "CTR"
