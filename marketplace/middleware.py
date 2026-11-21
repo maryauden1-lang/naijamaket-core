@@ -12,7 +12,7 @@ BOT_USER_AGENT_KEYWORDS = (
     'go-http-client', 'axios', 'node-fetch', 'java/', 'okhttp', 'zgrab', 'censys'
 )
 
-LIVE_PULSE_SCRIPT_TAG = b'\n<script src="/static/js/live_pulse.js?v=1" defer></script>\n</body>'
+LIVE_PULSE_SCRIPT_TAG = b'\n<script src="/static/js/live_pulse.js?v=2" defer></script>\n</body>'
 
 
 def is_bot_request(request):

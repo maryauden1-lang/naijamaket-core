@@ -3,7 +3,7 @@
   window.__NAIJASALE_LIVE_PULSE_LOADED__ = true;
 
   const PULSE_URL = "/api/live-pulse/";
-  const POLL_INTERVAL_MS = 6000;
+  const POLL_INTERVAL_MS = 5000;
   let baseline = null;
   let pollTimer = null;
 
@@ -30,14 +30,15 @@
     return container;
   }
 
-  function showLiveToast({ badge, title, body, actionText, actionUrl, onAction }) {
+  function showLiveToast({ badge, title, body, actionText, actionUrl, onAction, variant }) {
     const container = ensureToastContainer();
+    const isDanger = variant === "danger";
     const card = document.createElement("div");
     card.style.cssText = [
       "pointer-events:auto",
-      "background:#1E1B4B",
+      isDanger ? "background:#450A0A" : "background:#1E1B4B",
       "color:#FFFFFF",
-      "border:1px solid rgba(167,139,250,0.45)",
+      isDanger ? "border:1px solid rgba(248,113,113,0.55)" : "border:1px solid rgba(167,139,250,0.45)",
       "border-radius:16px",
       "padding:13px 15px",
       "box-shadow:0 14px 30px rgba(15,23,42,0.28)",
@@ -55,8 +56,14 @@
 
     const badgeEl = document.createElement("div");
     badgeEl.textContent = badge;
-    badgeEl.style.cssText =
-      "font-size:10px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:#FBBF24;margin-bottom:2px;";
+    badgeEl.style.cssText = [
+      "font-size:10px",
+      "font-weight:800",
+      "letter-spacing:0.6px",
+      "text-transform:uppercase",
+      isDanger ? "color:#FCA5A5" : "color:#FBBF24",
+      "margin-bottom:2px"
+    ].join(";");
 
     const titleEl = document.createElement("div");
     titleEl.textContent = title;
@@ -82,7 +89,7 @@
       btn.type = "button";
       btn.textContent = actionText;
       btn.style.cssText = [
-        "background:#FF8A00",
+        isDanger ? "background:#DC2626" : "background:#FF8A00",
         "color:#FFFFFF",
         "border:none",
         "border-radius:10px",
@@ -124,7 +131,7 @@
 
     setTimeout(function () {
       dismissToast(card);
-    }, 9000);
+    }, 10000);
   }
 
   function dismissToast(el) {
@@ -213,9 +220,10 @@
         }
       }
 
-      // 3. Regular user alerts (messages, offers, ad approvals, CEO broadcasts)
+      // 3. Regular user alerts (messages, offers, ad approvals, ad rejections, CEO broadcasts)
       if (data.authenticated && !data.is_staff) {
         updateDomBadges(data);
+        const isDashboard = window.location.pathname.startsWith("/dashboard");
 
         const isChatPage = window.location.pathname.startsWith("/chat/");
         if (!isChatPage && data.latest_msg_id && data.latest_msg_id > (baseline.latest_msg_id || 0)) {
@@ -247,6 +255,27 @@
             actionText: "View Ad",
             actionUrl: data.latest_my_approved_url || "/dashboard/"
           });
+          if (isDashboard) {
+            setTimeout(function () {
+              window.location.reload();
+            }, 1800);
+          }
+        }
+
+        if (data.my_rejected_ads_count > (baseline.my_rejected_ads_count || 0)) {
+          showLiveToast({
+            variant: "danger",
+            badge: "⚠️ Ad Needs Changes",
+            title: (data.latest_my_rejected_title || "Your ad") + " was not approved",
+            body: "Tap Edit to review feedback and update your listing.",
+            actionText: "Edit Ad",
+            actionUrl: data.latest_my_rejected_url || "/dashboard/"
+          });
+          if (isDashboard) {
+            setTimeout(function () {
+              window.location.reload();
+            }, 2200);
+          }
         }
       }
 

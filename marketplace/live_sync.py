@@ -82,14 +82,18 @@ def live_pulse_api_view(request):
         .first()
     )
 
-    # C) Seller's own approved ads count (detects instant approval while waiting)
-    my_active_ads = Listing.objects.filter(seller=request.user, status='active').count()
-    latest_my_approved = (
-        Listing.objects.filter(seller=request.user, status='active')
+    # C) Seller's own ads status tracking (detects instant approval OR rejection)
+    my_listings = list(
+        Listing.objects.filter(seller=request.user)
         .order_by('-id')
-        .values('id', 'title', 'slug')
-        .first()
+        .values('id', 'title', 'slug', 'status')[:30]
     )
+
+    my_active_ads = sum(1 for item in my_listings if item['status'] == 'active')
+    my_rejected_ads = sum(1 for item in my_listings if item['status'] == 'rejected')
+
+    latest_my_approved = next((item for item in my_listings if item['status'] == 'active'), None)
+    latest_my_rejected = next((item for item in my_listings if item['status'] == 'rejected'), None)
 
     payload.update({
         'is_staff': False,
@@ -116,6 +120,13 @@ def live_pulse_api_view(request):
         'latest_my_approved_url': (
             reverse('marketplace:listing_detail', kwargs={'slug': latest_my_approved['slug']})
             if latest_my_approved
+            else '/dashboard/'
+        ),
+        'my_rejected_ads_count': my_rejected_ads,
+        'latest_my_rejected_title': latest_my_rejected['title'] if latest_my_rejected else '',
+        'latest_my_rejected_url': (
+            reverse('marketplace:edit_listing', kwargs={'listing_id': latest_my_rejected['id']})
+            if latest_my_rejected
             else '/dashboard/'
         ),
     })
