@@ -5,6 +5,7 @@ from django.template import loader
 from django.core.mail import EmailMultiAlternatives
 from . import views
 from . import views_monetization
+from . import live_sync
 
 app_name = 'marketplace'
 
@@ -66,7 +67,8 @@ urlpatterns = [
     # Static Policy Pages
     path('page/<slug:slug>/', views.static_page_view, name='static_page'),
     
-    # AJAX Endpoints
+    # AJAX & Real-Time Live Pulse Endpoints
+    path('api/live-pulse/', live_sync.live_pulse_api_view, name='live_pulse_api'),
     path('api/search/', views.ajax_search_view, name='ajax_search'),
     path('api/get-areas/', views.get_areas_for_state_view, name='get_areas'),
     path('api/get-subcategories/', views.get_subcategories_for_category_view, name='get_subcategories'),

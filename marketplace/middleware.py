@@ -12,6 +12,8 @@ BOT_USER_AGENT_KEYWORDS = (
     'go-http-client', 'axios', 'node-fetch', 'java/', 'okhttp', 'zgrab', 'censys'
 )
 
+LIVE_PULSE_SCRIPT_TAG = b'\n<script src="/static/js/live_pulse.js?v=1" defer></script>\n</body>'
+
 
 def is_bot_request(request):
     """Detects search engine crawlers, uptime monitors, and automated scripts."""
@@ -23,22 +25,41 @@ def is_bot_request(request):
     return any(keyword in ua for keyword in BOT_USER_AGENT_KEYWORDS)
 
 
+def _inject_live_pulse_script(request, response):
+    """Automatically attaches live_pulse.js to every HTML page without touching templates."""
+    if request.path.startswith('/portal-management-99/'):
+        return response
+    if getattr(response, 'streaming', False):
+        return response
+
+    content_type = response.get('Content-Type', '')
+    if 'text/html' not in content_type:
+        return response
+
+    if b'live_pulse.js' in response.content or b'</body>' not in response.content:
+        return response
+
+    response.content = response.content.replace(b'</body>', LIVE_PULSE_SCRIPT_TAG, 1)
+    if response.has_header('Content-Length'):
+        response['Content-Length'] = len(response.content)
+    return response
+
+
 class ActiveUserMiddleware:
     """
-    Counts ONLY verified real human devices:
-    - Excludes bots, crawlers, uptime monitors, and requests without browser language headers.
-    - Requires a verified browser session cookie so cookie-less scrapers cannot inflate guest counts.
-    - Excludes staff/superuser accounts and admin portal polling.
+    1. Counts ONLY verified real human devices (with verified session cookie & browser headers).
+    2. Injects the global Live-Pulse real-time notification script into every HTML page.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. Skip static assets, media, admin portal polling, and background icon queries
+        # 1. Skip static assets, media, admin portal polling, live-pulse API, and icons
         if (
             request.path.startswith('/static/')
             or request.path.startswith('/media/')
             or request.path.startswith('/portal-management-99/')
+            or request.path == '/api/live-pulse/'
             or request.path == '/favicon.ico'
         ):
             return self.get_response(request)
@@ -49,15 +70,15 @@ class ActiveUserMiddleware:
 
         # 3. Skip staff/superuser accounts so your own admin activity doesn't count as customer traffic
         if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
-            return self.get_response(request)
+            response = self.get_response(request)
+            return _inject_live_pulse_script(request, response)
 
-        # 4. Require an existing session cookie before counting guests:
-        # First-time visitors get a session cookie assigned; real browsers send it back on subsequent
-        # requests/polls, whereas cookie-less scanners never get counted.
+        # 4. Require an existing session cookie before counting guests
         has_existing_session = bool(request.session.session_key)
         if not has_existing_session:
             request.session.save()
-            return self.get_response(request)
+            response = self.get_response(request)
+            return _inject_live_pulse_script(request, response)
 
         # 5. Use the verified session key (or User ID if logged in)
         if request.user.is_authenticated:
@@ -81,4 +102,4 @@ class ActiveUserMiddleware:
         cache.set('active_visitor_registry', pruned_registry, timeout=600)
 
         response = self.get_response(request)
-        return response
+        return _inject_live_pulse_script(request, response)
