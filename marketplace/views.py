@@ -34,6 +34,24 @@ from .forms import (
 from .image_processor import process_and_watermark_image
 
 
+BOT_USER_AGENT_KEYWORDS = (
+    'bot', 'crawl', 'spider', 'slurp', 'mediapartners', 'adsbot',
+    'bingpreview', 'facebookexternalhit', 'twitterbot', 'whatsapp',
+    'telegrambot', 'linkedinbot', 'python-requests', 'urllib', 'curl',
+    'wget', 'httpclient', 'scrapy', 'headless', 'phantomjs', 'selenium',
+    'playwright', 'puppeteer', 'uptime', 'pingdom', 'statuscake', 'monitor',
+    'ahrefs', 'semrush', 'mj12bot', 'dotbot', 'yandex', 'baidu', 'duckduckbot'
+)
+
+
+def is_bot_request(request):
+    """Detects search engine crawlers, uptime monitors, and automated scripts."""
+    ua = (request.META.get('HTTP_USER_AGENT') or '').strip().lower()
+    if not ua or len(ua) < 12:
+        return True
+    return any(keyword in ua for keyword in BOT_USER_AGENT_KEYWORDS)
+
+
 def apply_jiji_ranking(queryset):
     """
     Enterprise Jiji-Style Marketplace Ranking Engine:
@@ -225,9 +243,15 @@ def index_view(request):
         ).exclude(sender=request.user).count()
 
     promo_banners = list(PromoBanner.objects.filter(is_active=True).order_by('order', '-created_at'))
-    if promo_banners and not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
-        banner_ids = [b.id for b in promo_banners]
-        PromoBanner.objects.filter(id__in=banner_ids).update(views_count=F('views_count') + 1)
+    is_staff_user = request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
+    if promo_banners and not is_staff_user and not is_bot_request(request):
+        viewed_banners = set(request.session.get('viewed_promo_banners', []))
+        unseen_ids = [b.id for b in promo_banners if b.id not in viewed_banners]
+        if unseen_ids:
+            PromoBanner.objects.filter(id__in=unseen_ids).update(views_count=F('views_count') + 1)
+            viewed_banners.update(unseen_ids)
+            request.session['viewed_promo_banners'] = list(viewed_banners)
+            request.session.set_expiry(86400)
 
     context = {
         'settings': site_settings,
@@ -258,7 +282,7 @@ def index_view(request):
 def promo_banner_click_view(request, banner_id):
     """
     Enterprise Banner Click Tracker:
-    Records 1 unique click per visitor session (ignoring admin/staff previews)
+    Records 1 unique human click per visitor session (ignoring bots & staff)
     and redirects seamlessly to the sponsor's destination URL.
     """
     banner = get_object_or_404(PromoBanner, id=banner_id, is_active=True)
@@ -266,7 +290,7 @@ def promo_banner_click_view(request, banner_id):
     is_staff_user = request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)
     session_key = f"promo_clicked_{banner.id}"
 
-    if not is_staff_user and not request.session.get(session_key, False):
+    if not is_staff_user and not is_bot_request(request) and not request.session.get(session_key, False):
         PromoBanner.objects.filter(pk=banner.pk).update(clicks_count=F('clicks_count') + 1)
         request.session[session_key] = True
         request.session.set_expiry(86400)
