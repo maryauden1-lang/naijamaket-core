@@ -14,7 +14,7 @@ BOT_USER_AGENT_KEYWORDS = (
 
 LIVE_PULSE_SCRIPT_TAG = (
     b'\n<script src="/static/js/live_pulse.js?v=2" defer></script>'
-    b'\n<script src="/static/js/help_center.js?v=1" defer></script>\n</body>'
+    b'\n<script src="/static/js/help_center.js?v=2" defer></script>\n</body>'
 )
 
 
