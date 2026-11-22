@@ -12,7 +12,10 @@ BOT_USER_AGENT_KEYWORDS = (
     'go-http-client', 'axios', 'node-fetch', 'java/', 'okhttp', 'zgrab', 'censys'
 )
 
-LIVE_PULSE_SCRIPT_TAG = b'\n<script src="/static/js/live_pulse.js?v=2" defer></script>\n</body>'
+LIVE_PULSE_SCRIPT_TAG = (
+    b'\n<script src="/static/js/live_pulse.js?v=2" defer></script>'
+    b'\n<script src="/static/js/help_center.js?v=1" defer></script>\n</body>'
+)
 
 
 def is_bot_request(request):
@@ -26,7 +29,7 @@ def is_bot_request(request):
 
 
 def _inject_live_pulse_script(request, response):
-    """Automatically attaches live_pulse.js to every HTML page without touching templates."""
+    """Automatically attaches live_pulse.js and help_center.js to every HTML page."""
     if request.path.startswith('/portal-management-99/'):
         return response
     if getattr(response, 'streaming', False):
@@ -36,7 +39,7 @@ def _inject_live_pulse_script(request, response):
     if 'text/html' not in content_type:
         return response
 
-    if b'live_pulse.js' in response.content or b'</body>' not in response.content:
+    if b'help_center.js' in response.content or b'</body>' not in response.content:
         return response
 
     response.content = response.content.replace(b'</body>', LIVE_PULSE_SCRIPT_TAG, 1)
@@ -48,18 +51,18 @@ def _inject_live_pulse_script(request, response):
 class ActiveUserMiddleware:
     """
     1. Counts ONLY verified real human devices (with verified session cookie & browser headers).
-    2. Injects the global Live-Pulse real-time notification script into every HTML page.
+    2. Injects global Live-Pulse & Help Center scripts into every HTML page.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # 1. Skip static assets, media, admin portal polling, live-pulse API, and icons
+        # 1. Skip static assets, media, admin portal polling, background APIs, and icons
         if (
             request.path.startswith('/static/')
             or request.path.startswith('/media/')
             or request.path.startswith('/portal-management-99/')
-            or request.path == '/api/live-pulse/'
+            or request.path in ('/api/live-pulse/', '/api/support-chat/')
             or request.path == '/favicon.ico'
         ):
             return self.get_response(request)
