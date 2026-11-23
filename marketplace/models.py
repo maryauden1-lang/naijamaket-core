@@ -848,3 +848,9 @@ def ensure_seller_profile_exists(sender, instance, created, **kwargs):
             user=instance,
             defaults={'phone_number': '08000000000'}
         )
+
+
+# ==========================================
+# 13. NAIJASALE WALLET & DOUBLE-ENTRY LEDGER (STANDALONE MODULE)
+# ==========================================
+from .models_wallet import UserWallet, WalletTransaction  # noqa: E402, F401

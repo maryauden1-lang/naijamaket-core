@@ -7,6 +7,7 @@ from . import views
 from . import views_monetization
 from . import live_sync
 from . import support_sync
+from . import views_wallet
 
 app_name = 'marketplace'
 
@@ -82,6 +83,13 @@ urlpatterns = [
     path('payment/callback/', views_monetization.payment_callback_view, name='payment_callback'),
     path('webhook/paystack/', views_monetization.paystack_webhook, name='paystack_webhook'),
     path('webhook/flutterwave/', views_monetization.flutterwave_webhook, name='flutterwave_webhook'),
+
+    # Seller Wallet & Paystack Top-Up Routes
+    path('wallet/', views_wallet.wallet_dashboard_view, name='wallet_dashboard'),
+    path('wallet/topup/', views_wallet.wallet_topup_init_view, name='wallet_topup_init'),
+    path('wallet/topup/callback/', views_wallet.wallet_topup_callback_view, name='wallet_topup_callback'),
+    path('wallet/boost/', views_wallet.wallet_boost_ad_view, name='wallet_boost_ad'),
+    path('webhook/paystack-wallet/', views_wallet.paystack_wallet_webhook_view, name='paystack_wallet_webhook'),
 
     # Password Reset Pipeline
     path(

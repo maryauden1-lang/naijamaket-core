@@ -680,3 +680,9 @@ class PromoBannerAdmin(admin.ModelAdmin):
             f"{ctr:.2f}",
         )
     ctr_badge.short_description = "CTR"
+
+
+# ==============================================================================
+# NAIJASALE WALLET & DOUBLE-ENTRY LEDGER (TAMPER-PROOF ADMIN VIEW)
+# ==============================================================================
+from .admin_wallet import UserWalletAdmin, WalletTransactionAdmin  # noqa: E402, F401
