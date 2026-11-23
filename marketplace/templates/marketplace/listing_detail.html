@@ -43,22 +43,22 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: #F8F9FA; 
+      background-color: #F4F2FF;
+      background-image:
+        radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.12) 0px, transparent 50%),
+        radial-gradient(at 0% 20%, rgba(139, 92, 246, 0.07) 0px, transparent 48%);
     }
     .purple-gradient { 
       background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%); 
     }
-    .purple-glow { 
-      box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.35); 
-    }
     .sell-btn-orange { 
       background-color: #FF8A00; 
-      box-shadow: 0 4px 14px rgba(255, 138, 0, 0.35); 
+      box-shadow: 0 4px 14px rgba(255, 138, 0, 0.32); 
     }
     .sell-btn-orange:hover { 
       background-color: #EA7A00; 
@@ -68,40 +68,60 @@
 <body class="text-slate-900 antialiased min-h-screen flex flex-col pb-16 selection:bg-purple-600 selection:text-white">
 
   <!-- ========================================================= -->
-  <!-- TOP WHITE HEADER BAR                                      -->
+  <!-- TOP HEADER BAR (PRESERVES REAL NAIJASALE LOGO)            -->
   <!-- ========================================================= -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-22 flex items-center justify-between gap-3 sm:gap-6">
+  <header class="bg-white/95 backdrop-blur-md border-b border-purple-100/80 sticky top-0 z-40 shadow-2xs">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
       
-      <!-- Brand Logo -->
-      <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5 group shrink-0 py-1">
-        {% if settings.logo %}
-          <img 
-            src="{{ settings.logo.url }}" 
-            alt="{{ settings.site_name }}" 
-            class="h-12 sm:h-16 w-auto max-w-[180px] sm:max-w-[260px] object-contain group-hover:scale-102 transition-transform duration-200"
-          >
-        {% else %}
-          <div class="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-2xl sm:text-3xl shadow-md group-hover:scale-105 transition-transform">
-            {{ settings.site_name|slice:":1"|upper|default:"N" }}
-          </div>
-          <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {{ settings.site_name|default:"Naijasale" }}
-          </span>
-        {% endif %}
-      </a>
-
-      <!-- Right Controls: Back Link & Sell Button -->
-      <div class="flex items-center gap-3 sm:gap-4">
-        <a href="{% url 'marketplace:home' %}" class="text-xs sm:text-sm font-bold text-slate-600 hover:text-purple-700 px-3 py-2 flex items-center gap-1 transition-colors">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">Back to Marketplace</span>
+      <!-- Left: Back Pill + Real Brand Logo -->
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <a href="{% url 'marketplace:home' %}" class="w-10 h-10 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-100 flex items-center justify-center text-slate-800 shrink-0 transition-colors" title="Back to Marketplace">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
+
+        <a href="{% url 'marketplace:home' %}" class="flex items-center gap-2.5 group shrink-0 py-1">
+          {% if settings.logo %}
+            <img 
+              src="{{ settings.logo.url }}" 
+              alt="{{ settings.site_name }}" 
+              class="h-11 sm:h-14 w-auto max-w-[165px] sm:max-w-[230px] object-contain group-hover:scale-102 transition-transform duration-200"
+            >
+          {% else %}
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-700 text-white flex items-center justify-center font-black text-xl sm:text-2xl shadow-sm">
+              {{ settings.site_name|slice:":1"|upper|default:"N" }}
+            </div>
+            <span class="text-xl sm:text-2xl font-black tracking-tight text-slate-900">
+              {{ settings.site_name|default:"Naijasale" }}
+            </span>
+          {% endif %}
+        </a>
+      </div>
+
+      <!-- Right Controls: Favorite, Share & Sell -->
+      <div class="flex items-center gap-2 shrink-0">
+        <a 
+          href="{% url 'marketplace:toggle_favorite' listing.id %}" 
+          class="w-10 h-10 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-100 flex items-center justify-center transition-colors"
+          title="Save Item"
+        >
+          <i data-lucide="heart" class="w-4 h-4 {% if is_favorited %}text-rose-600 fill-rose-600{% else %}text-purple-700{% endif %}"></i>
+        </a>
+
+        <button 
+          type="button"
+          id="copyAdLinkBtn"
+          onclick="copyAdLink()" 
+          class="w-10 h-10 rounded-full bg-purple-50 hover:bg-purple-100 border border-purple-100 flex items-center justify-center text-purple-700 transition-colors cursor-pointer"
+          title="Copy Ad Link"
+        >
+          <i id="copyIcon" data-lucide="share-2" class="w-4 h-4"></i>
+        </button>
+
         <a 
           href="{% url 'marketplace:post_ad' %}" 
-          class="sell-btn-orange text-white text-xs sm:text-sm font-black px-4 sm:px-8 py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
+          class="sell-btn-orange text-white text-xs sm:text-sm font-black px-4 sm:px-5 py-2.5 rounded-full uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shrink-0"
         >
-          SELL
+          + Sell
         </a>
       </div>
     </div>
@@ -109,468 +129,454 @@
 
   <!-- Notification Banner -->
   {% if messages %}
-    <div class="max-w-7xl mx-auto px-4 mt-4 w-full">
+    <div class="max-w-3xl mx-auto px-4 mt-3 w-full">
       {% for message in messages %}
-        <div class="p-3.5 rounded-2xl text-xs font-semibold flex items-center justify-between border {% if message.tags == 'success' %}bg-purple-500/10 border-purple-500/20 text-purple-900{% else %}bg-rose-500/10 border-rose-500/20 text-rose-800{% endif %}">
+        <div class="p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between border {% if message.tags == 'success' %}bg-purple-50 border-purple-200 text-purple-900{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %}">
           <span>{{ message }}</span>
-          <button onclick="this.parentElement.remove()" class="text-slate-400">✕</button>
+          <button onclick="this.parentElement.remove()" class="text-slate-400 ml-2">✕</button>
         </div>
       {% endfor %}
     </div>
   {% endif %}
 
-  <!-- Main Showcase -->
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-8 flex-1 w-full space-y-6">
-    
-    <!-- Top Bar: Breadcrumb & Modern Action Pills -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <!-- Breadcrumb -->
-      <nav class="flex items-center gap-2 text-xs font-semibold text-slate-400 overflow-x-auto whitespace-nowrap">
+  <!-- Main Scrollable Single-Column Container -->
+  <main class="max-w-3xl mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1 w-full space-y-5">
+
+    <!-- Breadcrumb + WhatsApp Status Share Bar -->
+    <div class="flex items-center justify-between gap-2">
+      <nav class="flex items-center gap-1.5 text-xs font-semibold text-slate-500 overflow-x-auto whitespace-nowrap">
         <a href="{% url 'marketplace:home' %}" class="hover:text-purple-700">Home</a>
         <span>/</span>
         <span>{{ listing.category.name }}</span>
         {% if listing.subcategory %}
           <span>/</span>
-          <span>{{ listing.subcategory.name }}</span>
+          <span class="text-slate-700">{{ listing.subcategory.name }}</span>
         {% endif %}
-        <span>/</span>
-        <span class="text-slate-700 truncate max-w-[200px]">{{ listing.title }}</span>
       </nav>
 
-      <!-- Modern Social Share & Action Pills -->
-      <div class="flex items-center gap-2 shrink-0">
-        
-        <!-- Modern WhatsApp Share Pill -->
-        <a 
-          href="https://api.whatsapp.com/send?text=🔥%20*{{ listing.title|urlencode }}*%0A%0A💰%20*Price:*%20₦{{ listing.price|intcomma|urlencode }}%0A📍%20*Location:*%20{% if listing.area %}{{ listing.area.name|urlencode }},%20{% endif %}{% if listing.state %}{{ listing.state.name|urlencode }}{% else %}Nigeria{% endif %}%0A%0A👉%20*View%20Photos%20%26%20Details:*%0A{{ request.build_absolute_uri|urlencode }}" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          class="inline-flex items-center gap-2 bg-[#25D366]/10 hover:bg-[#25D366] text-[#128C7E] hover:text-white border border-[#25D366]/30 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all duration-200 shadow-xs hover:shadow-md hover:-translate-y-0.5 group"
-          title="Share to WhatsApp chat or Status"
-        >
-          <!-- Modern WhatsApp SVG Icon -->
-          <svg class="w-4 h-4 fill-current transition-colors" viewBox="0 0 24 24">
-            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.35 7.35 9.17 7.35 9.03 7.36C8.85 7.37 8.63 7.44 8.44 7.64C8.22 7.87 7.6 8.46 7.6 9.66C7.6 10.87 8.47 12.03 8.6 12.2C8.72 12.38 10.31 14.83 12.75 15.88C13.33 16.13 13.78 16.28 14.13 16.39C14.71 16.58 15.24 16.55 15.66 16.49C16.13 16.42 17.11 15.9 17.31 15.32C17.52 14.75 17.52 14.26 17.46 14.16C17.39 14.05 17.23 13.99 16.98 13.87C16.74 13.74 15.53 13.15 15.3 13.07C15.08 12.98 14.92 12.94 14.76 13.18C14.6 13.43 14.13 13.99 13.99 14.15C13.85 14.32 13.71 14.34 13.46 14.21C13.22 14.09 12.44 13.83 11.51 13C10.79 12.36 10.3 11.56 10.16 11.31C10.02 11.07 10.14 10.94 10.27 10.82C10.38 10.7 10.53 10.51 10.65 10.36C10.78 10.22 10.82 10.12 10.9 9.95C10.99 9.79 10.94 9.64 10.88 9.53C10.82 9.41 10.32 8.19 10.12 7.7C9.92 7.21 9.72 7.28 9.53 7.34Z"/>
-          </svg>
-          <span>WhatsApp</span>
-          <span class="text-[10px] font-extrabold uppercase tracking-wide bg-[#25D366]/20 group-hover:bg-white/20 text-[#128C7E] group-hover:text-white px-1.5 py-0.5 rounded-full transition-colors">
-            Status
-          </span>
+      <a 
+        href="https://api.whatsapp.com/send?text=🔥%20*{{ listing.title|urlencode }}*%0A%0A💰%20*Price:*%20₦{{ listing.price|intcomma|urlencode }}%0A📍%20*Location:*%20{% if listing.area %}{{ listing.area.name|urlencode }},%20{% endif %}{% if listing.state %}{{ listing.state.name|urlencode }}{% else %}Nigeria{% endif %}%0A%0A👉%20*View%20Photos%20%26%20Details:*%0A{{ request.build_absolute_uri|urlencode }}" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        class="inline-flex items-center gap-1.5 bg-[#25D366]/15 hover:bg-[#25D366] text-[#128C7E] hover:text-white border border-[#25D366]/30 px-3 py-1 rounded-full font-extrabold text-[11px] transition-colors shrink-0"
+        title="Share to WhatsApp"
+      >
+        <i data-lucide="share" class="w-3.5 h-3.5"></i>
+        <span id="copyAdLinkText">Share Ad</span>
+      </a>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 1. IMAGE GALLERY STAGE (EXACT IMAGE SIZE PRESERVED)       -->
+    <!-- ========================================================= -->
+    <section class="space-y-3">
+      <div class="relative w-full h-72 sm:h-[460px] bg-slate-950 rounded-3xl overflow-hidden flex items-center justify-center shadow-sm border border-purple-100">
+        {% if listing.images.all %}
+          <img id="mainGalleryImage" src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-contain transition-all duration-300">
+        {% else %}
+          <div class="text-slate-400 flex flex-col items-center gap-2">
+            <i data-lucide="image" class="w-12 h-12"></i>
+            <span class="text-xs font-bold">No Photos Provided</span>
+          </div>
+        {% endif %}
+
+        <!-- Top Left Condition / Status Pill -->
+        <div class="absolute top-3.5 left-3.5 flex gap-2">
+          {% if listing.condition %}
+            <span class="bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold px-3.5 py-1.5 rounded-full border border-white/15 inline-flex items-center gap-1.5">
+              <i data-lucide="tag" class="w-3.5 h-3.5 text-purple-300"></i>
+              {{ listing.get_condition_display }}
+            </span>
+          {% endif %}
+          {% if listing.status == 'sold' %}
+            <span class="bg-rose-600 text-white text-xs font-black px-3.5 py-1.5 rounded-full shadow-md">
+              SOLD
+            </span>
+          {% elif listing.is_featured %}
+            <span class="purple-gradient text-white text-xs font-black px-3.5 py-1.5 rounded-full shadow-md">
+              VIP FEATURED
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Top Right Save Bookmark Circle -->
+        <a href="{% url 'marketplace:toggle_favorite' listing.id %}" class="absolute top-3.5 right-3.5 w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center shadow-md hover:scale-105 transition-transform">
+          <i data-lucide="heart" class="w-5 h-5 {% if is_favorited %}text-rose-600 fill-rose-600{% else %}text-slate-700{% endif %}"></i>
         </a>
 
-        <!-- Modern Compact Copy Link Pill -->
-        <button 
-          id="copyAdLinkBtn"
-          onclick="copyAdLink()" 
-          class="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 px-3 py-1.5 rounded-full font-bold text-xs transition-all duration-200 shadow-2xs hover:-translate-y-0.5"
-          title="Copy link to clipboard"
-        >
-          <i id="copyIcon" data-lucide="link" class="w-3.5 h-3.5 text-slate-500"></i>
-          <span id="copyAdLinkText">Copy Link</span>
-        </button>
-
+        <!-- Bottom Right Photo Counter Badge -->
+        {% if listing.images.count > 0 %}
+          <div class="absolute bottom-3.5 right-3.5 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-full border border-white/15 inline-flex items-center gap-1.5">
+            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+            <span><span id="currentPhotoIndex">1</span>/{{ listing.images.count }}</span>
+          </div>
+        {% endif %}
       </div>
-    </div>
 
-    <!-- 2 Column Master Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-      
-      <!-- Left Column: Gallery, Specs & Description (2 Cols) -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <!-- Multi-Photo Gallery Stage -->
-        <div class="bg-white rounded-3xl overflow-hidden p-3 shadow-sm border border-slate-200">
-          
-          <!-- Big Active Display Photo -->
-          <div class="relative w-full h-72 sm:h-[460px] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
-            {% if listing.images.all %}
-              <img id="mainGalleryImage" src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-contain transition-all duration-300">
-            {% else %}
-              <div class="text-slate-500 flex flex-col items-center gap-2">
-                <i data-lucide="image" class="w-12 h-12"></i>
-                <span class="text-xs font-bold">No Photos Provided</span>
-              </div>
-            {% endif %}
+      <!-- Clickable Mini Thumbnails Row -->
+      {% if listing.images.count > 1 %}
+      <div class="flex items-center gap-2.5 overflow-x-auto py-1">
+        {% for img in listing.images.all %}
+          <button 
+            type="button"
+            onclick="document.getElementById('mainGalleryImage').src='{{ img.image.url }}'; document.getElementById('currentPhotoIndex').innerText='{{ forloop.counter }}'; this.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-purple-600')); this.classList.add('ring-2', 'ring-purple-600')"
+            class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-white shrink-0 border border-slate-200 focus:outline-hidden transition-all cursor-pointer {% if forloop.first %}ring-2 ring-purple-600{% endif %}"
+          >
+            <img src="{{ img.image.url }}" alt="Thumbnail {{ forloop.counter }}" class="w-full h-full object-cover">
+          </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
 
-            <!-- Top Badges -->
-            <div class="absolute top-3 left-3 flex gap-2">
-              {% if listing.condition %}
-                <span class="bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-bold px-3 py-1 rounded-full border border-white/10">
-                  {{ listing.get_condition_display }}
-                </span>
-              {% endif %}
-              {% if listing.status == 'sold' %}
-                <span class="bg-rose-600 text-white text-[11px] font-black px-3 py-1 rounded-full shadow-md">
-                  SOLD
-                </span>
-              {% elif listing.is_featured %}
-                <span class="purple-gradient text-white text-[11px] font-black px-3 py-1 rounded-full shadow-md">
-                  VIP FEATURED
-                </span>
-              {% endif %}
-            </div>
+    <!-- ========================================================= -->
+    <!-- 2. TITLE, BOLD BLACK PRICE & LOCATION/VIEWS/TIME STRIP    -->
+    <!-- ========================================================= -->
+    <section class="space-y-2.5 px-0.5">
+      <h1 class="text-xl sm:text-2xl font-black text-slate-900 leading-snug">
+        {{ listing.title }}
+      </h1>
 
-            <!-- Save Bookmark Button -->
-            <a href="{% url 'marketplace:toggle_favorite' listing.id %}" class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-md hover:scale-110 transition-transform">
-              <i data-lucide="heart" class="w-5 h-5 {% if is_favorited %}text-rose-600 fill-rose-600{% else %}text-slate-600{% endif %}"></i>
-            </a>
-          </div>
-
-          <!-- Clickable Mini Thumbnails Row -->
-          {% if listing.images.count > 1 %}
-          <div class="flex items-center gap-2.5 mt-3 overflow-x-auto p-1">
-            {% for img in listing.images.all %}
-              <button 
-                onclick="document.getElementById('mainGalleryImage').src='{{ img.image.url }}'; this.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('ring-2', 'ring-purple-600')); this.classList.add('ring-2', 'ring-purple-600')"
-                class="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 focus:outline-hidden transition-all {% if forloop.first %}ring-2 ring-purple-600{% endif %}"
-              >
-                <img src="{{ img.image.url }}" alt="Thumbnail" class="w-full h-full object-cover">
-              </button>
-            {% endfor %}
-          </div>
+      <!-- Bold Black Price (Preserved per user instruction) -->
+      <p class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+        {% if listing.is_job and listing.extra_fields.min_salary %}
+          {% if listing.extra_fields.max_salary %}
+            ₦{{ listing.extra_fields.min_salary|intcomma }} - ₦{{ listing.extra_fields.max_salary|intcomma }}
+          {% else %}
+            From ₦{{ listing.extra_fields.min_salary|intcomma }}
           {% endif %}
+        {% else %}
+          ₦{{ listing.price|intcomma }}
+        {% endif %}
+      </p>
 
-        </div>
+      <!-- Location | Views | Posted Time Strip -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-1 text-xs sm:text-sm font-semibold text-slate-600">
+        <span class="inline-flex items-center gap-1.5">
+          <i data-lucide="map-pin" class="w-4 h-4 text-purple-600 shrink-0"></i>
+          <span>{% if listing.area %}{{ listing.area.name }}, {% endif %}{% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}</span>
+        </span>
+        <span class="text-slate-300">|</span>
+        <span class="inline-flex items-center gap-1.5">
+          <i data-lucide="eye" class="w-4 h-4 text-purple-600 shrink-0"></i>
+          <span>{{ listing.views_count }} views</span>
+        </span>
+        <span class="text-slate-300">|</span>
+        <span class="inline-flex items-center gap-1.5">
+          <i data-lucide="clock" class="w-4 h-4 text-purple-600 shrink-0"></i>
+          <span>{{ listing.created_at|naturaltime }}</span>
+        </span>
+      </div>
+    </section>
 
-        <!-- SPECIFICATIONS & ATTRIBUTES -->
-        <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200">
-          <h2 class="text-base font-black text-slate-900 mb-4 flex items-center gap-2">
-            <i data-lucide="cpu" class="w-5 h-5 text-purple-600"></i>
-            Item Specifications & Key Details
-          </h2>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            
-            {% if listing.condition %}
-              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Condition</span>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.get_condition_display }}</span>
-              </div>
-            {% endif %}
-
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Category</span>
-              <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.category.name }}</span>
-            </div>
-
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sub-Category</span>
-              <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.subcategory.name|default:"General" }}</span>
-            </div>
-
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Location / Market</span>
-              <span class="text-xs sm:text-sm font-extrabold text-purple-700 mt-0.5 block truncate">
-                {% if listing.area %}{{ listing.area.name }}{% elif listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}
-              </span>
-            </div>
-
-            {% if listing.extra_fields.company_name %}
-              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Company</span>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">{{ listing.extra_fields.company_name }}</span>
-              </div>
-            {% endif %}
-
-            {% if listing.extra_fields.job_type %}
-              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Job Type</span>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block capitalize">{{ listing.extra_fields.job_type|title }}</span>
-              </div>
-            {% endif %}
-
-            {% if listing.extra_fields.property_type %}
-              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Property Type</span>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block capitalize">{{ listing.extra_fields.property_type|title }}</span>
-              </div>
-            {% endif %}
-
-            {% if listing.extra_fields.bedrooms %}
-              <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Bedrooms</span>
-                <span class="text-xs sm:text-sm font-extrabold text-slate-900 mt-0.5 block">{{ listing.extra_fields.bedrooms }} Bedroom{{ listing.extra_fields.bedrooms|pluralize }}</span>
-              </div>
-            {% endif %}
-
-            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
-              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Seller Verified</span>
-              <span class="text-xs sm:text-sm font-extrabold text-blue-600 mt-0.5 block">
-                {% if listing.seller.seller_profile.is_nin_verified %}NIN Verified{% else %}Standard Merchant{% endif %}
-              </span>
-            </div>
-
+    <!-- ========================================================= -->
+    <!-- 3. ITEM SPECIFICATIONS CARD                               -->
+    <!-- ========================================================= -->
+    <section class="bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xs border border-purple-100 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
           </div>
+          <h2 class="text-base sm:text-lg font-black text-slate-900">Item Specifications</h2>
         </div>
-
-        <!-- Description Box -->
-        <div class="bg-white rounded-3xl p-5 sm:p-7 shadow-sm border border-slate-200">
-          <h2 class="text-base font-black text-slate-900 mb-3 flex items-center gap-2">
-            <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
-            Full Description
-          </h2>
-          <div class="text-slate-700 text-sm leading-relaxed whitespace-pre-line">
-            {{ listing.description }}
-          </div>
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- REPORT THIS AD & SAFETY CONTROLS                         -->
-        <!-- ======================================================== -->
-        <div class="bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <i data-lucide="flag" class="w-5 h-5"></i>
-            </div>
-            <div>
-              <h4 class="text-xs sm:text-sm font-bold text-slate-800">Notice something wrong with this ad?</h4>
-              <p class="text-[11px] text-slate-400">Help keep {{ settings.site_name|default:"Naijasale" }} safe by reporting scams, fake prices, or illegal items.</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
-            <button 
-              type="button" 
-              onclick="openReportModal('fraud')" 
-              class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-              <span>Report This Ad</span>
-            </button>
-            <button 
-              type="button" 
-              onclick="openReportModal('abusive_behavior')" 
-              class="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <i data-lucide="shield-alert" class="w-4 h-4"></i>
-              <span>Report Abuse</span>
-            </button>
-          </div>
-        </div>
-
       </div>
 
-      <!-- Right Column: Price & Merchant Controls (1 Col) -->
-      <div class="space-y-6">
-        
-        <!-- Price & Action Card -->
-        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200">
-          <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
-            {% if listing.is_job %}Salary{% else %}Asking Price{% endif %}
-          </p>
-
-          <!-- Render Smart Salary Range or Standard Price -->
-          <p class="text-2xl sm:text-3xl font-black text-slate-900 mb-4">
-            {% if listing.is_job and listing.extra_fields.min_salary %}
-              {% if listing.extra_fields.max_salary %}
-                ₦{{ listing.extra_fields.min_salary|intcomma }} - ₦{{ listing.extra_fields.max_salary|intcomma }}
-              {% else %}
-                From ₦{{ listing.extra_fields.min_salary|intcomma }}
-              {% endif %}
-            {% else %}
-              ₦{{ listing.price|intcomma }}
-            {% endif %}
-          </p>
-
-          <div class="space-y-2.5 pb-5 border-b border-slate-100 text-xs font-semibold text-slate-600">
-            <div class="flex items-center gap-2">
-              <i data-lucide="map-pin" class="w-4 h-4 text-purple-600"></i>
-              <span>
-                {% if listing.area %}{{ listing.area.name }}, {% endif %}{% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}
-              </span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {% if listing.condition %}
+          <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="tag" class="w-4 h-4"></i>
             </div>
-            <div class="flex items-center gap-2">
-              <i data-lucide="clock" class="w-4 h-4 text-purple-600"></i>
-              <span>Posted {{ listing.created_at|naturaltime }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <i data-lucide="eye" class="w-4 h-4 text-purple-600"></i>
-              <span>{{ listing.views_count }} views</span>
+            <div class="min-w-0">
+              <span class="text-[11px] font-semibold text-slate-500 block">Condition</span>
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900 block truncate">{{ listing.get_condition_display }}</span>
             </div>
           </div>
+        {% endif %}
 
-          <!-- Contact Buttons -->
-          <div class="pt-5 space-y-3">
-            
-            <!-- WhatsApp Button -->
-            <a 
-              href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3.5 rounded-2xl shadow-md transition-all"
-            >
-              <i data-lucide="message-circle" class="w-5 h-5"></i>
-              <span>Chat with Seller on WhatsApp</span>
-            </a>
-
-            <!-- In-App Chat -->
-            <a 
-              href="{% url 'marketplace:start_chat' listing.id %}" 
-              class="w-full flex items-center justify-center gap-2 purple-gradient text-white font-extrabold text-sm py-3.5 rounded-2xl purple-glow shadow-md transition-all"
-            >
-              <i data-lucide="messages-square" class="w-5 h-5"></i>
-              <span>Direct In-App Message</span>
-            </a>
-
-            <!-- Call Line -->
-            <a 
-              href="tel:{{ listing.seller.seller_profile.phone_number }}" 
-              class="w-full flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3 rounded-xl transition-all"
-            >
-              <i data-lucide="phone" class="w-4 h-4 text-slate-500"></i>
-              <span>Call: {{ listing.seller.seller_profile.phone_number }}</span>
-            </a>
+        <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[11px] font-semibold text-slate-500 block">Category</span>
+            <span class="text-xs sm:text-sm font-extrabold text-slate-900 block truncate">{{ listing.category.name }}</span>
           </div>
         </div>
 
-        <!-- Merchant Profile Card -->
-        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-5">
-          <div class="flex items-center gap-4">
-            
-            <div class="w-14 h-14 rounded-full overflow-hidden bg-slate-100 shrink-0 border-2 border-purple-200 shadow-xs flex items-center justify-center">
-              {% if listing.seller.seller_profile.avatar %}
-                <img src="{{ listing.seller.seller_profile.avatar.url }}" alt="{{ listing.seller.first_name|default:listing.seller.username }}" class="w-full h-full object-cover">
-              {% else %}
-                <div class="w-full h-full purple-gradient flex items-center justify-center text-white font-black text-xl">
-                  {{ listing.seller.first_name|default:listing.seller.username|slice:":1"|upper }}
-                </div>
-              {% endif %}
-            </div>
-
-            <div>
-              <div class="flex items-center gap-1.5">
-                <h3 class="font-black text-slate-900 text-base">
-                  {{ listing.seller.first_name|default:listing.seller.username }}
-                </h3>
-                
-                {% if listing.seller.seller_profile.is_nin_verified %}
-                  <span title="NIN Verified Merchant" class="inline-flex items-center">
-                    <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fill-rule="evenodd" clip-rule="evenodd" d="M7.06383 0.985077C7.33981 0.772642 7.66986 0.666667 7.99984 0.666748C8.32981 0.666667 8.65986 0.772642 8.93585 0.985077L9.71826 1.58584L10.6988 1.45682C11.3888 1.36588 12.0527 1.75039 12.3189 2.39207L12.6956 3.30452L13.6066 3.68068L13.6079 3.68122C14.2496 3.94745 14.634 4.61164 14.5431 5.30164L14.4142 6.28134L15.0153 7.06426C15.1741 7.27109 15.2735 7.50843 15.3133 7.7534C15.3423 7.93203 15.3396 8.11472 15.3051 8.29262C15.2608 8.5213 15.1642 8.742 15.0153 8.93591L14.4142 9.71883L14.5431 10.6985C14.634 11.3885 14.2496 12.0527 13.6079 12.3189L13.6066 12.3195L12.6956 12.6956L12.3189 13.6081C12.0527 14.2498 11.3888 14.6343 10.6988 14.5433L9.71826 14.4143L8.93585 15.0151C8.65986 15.2275 8.32981 15.3335 7.99984 15.3334C7.66986 15.3335 7.33981 15.2275 7.06383 15.0151L6.28141 14.4143L5.30087 14.5433C4.61083 14.6343 3.94699 14.2498 3.6808 13.6081L3.30412 12.6956L2.39303 12.3195L2.39173 12.3189C1.75005 12.0527 1.36565 11.3885 1.45657 10.6985L1.58547 9.71883L0.984385 8.93591C0.811485 8.71075 0.709028 8.44947 0.677232 8.18153C0.631114 7.79303 0.733722 7.39067 0.984385 7.06426L1.58547 6.28134L1.45657 5.30164C1.36565 4.61164 1.75005 3.94745 2.39173 3.68122L2.39303 3.68068L3.30412 3.30452L3.6808 2.39207C3.94699 1.75039 4.61083 1.36588 5.30087 1.45682L6.28141 1.58584L7.06383 0.985077ZM10.8046 6.80482C11.0649 6.54447 11.0649 6.12236 10.8046 5.86201C10.5442 5.60166 10.1221 5.60166 9.86177 5.86201L7.33317 8.39061L6.47124 7.52868C6.21089 7.26833 5.78878 7.26833 5.52843 7.52868C5.26808 7.78903 5.26808 8.21114 5.52843 8.47149L6.86177 9.80482C7.12212 10.0652 7.54423 10.0652 7.80458 9.80482L10.8046 6.80482Z" fill="#1B65FF"/>
-                      <path d="M6 7.99992L7.33333 9.33325L10.3333 6.33325" stroke="white" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                  </span>
-                {% endif %}
-
-                {% if listing.seller.seller_profile.is_cac_verified %}
-                  <span class="bg-amber-100 text-amber-800 text-[9px] font-black px-2 py-0.5 rounded-md border border-amber-300">CAC</span>
-                {% endif %}
-              </div>
-              <p class="text-xs text-slate-400">{{ listing.seller.seller_profile.response_time|default:"Replies quickly" }}</p>
-            </div>
+        <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+            <i data-lucide="layers" class="w-4 h-4"></i>
           </div>
-
-          <!-- PHYSICAL STORE ADDRESS -->
-          <div class="bg-purple-50 p-3.5 rounded-2xl border border-purple-200 text-xs space-y-1">
-            <div class="flex items-center gap-1.5 font-bold text-purple-900">
-              <i data-lucide="store" class="w-4 h-4 text-purple-700 shrink-0"></i>
-              <span>Physical Shop / Office Address</span>
-            </div>
-            <p class="text-slate-700 pl-5 font-medium">
-              {{ listing.seller.seller_profile.shop_address|default:"Physical store address available upon meeting inquiry in this commercial district." }}
-            </p>
+          <div class="min-w-0">
+            <span class="text-[11px] font-semibold text-slate-500 block">Sub-Category</span>
+            <span class="text-xs sm:text-sm font-extrabold text-slate-900 block truncate">{{ listing.subcategory.name|default:"General" }}</span>
           </div>
+        </div>
 
-          <!-- SOCIAL MEDIA CONNECT ICONS -->
-          <div class="pt-2">
-            <span class="text-[11px] font-black text-slate-400 uppercase tracking-wider block mb-2.5">
-              Connect Directly with Seller
+        <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+            <i data-lucide="map-pin" class="w-4 h-4"></i>
+          </div>
+          <div class="min-w-0">
+            <span class="text-[11px] font-semibold text-slate-500 block">Location / Area</span>
+            <span class="text-xs sm:text-sm font-extrabold text-purple-700 block truncate">
+              {% if listing.area %}{{ listing.area.name }}{% elif listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}
             </span>
-            <div class="flex items-center gap-2">
-              <a 
-                href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                class="w-10 h-10 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
-                title="WhatsApp"
-              >
-                <i data-lucide="message-circle" class="w-5 h-5"></i>
-              </a>
-
-              {% if listing.seller.seller_profile.instagram_handle %}
-                <a 
-                  href="https://instagram.com/{{ listing.seller.seller_profile.instagram_handle }}" 
-                  target="_blank" 
-                  class="w-10 h-10 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
-                  title="Instagram"
-                >
-                  <i data-lucide="instagram" class="w-5 h-5"></i>
-                </a>
-              {% endif %}
-
-              {% if listing.seller.seller_profile.facebook_handle %}
-                <a 
-                  href="https://facebook.com/{{ listing.seller.seller_profile.facebook_handle }}" 
-                  target="_blank" 
-                  class="w-10 h-10 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
-                  title="Facebook"
-                >
-                  <i data-lucide="facebook" class="w-5 h-5"></i>
-                </a>
-              {% endif %}
-
-              {% if listing.seller.seller_profile.tiktok_handle %}
-                <a 
-                  href="https://tiktok.com/@{{ listing.seller.seller_profile.tiktok_handle }}" 
-                  target="_blank" 
-                  class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
-                  title="TikTok"
-                >
-                  <i data-lucide="video" class="w-5 h-5"></i>
-                </a>
-              {% endif %}
-
-              <a 
-                href="tel:{{ listing.seller.seller_profile.phone_number }}" 
-                class="w-10 h-10 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center transition-transform hover:scale-110 shadow-xs"
-                title="Direct Phone Call"
-              >
-                <i data-lucide="phone-call" class="w-5 h-5"></i>
-              </a>
-            </div>
           </div>
-
-          <!-- Safety Warning -->
-          <div class="bg-amber-50 rounded-2xl p-4 border border-amber-200 text-amber-950 text-xs space-y-1">
-            <div class="flex items-center gap-1.5 font-bold text-amber-800">
-              <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i>
-              <span>Safety Warning</span>
-            </div>
-            <p class="leading-relaxed text-[11px]">
-              Inspect items thoroughly before releasing money. Never transfer advance dispatch fees.
-            </p>
-          </div>
-
         </div>
 
+        {% if listing.extra_fields.company_name %}
+          <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="building-2" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[11px] font-semibold text-slate-500 block">Company</span>
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900 block truncate">{{ listing.extra_fields.company_name }}</span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if listing.extra_fields.job_type %}
+          <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="briefcase" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[11px] font-semibold text-slate-500 block">Job Type</span>
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900 block capitalize truncate">{{ listing.extra_fields.job_type|title }}</span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if listing.extra_fields.property_type %}
+          <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="home" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[11px] font-semibold text-slate-500 block">Property Type</span>
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900 block capitalize truncate">{{ listing.extra_fields.property_type|title }}</span>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if listing.extra_fields.bedrooms %}
+          <div class="bg-[#F6F4FF] p-3.5 rounded-2xl border border-purple-100/80 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-white text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
+              <i data-lucide="bed-double" class="w-4 h-4"></i>
+            </div>
+            <div class="min-w-0">
+              <span class="text-[11px] font-semibold text-slate-500 block">Bedrooms</span>
+              <span class="text-xs sm:text-sm font-extrabold text-slate-900 block truncate">{{ listing.extra_fields.bedrooms }} Bedroom{{ listing.extra_fields.bedrooms|pluralize }}</span>
+            </div>
+          </div>
+        {% endif %}
       </div>
 
-    </div>
+      <!-- Clean Green Verified Seller Row Only (Nothing Beside It) -->
+      {% if listing.seller.seller_profile.is_nin_verified %}
+        <div class="pt-1 flex items-center justify-center">
+          <span class="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold text-emerald-700">
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+              <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+            </span>
+            <span>Verified Seller</span>
+          </span>
+        </div>
+      {% endif %}
+    </section>
 
-    <!-- ======================================================== -->
-    <!-- SIMILAR & RELATED ADS SECTION                            -->
-    <!-- ======================================================== -->
-    <div class="pt-10 border-t border-slate-200">
-      <div class="flex items-center justify-between mb-6">
+    <!-- ========================================================= -->
+    <!-- 4. PRODUCT DESCRIPTION CARD                               -->
+    <!-- ========================================================= -->
+    <section class="bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xs border border-purple-100 space-y-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+          <i data-lucide="file-text" class="w-4 h-4"></i>
+        </div>
+        <h2 class="text-base sm:text-lg font-black text-slate-900">Product Description</h2>
+      </div>
+
+      <div class="text-slate-700 text-sm sm:text-[15px] leading-relaxed whitespace-pre-line">
+        {{ listing.description }}
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 5. SELLER PROFILE & DIRECT CONTACT CARD                   -->
+    <!-- ========================================================= -->
+    <section class="bg-white/95 rounded-3xl p-5 sm:p-6 shadow-xs border border-purple-100 space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3.5 min-w-0">
+          <div class="w-14 h-14 rounded-full overflow-hidden bg-purple-100 shrink-0 border-2 border-purple-200 shadow-2xs flex items-center justify-center">
+            {% if listing.seller.seller_profile.avatar %}
+              <img src="{{ listing.seller.seller_profile.avatar.url }}" alt="{{ listing.seller.first_name|default:listing.seller.username }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full purple-gradient flex items-center justify-center text-white font-black text-xl">
+                {{ listing.seller.first_name|default:listing.seller.username|slice:":1"|upper }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h3 class="font-black text-slate-900 text-base sm:text-lg truncate">
+                {{ listing.seller.first_name|default:listing.seller.username }}
+              </h3>
+
+              {% if listing.seller.seller_profile.is_nin_verified %}
+                <span title="Verified Seller" class="inline-flex items-center shrink-0">
+                  <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.06383 0.985077C7.33981 0.772642 7.66986 0.666667 7.99984 0.666748C8.32981 0.666667 8.65986 0.772642 8.93585 0.985077L9.71826 1.58584L10.6988 1.45682C11.3888 1.36588 12.0527 1.75039 12.3189 2.39207L12.6956 3.30452L13.6066 3.68068L13.6079 3.68122C14.2496 3.94745 14.634 4.61164 14.5431 5.30164L14.4142 6.28134L15.0153 7.06426C15.1741 7.27109 15.2735 7.50843 15.3133 7.7534C15.3423 7.93203 15.3396 8.11472 15.3051 8.29262C15.2608 8.5213 15.1642 8.742 15.0153 8.93591L14.4142 9.71883L14.5431 10.6985C14.634 11.3885 14.2496 12.0527 13.6079 12.3189L13.6066 12.3195L12.6956 12.6956L12.3189 13.6081C12.0527 14.2498 11.3888 14.6343 10.6988 14.5433L9.71826 14.4143L8.93585 15.0151C8.65986 15.2275 8.32981 15.3335 7.99984 15.3334C7.66986 15.3335 7.33981 15.2275 7.06383 15.0151L6.28141 14.4143L5.30087 14.5433C4.61083 14.6343 3.94699 14.2498 3.6808 13.6081L3.30412 12.6956L2.39303 12.3195L2.39173 12.3189C1.75005 12.0527 1.36565 11.3885 1.45657 10.6985L1.58547 9.71883L0.984385 8.93591C0.811485 8.71075 0.709028 8.44947 0.677232 8.18153C0.631114 7.79303 0.733722 7.39067 0.984385 7.06426L1.58547 6.28134L1.45657 5.30164C1.36565 4.61164 1.75005 3.94745 2.39173 3.68122L2.39303 3.68068L3.30412 3.30452L3.6808 2.39207C3.94699 1.75039 4.61083 1.36588 5.30087 1.45682L6.28141 1.58584L7.06383 0.985077ZM10.8046 6.80482C11.0649 6.54447 11.0649 6.12236 10.8046 5.86201C10.5442 5.60166 10.1221 5.60166 9.86177 5.86201L7.33317 8.39061L6.47124 7.52868C6.21089 7.26833 5.78878 7.26833 5.52843 7.52868C5.26808 7.78903 5.26808 8.21114 5.52843 8.47149L6.86177 9.80482C7.12212 10.0652 7.54423 10.0652 7.80458 9.80482L10.8046 6.80482Z" fill="#1B65FF"/>
+                    <path d="M6 7.99992L7.33333 9.33325L10.3333 6.33325" stroke="white" stroke-width="1.33" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              {% endif %}
+
+              {% if listing.seller.seller_profile.is_cac_verified %}
+                <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-amber-300">CAC</span>
+              {% endif %}
+            </div>
+
+            <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
+              <span>{{ listing.seller.seller_profile.response_time|default:"Replies quickly" }}</span>
+            </p>
+            <p class="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 truncate">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
+              <span class="truncate">{{ listing.seller.seller_profile.shop_address|default:"Physical store address available upon inquiry" }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3-Button Contact Row (WhatsApp, Direct Message, Call Seller) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+        <a 
+          href="https://wa.me/{{ listing.seller.seller_profile.clean_whatsapp_number }}?text=Hello%20{{ listing.seller.first_name|default:listing.seller.username|urlencode }},%20I%20saw%20your%20listing%20{{ listing.title|urlencode }}%20on%20{{ settings.site_name|default:'Naijasale'|urlencode }}:%0A{{ request.build_absolute_uri|urlencode }}" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="flex items-center justify-center gap-2 bg-[#00A859] hover:bg-[#00924D] text-white font-extrabold text-xs sm:text-sm py-3 px-4 rounded-full shadow-xs transition-all"
+        >
+          <i data-lucide="message-circle" class="w-4 h-4"></i>
+          <span>Chat on WhatsApp</span>
+        </a>
+
+        <a 
+          href="{% url 'marketplace:start_chat' listing.id %}" 
+          class="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200/80 font-extrabold text-xs sm:text-sm py-3 px-4 rounded-full transition-all"
+        >
+          <i data-lucide="messages-square" class="w-4 h-4 text-purple-700"></i>
+          <span>Direct Message</span>
+        </a>
+
+        <a 
+          href="tel:{{ listing.seller.seller_profile.phone_number }}" 
+          class="flex items-center justify-center gap-2 bg-purple-50 hover:bg-purple-100 text-slate-900 border border-purple-200/80 font-extrabold text-xs sm:text-sm py-3 px-4 rounded-full transition-all"
+        >
+          <i data-lucide="phone" class="w-4 h-4 text-purple-700"></i>
+          <span>Call Seller</span>
+        </a>
+      </div>
+
+      <!-- Optional Social Links if Seller Configured Them -->
+      {% if listing.seller.seller_profile.instagram_handle or listing.seller.seller_profile.facebook_handle or listing.seller.seller_profile.tiktok_handle %}
+      <div class="pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+        <span class="text-[11px] font-bold text-slate-400">Seller Social Channels</span>
+        <div class="flex items-center gap-2">
+          {% if listing.seller.seller_profile.instagram_handle %}
+            <a href="https://instagram.com/{{ listing.seller.seller_profile.instagram_handle }}" target="_blank" class="w-8 h-8 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:scale-105 transition-transform" title="Instagram">
+              <i data-lucide="instagram" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+          {% if listing.seller.seller_profile.facebook_handle %}
+            <a href="https://facebook.com/{{ listing.seller.seller_profile.facebook_handle }}" target="_blank" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:scale-105 transition-transform" title="Facebook">
+              <i data-lucide="facebook" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+          {% if listing.seller.seller_profile.tiktok_handle %}
+            <a href="https://tiktok.com/@{{ listing.seller.seller_profile.tiktok_handle }}" target="_blank" class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center hover:scale-105 transition-transform" title="TikTok">
+              <i data-lucide="video" class="w-4 h-4"></i>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 6. SAFETY WARNING CARD                                    -->
+    <!-- ========================================================= -->
+    <section class="bg-white/95 rounded-3xl p-4 sm:p-5 border border-purple-100 shadow-2xs flex items-center gap-3.5">
+      <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+        <i data-lucide="shield-check" class="w-5 h-5"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <h4 class="text-xs sm:text-sm font-extrabold text-purple-800">Safety Warning</h4>
+        <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+          Inspect items thoroughly before releasing money. Never transfer advance dispatch fees.
+        </p>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 7. REPORT THIS AD & ABUSE BAR                             -->
+    <!-- ========================================================= -->
+    <section class="bg-white/95 rounded-3xl p-4 sm:p-5 border border-purple-100 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+          <i data-lucide="flag" class="w-4 h-4"></i>
+        </div>
         <div>
-          <h3 class="text-lg sm:text-xl font-black text-slate-900 flex items-center gap-2">
-            <i data-lucide="sparkles" class="w-5 h-5 text-purple-600"></i>
+          <h4 class="text-xs sm:text-sm font-extrabold text-slate-900">Notice something wrong with this ad?</h4>
+          <p class="text-[11px] text-slate-500">Help keep {{ settings.site_name|default:"Naijasale" }} safe by reporting scams or fake prices.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button 
+          type="button" 
+          onclick="openReportModal('fraud')" 
+          class="flex-1 sm:flex-none px-3.5 py-2 rounded-full border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+          <span>Report Ad</span>
+        </button>
+        <button 
+          type="button" 
+          onclick="openReportModal('abusive_behavior')" 
+          class="flex-1 sm:flex-none px-3.5 py-2 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+        >
+          <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
+          <span>Report Abuse</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 8. SIMILAR ITEMS YOU MAY LIKE                             -->
+    <!-- ========================================================= -->
+    <section class="pt-3 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base sm:text-lg font-black text-slate-900">
             Similar Items You May Like
           </h3>
-          <p class="text-xs text-slate-400">Discover comparable active listings across {% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}.</p>
+          <p class="text-xs text-slate-500">Comparable listings across {% if listing.state %}{{ listing.state.name }}{% else %}Nigeria{% endif %}</p>
         </div>
-        <a href="{% url 'marketplace:home' %}?category={{ listing.category.slug }}" class="text-xs font-bold text-purple-700 hover:text-purple-900 flex items-center gap-1">
-          <span>See More in {{ listing.category.name }}</span>
-          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        <a href="{% url 'marketplace:home' %}?category={{ listing.category.slug }}" class="text-xs font-extrabold text-purple-700 hover:underline flex items-center gap-1">
+          <span>See More</span>
+          <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
         </a>
       </div>
 
       {% if related_items %}
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {% for item in related_items %}
-            <a href="{% url 'marketplace:listing_detail' item.slug %}" class="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-1 transition-all flex flex-col">
-              
-              <!-- Thumbnail -->
+            <a href="{% url 'marketplace:listing_detail' item.slug %}" class="group bg-white rounded-3xl border border-purple-100/90 overflow-hidden shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col">
               <div class="relative aspect-square bg-slate-100 overflow-hidden">
                 {% if item.images.first %}
                   <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
@@ -579,60 +585,49 @@
                     <i data-lucide="image" class="w-8 h-8"></i>
                   </div>
                 {% endif %}
-                
-                {% if item.condition %}
-                  <span class="absolute top-2 left-2 bg-slate-950/70 backdrop-blur-xs text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
-                    {{ item.get_condition_display }}
-                  </span>
-                {% endif %}
 
-                {% if item.seller.seller_profile.is_nin_verified %}
-                  <span class="absolute top-2 right-2 bg-blue-600 text-white p-1 rounded-full shadow-xs" title="Verified Seller">
-                    <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
+                {% if item.condition %}
+                  <span class="absolute top-2.5 left-2.5 bg-slate-900/75 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                    {{ item.get_condition_display }}
                   </span>
                 {% endif %}
               </div>
 
-              <!-- Content Info -->
-              <div class="p-3 flex flex-col flex-1 justify-between">
+              <div class="p-3.5 flex flex-col flex-1 justify-between">
                 <div>
-                  <h4 class="text-xs font-bold text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-2 leading-tight">
+                  <h4 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-purple-700 transition-colors line-clamp-2 leading-snug">
                     {{ item.title }}
                   </h4>
-                  <p class="text-sm font-black text-slate-900 mt-1">₦{{ item.price|intcomma }}</p>
+                  <p class="text-sm sm:text-base font-black text-slate-900 mt-1">₦{{ item.price|intcomma }}</p>
                 </div>
-                
-                <div class="flex items-center gap-1 text-[10px] text-slate-400 mt-2 truncate">
-                  <i data-lucide="map-pin" class="w-3 h-3 text-slate-400 shrink-0"></i>
+
+                <div class="flex items-center gap-1 text-[11px] text-slate-500 mt-2 truncate">
+                  <i data-lucide="map-pin" class="w-3 h-3 text-purple-600 shrink-0"></i>
                   <span class="truncate">
                     {% if item.area %}{{ item.area.name }}{% elif item.state %}{{ item.state.name }}{% else %}Nigeria{% endif %}
                   </span>
                 </div>
               </div>
-
             </a>
           {% endfor %}
         </div>
       {% else %}
-        <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center space-y-2">
-          <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-            <i data-lucide="package-search" class="w-5 h-5"></i>
-          </div>
+        <div class="bg-white/95 rounded-3xl p-6 border border-purple-100 text-center space-y-2">
           <p class="text-xs font-bold text-slate-700">No other similar items active right now.</p>
-          <a href="{% url 'marketplace:home' %}" class="inline-block text-xs font-bold text-purple-700 hover:underline">
-            Explore All Categories
+          <a href="{% url 'marketplace:home' %}" class="inline-block text-xs font-extrabold text-purple-700 hover:underline">
+            Explore All Categories &rarr;
           </a>
         </div>
       {% endif %}
-    </div>
+    </section>
 
   </main>
 
-  <!-- ======================================================== -->
-  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                    -->
-  <!-- ======================================================== -->
+  <!-- ========================================================= -->
+  <!-- MODAL: REPORT THIS AD / ABUSE (POPUP)                     -->
+  <!-- ========================================================= -->
   <div id="reportModal" class="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-purple-100 space-y-4">
       
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <div class="flex items-center gap-2">
@@ -645,7 +640,7 @@
       </div>
 
       <p class="text-xs text-slate-500">
-        You are reporting: <strong class="text-slate-800">{{ listing.title }}</strong>. Our trust & safety team investigates reports within 15 minutes.
+        You are reporting: <strong class="text-slate-800">{{ listing.title }}</strong>. Our trust &amp; safety team investigates reports within 15 minutes.
       </p>
 
       <form method="POST" action="{% url 'marketplace:report_ad' listing.id %}" class="space-y-4">
@@ -653,7 +648,7 @@
 
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Reason for Report</label>
-          <select name="reason" id="reportReasonSelect" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-hidden bg-slate-50/50">
+          <select name="reason" id="reportReasonSelect" required class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-hidden bg-slate-50/50">
             <option value="fraud">Suspected Scam / Fraud</option>
             <option value="fake_price">Fake / Unrealistic Price</option>
             <option value="counterfeit">Counterfeit or Fake Product</option>
@@ -666,14 +661,14 @@
 
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">Additional Details (Optional)</label>
-          <textarea name="details" rows="3" placeholder="Provide extra context to help our staff verify..." class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-rose-500 focus:outline-hidden bg-slate-50/50"></textarea>
+          <textarea name="details" rows="3" placeholder="Provide extra context to help our staff verify..." class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 text-xs focus:ring-2 focus:ring-purple-500 focus:outline-hidden bg-slate-50/50"></textarea>
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-2">
-          <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">
+          <button type="button" onclick="closeReportModal()" class="px-4 py-2 rounded-full text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">
             Cancel
           </button>
-          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md">
+          <button type="submit" class="px-5 py-2 rounded-full text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-md">
             Submit Report
           </button>
         </div>
@@ -684,8 +679,8 @@
   </div>
 
   <!-- Footer -->
-  <footer class="bg-white border-t border-slate-200 mt-auto py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+  <footer class="bg-white/90 border-t border-purple-100 mt-auto py-7">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-medium">
       <div class="flex items-center gap-2.5">
         {% if settings.logo %}
           <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" class="h-7 w-auto object-contain">
@@ -694,7 +689,7 @@
         {% endif %}
         <span>&copy; 2026 {{ settings.site_name|default:"Naijasale" }}. Verified Nigerian Classifieds.</span>
       </div>
-      <div class="flex items-center gap-4">
+      <div>
         <span>Support: <strong class="text-slate-700">{{ settings.support_phone|default:"0800-NAIJASALE" }}</strong></span>
       </div>
     </div>
@@ -703,29 +698,24 @@
   <script>
     lucide.createIcons();
 
-    // Copy Link function with feedback
     function copyAdLink() {
       const url = window.location.href;
       navigator.clipboard.writeText(url).then(() => {
         const textSpan = document.getElementById('copyAdLinkText');
         const icon = document.getElementById('copyIcon');
         
-        textSpan.innerText = 'Copied!';
-        textSpan.classList.add('text-emerald-600');
+        if (textSpan) textSpan.innerText = 'Copied!';
         if (icon) {
           icon.setAttribute('data-lucide', 'check');
-          icon.classList.remove('text-slate-500');
           icon.classList.add('text-emerald-600');
           lucide.createIcons();
         }
 
         setTimeout(() => {
-          textSpan.innerText = 'Copy Link';
-          textSpan.classList.remove('text-emerald-600');
+          if (textSpan) textSpan.innerText = 'Share Ad';
           if (icon) {
-            icon.setAttribute('data-lucide', 'link');
+            icon.setAttribute('data-lucide', 'share-2');
             icon.classList.remove('text-emerald-600');
-            icon.classList.add('text-slate-500');
             lucide.createIcons();
           }
         }, 2000);
