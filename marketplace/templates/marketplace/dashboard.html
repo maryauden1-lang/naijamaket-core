@@ -5,52 +5,56 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6D28D9">
-  <title>Seller Dashboard - {{ request.user.username }}</title>
+  <title>Seller Dashboard - {{ request.user.username }} | NaijaSale</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
     body { 
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background: #F8F9FA;
+      background-color: #F4F2FF;
+      background-image:
+        radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.14) 0px, transparent 52%),
+        radial-gradient(at 0% 15%, rgba(139, 92, 246, 0.08) 0px, transparent 48%);
     }
-    .jiji-purple-header {
-      background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    .wallet-hero-card {
+      background: linear-gradient(135deg, #1E133A 0%, #3B1E7A 55%, #5B21B6 100%);
+      box-shadow: 0 16px 32px -8px rgba(45, 27, 90, 0.42);
     }
-    .sell-btn-orange {
-      background-color: #FF8A00;
-      box-shadow: 0 4px 14px rgba(255, 138, 0, 0.35);
+    .topup-purple-btn {
+      background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+      box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
     }
-    .sell-btn-orange:hover {
-      background-color: #EA7A00;
+    .topup-purple-btn:hover {
+      background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
     }
   </style>
 </head>
-<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-20 sm:pb-8 selection:bg-purple-600 selection:text-white">
+<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-24 selection:bg-purple-600 selection:text-white">
 
-  <!-- Purple Top Navigation -->
-  <header class="jiji-purple-header text-white sticky top-0 z-40 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <a href="{% url 'marketplace:home' %}" class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-          <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
+  <!-- Top Brand Header -->
+  <header class="pt-5 pb-2">
+    <div class="max-w-xl mx-auto px-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <a href="{% url 'marketplace:home' %}" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center shadow-sm">
+          <i data-lucide="shopping-bag" class="w-5 h-5 text-white"></i>
         </a>
-        <h1 class="text-base sm:text-xl font-black text-white">My Seller Dashboard</h1>
+        <span class="text-xl font-black tracking-tight text-slate-900">NaijaSale</span>
       </div>
 
-      <div class="flex items-center gap-2">
-        <a href="{% url 'marketplace:wallet_dashboard' %}" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-emerald-300/30">
-          <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-300"></i>
-          <span>₦{{ user.wallet.balance|default:"0"|floatformat:0|intcomma }}</span>
+      <div class="flex items-center gap-2.5">
+        <a href="{% url 'marketplace:inbox' %}" class="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-xs border border-purple-100 flex items-center justify-center text-slate-700 transition-colors" title="Inbox & Alerts">
+          <i data-lucide="bell" class="w-4 h-4"></i>
         </a>
-        <a href="{% url 'marketplace:profile' %}" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-white/20">
-          <i data-lucide="store" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Store Settings & KYC</span>
-        </a>
-        <a href="{% url 'marketplace:post_ad' %}" class="sell-btn-orange text-white text-xs font-black px-3.5 py-1.5 rounded-xl uppercase transition-all">
-          + Sell
+        <a href="{% url 'marketplace:profile' %}" class="relative w-10 h-10 rounded-full overflow-hidden bg-purple-100 border-2 border-white shadow-xs flex items-center justify-center">
+          {% if user.seller_profile.avatar %}
+            <img src="{{ user.seller_profile.avatar.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
+          {% else %}
+            <span class="text-sm font-black text-purple-700">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+          {% endif %}
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></span>
         </a>
       </div>
     </div>
@@ -58,266 +62,306 @@
 
   <!-- Alerts -->
   {% if messages %}
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 mt-3 w-full">
+    <div class="max-w-xl mx-auto px-4 mt-2 w-full">
       {% for message in messages %}
-        <div class="p-3.5 rounded-xl text-xs font-semibold flex items-center justify-between border {% if message.tags == 'success' %}bg-purple-50 border-purple-200 text-purple-900{% elif message.tags == 'info' %}bg-blue-50 border-blue-200 text-blue-900{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %}">
+        <div class="p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between border {% if message.tags == 'success' %}bg-purple-50 border-purple-200 text-purple-900{% elif message.tags == 'info' %}bg-blue-50 border-blue-200 text-blue-900{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %}">
           <span>{{ message }}</span>
-          <button onclick="this.parentElement.remove()" class="text-slate-400">✕</button>
+          <button onclick="this.parentElement.remove()" class="text-slate-400 ml-2">✕</button>
         </div>
       {% endfor %}
     </div>
   {% endif %}
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 flex-1 w-full space-y-4 sm:space-y-6">
+  <!-- Main Single-Column Dashboard Container -->
+  <main class="max-w-xl mx-auto px-4 py-3 flex-1 w-full space-y-4">
 
-    <!-- Seller Identity Card & Quick Store Address Status -->
-    <div class="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-purple-100 shrink-0 border-2 border-purple-200 flex items-center justify-center">
-          {% if user.seller_profile.avatar %}
-            <img src="{{ user.seller_profile.avatar.url }}" alt="{{ user.username }}" class="w-full h-full object-cover">
-          {% else %}
-            <span class="text-lg font-black text-purple-700">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+    <!-- Welcome Greeting -->
+    <div class="flex items-center justify-between pt-1">
+      <div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            Welcome, {{ user.first_name|default:user.username }} 👋
+          </h1>
+          {% if user.seller_profile.is_nin_verified %}
+            <span class="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded-full border border-blue-200">
+              <i data-lucide="badge-check" class="w-3 h-3 text-blue-600"></i> Verified
+            </span>
+          {% elif user.seller_profile.verification_status == 'pending' %}
+            <span class="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 font-extrabold px-2 py-0.5 rounded-full border border-amber-200">
+              <i data-lucide="clock" class="w-3 h-3 text-amber-600"></i> KYC In Review
+            </span>
           {% endif %}
         </div>
-        <div>
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <h2 class="text-base sm:text-lg font-black text-slate-900">{{ user.first_name|default:user.username }}</h2>
-            
-            {% if user.seller_profile.is_nin_verified %}
-              <span class="inline-flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 font-extrabold px-2 py-0.5 rounded-full border border-blue-200 shadow-2xs">
-                <i data-lucide="badge-check" class="w-3 h-3 text-blue-600"></i>
-                Verified Merchant
-              </span>
-            {% elif user.seller_profile.verification_status == 'pending' %}
-              <span class="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 font-extrabold px-2 py-0.5 rounded-full border border-amber-200">
-                <i data-lucide="clock" class="w-3 h-3 text-amber-600"></i>
-                KYC In Review
-              </span>
-            {% endif %}
+        <p class="text-xs sm:text-sm font-medium text-slate-500 mt-0.5">Here's your seller dashboard</p>
+      </div>
+    </div>
+
+    <!-- Dark Purple Wallet Balance Card -->
+    <div class="wallet-hero-card rounded-3xl p-5 sm:p-6 text-white relative overflow-hidden">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/15 flex items-center justify-center shrink-0">
+            <i data-lucide="wallet" class="w-6 h-6 text-purple-200"></i>
           </div>
-          <p class="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-            <i data-lucide="map-pin" class="w-3.5 h-3.5 text-purple-600 shrink-0"></i>
-            <span class="truncate max-w-[240px] sm:max-w-md">
-              {{ user.seller_profile.shop_address|default:"No physical shop address added yet" }}
-            </span>
-          </p>
+          <div>
+            <p class="text-xs font-medium text-purple-200/80">Wallet Balance</p>
+            <p class="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              ₦{{ user.wallet.balance|default:"0.00"|floatformat:2|intcomma }}
+            </p>
+          </div>
         </div>
+
+        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full bg-white/10 border border-white/20 text-purple-100">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+          Secure
+        </span>
       </div>
 
-      <!-- Button to Edit Store / Verification -->
-      <a href="{% url 'marketplace:profile' %}" class="w-full sm:w-auto text-center bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5">
-        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-        <span>Manage KYC Verification & Shop</span>
+      <!-- Dual Action Pill Buttons -->
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <a href="{% url 'marketplace:wallet_dashboard' %}" class="topup-purple-btn py-3 px-4 rounded-full text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
+          <span class="w-5 h-5 rounded-full bg-white text-purple-700 flex items-center justify-center">
+            <i data-lucide="arrow-up" class="w-3.5 h-3.5 stroke-[3]"></i>
+          </span>
+          <span>Top Up Wallet</span>
+        </a>
+
+        <a href="{% url 'marketplace:wallet_dashboard' %}" class="py-3 px-4 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all">
+          <i data-lucide="rocket" class="w-4 h-4 text-purple-200"></i>
+          <span>Boost &amp; Receipts</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- 4-Icon Quick Shortcuts Card -->
+    <div class="bg-white/95 rounded-3xl p-4 border border-purple-100 shadow-2xs grid grid-cols-4 gap-2 text-center">
+      <a href="#my-listings-section" class="flex flex-col items-center gap-1.5 group">
+        <div class="w-11 h-11 rounded-2xl bg-purple-50 group-hover:bg-purple-100 text-purple-700 flex items-center justify-center transition-colors">
+          <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[11px] font-bold text-slate-800">My Listings</span>
+      </a>
+
+      <a href="{% url 'marketplace:profile' %}" class="flex flex-col items-center gap-1.5 group">
+        <div class="w-11 h-11 rounded-2xl bg-purple-50 group-hover:bg-purple-100 text-purple-700 flex items-center justify-center transition-colors">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[11px] font-bold text-slate-800">Verification</span>
+      </a>
+
+      <a href="{% url 'marketplace:wallet_dashboard' %}" class="flex flex-col items-center gap-1.5 group">
+        <div class="w-11 h-11 rounded-2xl bg-purple-50 group-hover:bg-purple-100 text-purple-700 flex items-center justify-center transition-colors">
+          <i data-lucide="receipt" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[11px] font-bold text-slate-800">Receipts</span>
+      </a>
+
+      <a href="{% url 'marketplace:profile' %}" class="flex flex-col items-center gap-1.5 group">
+        <div class="w-11 h-11 rounded-2xl bg-purple-50 group-hover:bg-purple-100 text-purple-700 flex items-center justify-center transition-colors">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[11px] font-bold text-slate-800">Settings</span>
       </a>
     </div>
 
-    <!-- NAIJASALE WALLET & PAYSTACK TOP-UP CARD -->
-    <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
-          <i data-lucide="wallet" class="w-6 h-6 text-emerald-400"></i>
+    <!-- Overview Stats Card -->
+    <div class="bg-white/95 rounded-3xl p-4 sm:p-5 border border-purple-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="bar-chart-2" class="w-4 h-4 text-slate-900"></i>
+          <h2 class="text-sm sm:text-base font-extrabold text-slate-900">Overview</h2>
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Naijasale Wallet Balance</p>
-            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Paystack Secured</span>
+        <span class="text-[11px] font-bold text-slate-600 bg-purple-50 border border-purple-100 px-3 py-1 rounded-full">
+          All Time
+        </span>
+      </div>
+
+      <div class="grid grid-cols-4 divide-x divide-slate-100 text-center">
+        <div class="px-1">
+          <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-1.5">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
           </div>
-          <p class="text-2xl sm:text-3xl font-black text-white mt-0.5">
-            ₦{{ user.wallet.balance|default:"0.00"|floatformat:2|intcomma }}
-          </p>
+          <p class="text-lg sm:text-xl font-black text-slate-900">{{ active_count }}</p>
+          <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">Active Ads</p>
+        </div>
+
+        <div class="px-1">
+          <div class="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-1.5">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+          <p class="text-lg sm:text-xl font-black text-slate-900">{{ pending_count }}</p>
+          <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">In Review</p>
+        </div>
+
+        <div class="px-1">
+          <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-1.5">
+            <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+          </div>
+          <p class="text-lg sm:text-xl font-black text-slate-900">{{ sold_count }}</p>
+          <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">Sold</p>
+        </div>
+
+        <div class="px-1">
+          <div class="w-8 h-8 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-1.5">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+          </div>
+          <p class="text-lg sm:text-xl font-black text-slate-900">{{ total_views|intcomma }}</p>
+          <p class="text-[10px] sm:text-[11px] font-semibold text-slate-500 mt-0.5">Views</p>
         </div>
       </div>
-
-      <div class="flex items-center gap-2.5 w-full sm:w-auto">
-        <a href="{% url 'marketplace:wallet_dashboard' %}" class="flex-1 sm:flex-initial text-center bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          <span>Top Up Wallet</span>
-        </a>
-        <a href="{% url 'marketplace:wallet_dashboard' %}" class="flex-1 sm:flex-initial text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all">
-          Receipts & Boost
-        </a>
-      </div>
     </div>
 
-    <!-- 4 STATS CARDS (MOBILE-RESPONSIVE) -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
-      
-      <!-- Active Ads -->
-      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-2xs text-center flex flex-col justify-center">
-        <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-tight truncate">Active Ads</p>
-        <p class="text-lg sm:text-3xl font-black text-emerald-600 mt-0.5 sm:mt-1">{{ active_count }}</p>
-      </div>
-
-      <!-- Pending Ads -->
-      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-2xs text-center flex flex-col justify-center">
-        <p class="text-[10px] sm:text-xs font-bold text-amber-500 uppercase tracking-tight truncate">Under Review</p>
-        <p class="text-lg sm:text-3xl font-black text-amber-600 mt-0.5 sm:mt-1">{{ pending_count }}</p>
-      </div>
-
-      <!-- Items Sold -->
-      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-2xs text-center flex flex-col justify-center">
-        <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-tight truncate">Items Sold</p>
-        <p class="text-lg sm:text-3xl font-black text-purple-700 mt-0.5 sm:mt-1">{{ sold_count }}</p>
-      </div>
-
-      <!-- Total Views -->
-      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 shadow-2xs text-center flex flex-col justify-center">
-        <p class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-tight truncate">Total Views</p>
-        <p class="text-lg sm:text-3xl font-black text-slate-900 mt-0.5 sm:mt-1">{{ total_views|intcomma }}</p>
-      </div>
-
-    </div>
-
-    <!-- Listings Management Table / Card Feed -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-      
-      <div class="p-3.5 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-        <h3 class="text-xs sm:text-sm font-black text-slate-900 uppercase tracking-wider">
-          My Posted Listings ({{ user_listings.count }})
-        </h3>
-        <a href="{% url 'marketplace:post_ad' %}" class="text-[11px] font-extrabold text-purple-700 hover:underline">
+    <!-- My Posted Listings Card -->
+    <div id="my-listings-section" class="bg-white/95 rounded-3xl p-4 sm:p-5 border border-purple-100 shadow-2xs space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="tag" class="w-4 h-4 text-slate-900"></i>
+          <h3 class="text-sm sm:text-base font-extrabold text-slate-900">
+            My Posted Listings ({{ user_listings.count }})
+          </h3>
+        </div>
+        <a href="{% url 'marketplace:post_ad' %}" class="text-xs font-extrabold text-purple-700 hover:underline">
           + Post New Item
         </a>
       </div>
 
       <div class="divide-y divide-slate-100">
         {% for item in user_listings %}
-        <div class="p-3 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors">
-          
-          <div class="flex items-start sm:items-center gap-3 min-w-0">
+        <div class="py-4 first:pt-1 last:pb-1 space-y-3">
+          <div class="flex items-start gap-3.5">
             <!-- Thumbnail -->
-            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 mt-0.5 sm:mt-0">
+            <div class="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200/80">
               {% if item.images.first %}
                 <img src="{{ item.images.first.image.url }}" alt="{{ item.title }}" class="w-full h-full object-cover">
               {% else %}
                 <div class="w-full h-full flex items-center justify-center text-slate-300">
-                  <i data-lucide="image" class="w-6 h-6"></i>
+                  <i data-lucide="image" class="w-7 h-7"></i>
                 </div>
               {% endif %}
             </div>
 
-            <!-- Title & Status -->
-            <div class="min-w-0">
+            <!-- Info -->
+            <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 flex-wrap">
                 {% if item.status == 'active' %}
-                  <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                     <i data-lucide="check" class="w-2.5 h-2.5"></i> Active
                   </span>
                 {% elif item.status == 'pending' %}
-                  <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                    <i data-lucide="clock" class="w-2.5 h-2.5"></i> Under Review
+                  <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    <i data-lucide="clock" class="w-2.5 h-2.5"></i> Pending
                   </span>
                 {% elif item.status == 'rejected' %}
-                  <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                     <i data-lucide="x" class="w-2.5 h-2.5"></i> Declined
                   </span>
                 {% elif item.status == 'sold' %}
-                  <span class="inline-flex items-center text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  <span class="inline-flex items-center text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600">
                     Sold
                   </span>
                 {% endif %}
 
                 {% if item.is_featured %}
-                  <span class="inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
-                    ★ Featured
+                  <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                    ★ Boosted
                   </span>
                 {% endif %}
 
-                <span class="text-[10px] text-slate-400 font-semibold">{{ item.created_at|naturaltime }}</span>
+                <span class="text-[11px] text-slate-400 font-medium">• {{ item.created_at|naturaltime }}</span>
               </div>
 
-              <h4 class="font-extrabold text-slate-900 text-xs sm:text-sm mt-1 truncate max-w-[220px] sm:max-w-md">
+              <h4 class="font-extrabold text-slate-900 text-sm mt-1 truncate">
                 {{ item.title }}
               </h4>
 
-              <p class="text-xs sm:text-sm font-black text-purple-700 mt-0.5">
+              <p class="text-sm font-black text-purple-700 mt-0.5">
                 ₦{{ item.price|intcomma }}
               </p>
 
-              <!-- Rejection feedback note if declined -->
               {% if item.status == 'rejected' and item.rejection_reason %}
                 <p class="text-[11px] text-rose-600 font-bold mt-1 bg-rose-50 px-2 py-0.5 rounded border border-rose-100 inline-block">
-                  Declined Reason: {{ item.rejection_reason }}
+                  Declined: {{ item.rejection_reason }}
                 </p>
               {% endif %}
             </div>
-          </div>
 
-          <!-- Actions Buttons (View, Boost Ad, Edit Ad, Mark Sold, Delete) -->
-          <div class="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-wrap">
-            
-            <!-- View Live Ad Link (Only if Active) -->
             {% if item.status == 'active' %}
-              <a 
-                href="{% url 'marketplace:listing_detail' item.slug %}" 
-                class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 transition-all"
-                title="View Ad Page"
-              >
+              <a href="{% url 'marketplace:listing_detail' item.slug %}" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 shrink-0" title="View Live Ad">
                 <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                <span class="hidden sm:inline">View</span>
-              </a>
-
-              <!-- Boost / Promote Ad Button -->
-              <a 
-                href="{% url 'marketplace:promote_listing' item.id %}" 
-                class="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-extrabold text-xs flex items-center gap-1 border border-amber-300 transition-all shadow-2xs"
-                title="Promote this listing"
-              >
-                <i data-lucide="rocket" class="w-3.5 h-3.5 text-amber-700"></i>
-                <span>{% if item.is_featured %}Extend Boost{% else %}Boost Ad{% endif %}</span>
               </a>
             {% endif %}
-
-            <!-- Edit Button -->
-            <a 
-              href="{% url 'marketplace:edit_listing' item.id %}" 
-              class="px-3 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs flex items-center gap-1 border border-purple-200 transition-all"
-            >
-              <i data-lucide="edit" class="w-3.5 h-3.5"></i>
-              <span>Edit Ad</span>
-            </a>
-
-            <!-- Mark Sold -->
-            {% if item.status == 'active' %}
-              <a 
-                href="{% url 'marketplace:mark_sold' item.id %}" 
-                onclick="return confirm('Mark this ad as sold?')"
-                class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs transition-all"
-                title="Mark Sold"
-              >
-                Mark Sold
-              </a>
-            {% endif %}
-
-            <!-- Delete -->
-            <a 
-              href="{% url 'marketplace:delete_listing' item.id %}" 
-              onclick="return confirm('Permanently delete this ad? This action cannot be reversed.')"
-              class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs transition-all"
-              title="Delete Listing"
-            >
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            </a>
-
           </div>
 
+          <!-- 4-Pill Action Row (Edit, Boost, Mark Sold, Delete) -->
+          <div class="grid grid-cols-4 gap-2">
+            <a href="{% url 'marketplace:edit_listing' item.id %}" class="py-2 px-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-bold text-[11px] flex items-center justify-center gap-1 transition-colors">
+              <i data-lucide="edit" class="w-3.5 h-3.5 text-slate-600"></i>
+              <span>Edit</span>
+            </a>
+
+            {% if item.status == 'active' %}
+              <a href="{% url 'marketplace:promote_listing' item.id %}" class="py-2 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-extrabold text-[11px] flex items-center justify-center gap-1 transition-colors">
+                <i data-lucide="rocket" class="w-3.5 h-3.5 text-purple-600"></i>
+                <span>{% if item.is_featured %}Extend{% else %}Boost{% endif %}</span>
+              </a>
+
+              <a href="{% url 'marketplace:mark_sold' item.id %}" onclick="return confirm('Mark this ad as sold?')" class="py-2 px-2 rounded-xl bg-white hover:bg-emerald-50 border border-slate-200 text-slate-800 font-bold text-[11px] flex items-center justify-center gap-1 transition-colors">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>Sold</span>
+              </a>
+            {% else %}
+              <span class="py-2 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-bold text-[11px] flex items-center justify-center gap-1 cursor-not-allowed">
+                <i data-lucide="rocket" class="w-3.5 h-3.5"></i>
+                <span>Boost</span>
+              </span>
+              <span class="py-2 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 font-bold text-[11px] flex items-center justify-center gap-1 cursor-not-allowed">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span>Sold</span>
+              </span>
+            {% endif %}
+
+            <a href="{% url 'marketplace:delete_listing' item.id %}" onclick="return confirm('Permanently delete this ad? This action cannot be reversed.')" class="py-2 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-100 text-rose-600 font-bold text-[11px] flex items-center justify-center gap-1 transition-colors">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              <span>Delete</span>
+            </a>
+          </div>
         </div>
         {% empty %}
-        <div class="py-12 text-center">
-          <i data-lucide="package-open" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
+        <div class="py-10 text-center">
+          <i data-lucide="package-open" class="w-10 h-10 text-purple-300 mx-auto mb-2"></i>
           <p class="text-xs font-bold text-slate-600">You haven't posted any items yet.</p>
-          <a href="{% url 'marketplace:post_ad' %}" class="inline-block mt-3 bg-purple-700 text-white font-bold text-xs px-4 py-2 rounded-xl">
+          <a href="{% url 'marketplace:post_ad' %}" class="inline-block mt-3 bg-purple-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-full shadow-xs">
             Post Your First Ad
           </a>
         </div>
         {% endfor %}
       </div>
-
     </div>
 
   </main>
+
+  <!-- Floating Bottom App Navigation Bar -->
+  <nav class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-purple-100 shadow-lg">
+    <div class="max-w-xl mx-auto px-4 h-16 grid grid-cols-4 items-center text-center">
+      <a href="{% url 'marketplace:home' %}" class="flex flex-col items-center justify-center gap-1 text-purple-700 relative">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span class="text-[11px] font-extrabold">Home</span>
+        <span class="w-8 h-1 rounded-full bg-purple-700 mt-0.5"></span>
+      </a>
+      <a href="#my-listings-section" class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-purple-700 transition-colors">
+        <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
+        <span class="text-[11px] font-bold">Analytics</span>
+      </a>
+      <a href="{% url 'marketplace:inbox' %}" class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-purple-700 transition-colors">
+        <i data-lucide="headphones" class="w-5 h-5"></i>
+        <span class="text-[11px] font-bold">Support</span>
+      </a>
+      <a href="{% url 'marketplace:profile' %}" class="flex flex-col items-center justify-center gap-1 text-slate-500 hover:text-purple-700 transition-colors">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[11px] font-bold">Profile</span>
+      </a>
+    </div>
+  </nav>
 
   <script>lucide.createIcons();</script>
 </body>

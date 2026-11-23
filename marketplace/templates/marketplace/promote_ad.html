@@ -4,68 +4,116 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0F172A">
-  <title>Elevate Listing — {{ listing.title }} | NaijaSale</title>
+  <meta name="theme-color" content="#6D28D9">
+  <title>Boost Your Ad — {{ listing.title }} | NaijaSale</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #F4F5F8;
-      background-image: radial-gradient(at 0% 0%, rgba(124, 58, 237, 0.06) 0px, transparent 50%),
-                        radial-gradient(at 100% 0%, rgba(217, 119, 6, 0.06) 0px, transparent 50%);
+      background-color: #F4F2FF;
+      background-image:
+        radial-gradient(at 100% 0%, rgba(124, 58, 237, 0.14) 0px, transparent 52%),
+        radial-gradient(at 0% 15%, rgba(139, 92, 246, 0.08) 0px, transparent 48%);
     }
     .plan-card {
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .plan-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
-    .pay-btn-gradient {
-      background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #4C1D95 100%);
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.35);
-      transition: all 0.25s ease;
+    .listing-dark-card {
+      background: linear-gradient(135deg, #1E133A 0%, #2D1B5A 55%, #1A1033 100%);
+      box-shadow: 0 14px 28px -8px rgba(30, 19, 58, 0.35);
     }
-    .pay-btn-gradient:hover {
-      box-shadow: 0 14px 30px -5px rgba(76, 29, 149, 0.45);
+    .pay-purple-btn {
+      background: linear-gradient(135deg, #6D28D9 0%, #5B21B6 100%);
+      box-shadow: 0 10px 24px -4px rgba(109, 40, 217, 0.42);
+      transition: all 0.2s ease;
+    }
+    .pay-purple-btn:hover {
+      background: linear-gradient(135deg, #5B21B6 0%, #4C1D95 100%);
       transform: translateY(-1px);
     }
   </style>
 </head>
-<body class="text-slate-900 antialiased min-h-screen flex flex-col overflow-x-hidden">
+<body class="text-slate-900 antialiased min-h-screen flex flex-col overflow-x-hidden pb-10">
 
-  <!-- Minimalist Top Bar -->
-  <header class="bg-white/85 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-40">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <a href="{% url 'marketplace:dashboard' %}" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200/80 flex items-center justify-center text-slate-700 transition-colors">
-          <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        </a>
-        <div class="flex items-center gap-2">
-          <span class="text-sm sm:text-base font-extrabold tracking-tight text-slate-900">Promote Listing</span>
-          <span class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-900 text-amber-300 border border-amber-400/30">
-            Executive Placement
-          </span>
+  <!-- Top Brand Header & Hero Banner -->
+  <header class="relative overflow-hidden pt-5 pb-4">
+    <div class="max-w-xl mx-auto px-4">
+      <!-- Top Navigation Bar -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'marketplace:dashboard' %}" class="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-xs border border-purple-100 flex items-center justify-center text-slate-800 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </a>
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center shadow-sm">
+              <i data-lucide="shopping-bag" class="w-4 h-4 text-white"></i>
+            </div>
+            <span class="text-lg font-black tracking-tight text-slate-900">NaijaSale</span>
+          </div>
         </div>
+
+        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 bg-white/90 px-3 py-1.5 rounded-full border border-purple-200/70 shadow-2xs">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i> SSL Secure
+        </span>
       </div>
 
-      <div class="flex items-center gap-3">
-        <span class="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200/60">
-          <i data-lucide="lock" class="w-3.5 h-3.5"></i> 256-bit SSL Encrypted
-        </span>
-        <a href="{% url 'marketplace:dashboard' %}" class="text-xs font-bold text-slate-500 hover:text-slate-900 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-          Cancel
-        </a>
+      <!-- Hero Title + Rocket Growth Graphic -->
+      <div class="mt-5 flex items-center justify-between gap-3">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+            Boost Your Ad
+          </h1>
+          <p class="text-xs sm:text-sm font-medium text-slate-600 mt-1 leading-relaxed max-w-[240px] sm:max-w-xs">
+            Get more views, reach more buyers, and sell faster!
+          </p>
+        </div>
+
+        <!-- Rocket Growth Bars Illustration -->
+        <div class="shrink-0 relative w-28 h-24 flex items-end justify-end pr-1 select-none" aria-hidden="true">
+          <svg viewBox="0 0 120 96" class="w-full h-full overflow-visible">
+            <defs>
+              <linearGradient id="nsBarGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#8B5CF6"/>
+                <stop offset="100%" stop-color="#6D28D9"/>
+              </linearGradient>
+              <linearGradient id="nsFlameGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#FBBF24"/>
+                <stop offset="100%" stop-color="#F97316"/>
+              </linearGradient>
+            </defs>
+            <!-- Soft background glow -->
+            <circle cx="72" cy="52" r="38" fill="#DDD6FE" fill-opacity="0.45"/>
+            <!-- 3 Growth Bars -->
+            <rect x="24" y="64" width="14" height="24" rx="4" fill="url(#nsBarGrad)" fill-opacity="0.55"/>
+            <rect x="44" y="50" width="14" height="38" rx="4" fill="url(#nsBarGrad)" fill-opacity="0.78"/>
+            <rect x="64" y="34" width="14" height="54" rx="4" fill="url(#nsBarGrad)"/>
+            <!-- Rising Arrow -->
+            <path d="M26 56 C44 46, 56 34, 72 20" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <path d="M65 20 H73 V28" stroke="#7C3AED" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <!-- Rocket -->
+            <g transform="translate(86, 12) rotate(35)">
+              <path d="M0 18 L-5 27 L0 24 L5 27 Z" fill="url(#nsFlameGrad)"/>
+              <path d="M0 -12 C8 -4, 9 8, 6 16 L-6 16 C-9 8, -8 -4, 0 -12 Z" fill="#FFFFFF" stroke="#5B21B6" stroke-width="2"/>
+              <path d="M-6 10 L-11 16 L-5 15 Z" fill="#7C3AED"/>
+              <path d="M6 10 L11 16 L5 15 Z" fill="#7C3AED"/>
+              <circle cx="0" cy="2" r="3.5" fill="#6D28D9"/>
+            </g>
+          </svg>
+        </div>
       </div>
     </div>
   </header>
 
   {% if messages %}
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-5 w-full">
+    <div class="max-w-xl mx-auto px-4 mb-4 w-full">
       {% for message in messages %}
-        <div class="p-4 rounded-2xl text-xs font-semibold flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
-          <div class="flex items-center gap-2.5">
+        <div class="p-3.5 rounded-2xl text-xs font-bold flex items-center justify-between bg-rose-50 border border-rose-200 text-rose-800 shadow-xs">
+          <div class="flex items-center gap-2">
             <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 shrink-0"></i>
             <span>{{ message }}</span>
           </div>
@@ -75,301 +123,201 @@
     </div>
   {% endif %}
 
-  <!-- Main Checkout Grid -->
-  <main class="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-    <form method="POST" id="boostForm" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+  <!-- Main Single-Column Fintech Container -->
+  <main class="max-w-xl mx-auto px-4 flex-1 w-full">
+    <form method="POST" id="boostForm" class="space-y-4">
       {% csrf_token %}
       <input type="hidden" name="gateway" value="PAYSTACK">
 
-      <!-- LEFT COLUMN: Status Tier & Accepted Payment Methods -->
-      <div class="lg:col-span-7 min-w-0 space-y-8">
-
-        <!-- Section 1: Boost Tiers -->
-        <section>
-          <div class="mb-4">
-            <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">1. Choose Visibility Tier</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Higher tiers pin above standard listings and display your 3D badge next to the price.</p>
+      <!-- Card 1: Choose Visibility Tier -->
+      <section class="bg-white/95 backdrop-blur-xs rounded-3xl p-4 sm:p-5 border border-purple-100/90 shadow-sm space-y-3.5">
+        <div class="flex items-center gap-2.5 px-1">
+          <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+            <i data-lucide="zap" class="w-4 h-4 fill-purple-600"></i>
           </div>
+          <div>
+            <h2 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">Choose Visibility Tier</h2>
+            <p class="text-[11px] font-medium text-slate-500">Select a boost plan that fits your goals.</p>
+          </div>
+        </div>
 
-          <div class="space-y-3">
-            {% for plan in plans %}
-              <label class="block cursor-pointer group">
-                <input 
-                  type="radio" 
-                  name="plan_id" 
-                  value="{{ plan.id }}" 
-                  data-name="{{ plan.name }}"
-                  data-days="{{ plan.duration_days }}"
-                  data-price="{{ plan.price_ngn|intcomma }}"
-                  class="peer sr-only plan-radio" 
-                  {% if forloop.first %}checked{% endif %} 
-                  required
-                >
-                <div class="plan-card relative bg-white rounded-2xl p-5 border-2 border-slate-200/90 peer-checked:border-amber-500 peer-checked:bg-amber-50/20 peer-checked:shadow-lg peer-checked:shadow-slate-900/5">
-                  <div class="flex items-center justify-between gap-4">
-                    
-                    <div class="flex items-center gap-3.5">
-                      <!-- Custom Radio Dot -->
-                      <div class="w-5 h-5 rounded-full border-2 border-slate-300 group-hover:border-amber-500 flex items-center justify-center transition-colors shrink-0">
-                        <div class="w-2.5 h-2.5 rounded-full bg-slate-900 opacity-0 scale-50 transition-all duration-200 radio-dot"></div>
+        <div class="space-y-3 pt-1">
+          {% for plan in plans %}
+            <label class="block cursor-pointer group relative">
+              <input
+                type="radio"
+                name="plan_id"
+                value="{{ plan.id }}"
+                data-name="{{ plan.name }}"
+                data-days="{{ plan.duration_days }}"
+                data-price="{{ plan.price_ngn|intcomma }}"
+                class="peer sr-only plan-radio"
+                {% if forloop.first %}checked{% endif %}
+                required
+              >
+
+              <div class="plan-card relative bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-slate-200/80 peer-checked:border-purple-600 peer-checked:bg-purple-50/45 peer-checked:shadow-md peer-checked:shadow-purple-900/5">
+                {% if forloop.first %}
+                  <span class="popular-pill absolute -top-2.5 left-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xs">
+                    Most Popular
+                  </span>
+                {% endif %}
+
+                <div class="flex items-center justify-between gap-2.5">
+                  <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <!-- Radio Circle -->
+                    <div class="w-5 h-5 rounded-full border-2 border-slate-300 group-hover:border-purple-500 flex items-center justify-center transition-colors shrink-0 radio-ring">
+                      <div class="w-2.5 h-2.5 rounded-full bg-purple-600 opacity-0 scale-50 transition-all duration-200 radio-dot"></div>
+                    </div>
+
+                    <!-- Your Exact 3D Badges (Diamond, Star, Crown) -->
+                    <div class="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 p-1.5 shadow-2xs">
+                      {% if plan.badge_type == 'TOP_DEAL' or plan.badge_type == 'TOP_AD' %}
+                        <img src="{% static 'badges/crown.jpg' %}" alt="VIP Crown" class="w-9 h-9 object-contain mix-blend-multiply">
+                      {% elif plan.badge_type == 'URGENT' %}
+                        <img src="{% static 'badges/diamond.jpg' %}" alt="Premium Diamond" class="w-9 h-9 object-contain mix-blend-multiply">
+                      {% else %}
+                        <img src="{% static 'badges/star.jpg' %}" alt="Featured Star" class="w-9 h-9 object-contain mix-blend-multiply">
+                      {% endif %}
+                    </div>
+
+                    <!-- Plan Details -->
+                    <div class="min-w-0">
+                      <div class="font-extrabold text-slate-900 text-xs sm:text-sm truncate">
+                        {{ plan.name }}
                       </div>
-
-                      <!-- Real 3D Tier Emblem -->
-                      <div class="w-12 h-12 rounded-xl bg-white border border-slate-100 flex items-center justify-center shrink-0 p-1 shadow-2xs">
-                        {% if plan.badge_type == 'TOP_DEAL' %}
-                          <img src="{% static 'badges/crown.jpg' %}" alt="VIP Crown" class="w-10 h-10 object-contain mix-blend-multiply">
+                      <p class="text-[11px] text-slate-500 mt-0.5 leading-snug line-clamp-2">
+                        {% if plan.badge_type == 'TOP_DEAL' or plan.badge_type == 'TOP_AD' %}
+                          Supreme feed priority + <strong class="text-slate-700">VIP Gold Crown</strong> badge for {{ plan.duration_days }} days.
                         {% elif plan.badge_type == 'URGENT' %}
-                          <img src="{% static 'badges/diamond.jpg' %}" alt="Premium Diamond" class="w-9 h-9 object-contain mix-blend-multiply">
+                          High-tier search boost + <strong class="text-slate-700">Sapphire Diamond</strong> badge for {{ plan.duration_days }} days.
                         {% else %}
-                          <img src="{% static 'badges/star.jpg' %}" alt="Featured Star" class="w-9 h-9 object-contain mix-blend-multiply">
+                          Curated top placement + <strong class="text-slate-700">3D Gold Star</strong> badge for {{ plan.duration_days }} days.
                         {% endif %}
-                      </div>
+                      </p>
 
-                      <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                          <span class="font-extrabold text-slate-900 text-sm sm:text-base">{{ plan.name }}</span>
-                        </div>
-
-                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                          {% if plan.badge_type == 'TOP_DEAL' %}
-                            #1 Supreme feed priority + <strong class="text-slate-800">VIP Gold Crown</strong> badge for {{ plan.duration_days }} days.
-                          {% elif plan.badge_type == 'URGENT' %}
-                            High-tier search boost + <strong class="text-slate-800">Sapphire Diamond</strong> badge for {{ plan.duration_days }} days.
-                          {% else %}
-                            Curated top placement + <strong class="text-slate-800">3D Gold Star</strong> badge for {{ plan.duration_days }} days.
-                          {% endif %}
-                        </p>
-
-                        <div class="flex items-center gap-3 mt-2 text-[11px] font-semibold text-slate-500">
-                          <span class="inline-flex items-center gap-1 text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                            <i data-lucide="calendar" class="w-3 h-3 text-slate-700"></i> {{ plan.duration_days }} Days
-                          </span>
-                          <span class="inline-flex items-center gap-1 text-emerald-700">
-                            <i data-lucide="trending-up" class="w-3 h-3"></i>
-                            {% if plan.badge_type == 'TOP_DEAL' %}3x Rank Score{% elif plan.badge_type == 'URGENT' %}2x Rank Score{% else %}1.5x Rank Score{% endif %}
-                          </span>
-                        </div>
+                      <!-- Duration & Rank Score Chips -->
+                      <div class="flex items-center gap-1.5 mt-2 flex-wrap">
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded-lg">
+                          <i data-lucide="calendar" class="w-3 h-3 text-purple-600"></i> {{ plan.duration_days }} Days
+                        </span>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg">
+                          <i data-lucide="trending-up" class="w-3 h-3 text-emerald-600"></i>
+                          {% if plan.badge_type == 'TOP_DEAL' or plan.badge_type == 'TOP_AD' %}3x Rank Score{% elif plan.badge_type == 'URGENT' %}2x Rank Score{% else %}1.5x Rank Score{% endif %}
+                        </span>
                       </div>
                     </div>
+                  </div>
 
-                    <div class="text-right shrink-0">
-                      <div class="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
-                        ₦{{ plan.price_ngn|intcomma }}
-                      </div>
-                      <div class="text-[10px] font-semibold text-slate-400">one-time</div>
+                  <!-- Right Price Column -->
+                  <div class="text-right shrink-0 pl-2 border-l border-slate-100">
+                    <div class="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                      ₦{{ plan.price_ngn|intcomma }}
                     </div>
-
+                    <div class="text-[10px] font-semibold text-slate-400">one-time</div>
                   </div>
                 </div>
-              </label>
-            {% empty %}
-              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-xs font-semibold text-amber-900 flex items-center gap-3">
-                <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0"></i>
-                <span>No active boost plans are currently configured in Admin.</span>
               </div>
-            {% endfor %}
-          </div>
-        </section>
-
-        <!-- Section 2: Accepted Nigerian Payment Channels (Powered by Paystack) -->
-        <section>
-          <div class="mb-3 flex items-center justify-between">
-            <div>
-              <h2 class="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">2. Accepted Payment Channels</h2>
-              <p class="text-xs text-slate-500 mt-0.5">Choose your preferred payment method inside the Paystack secure window.</p>
+            </label>
+          {% empty %}
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs font-semibold text-amber-900 flex items-center gap-2.5">
+              <i data-lucide="info" class="w-5 h-5 text-amber-600 shrink-0"></i>
+              <span>No active boost plans are currently configured in Admin.</span>
             </div>
-            <!-- Paystack Official Mark Badge -->
-            <div class="hidden sm:flex items-center gap-1.5 bg-sky-50 border border-sky-200/80 px-3 py-1.5 rounded-xl">
-              <svg class="w-4 h-4 text-sky-500" viewBox="0 0 24 24" fill="currentColor">
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Card 2: Dark Purple "Your Listing" Summary Card -->
+      <section class="listing-dark-card rounded-3xl p-4 sm:p-5 text-white border border-purple-400/20">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-400">
+              <span class="w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center">
+                <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+              </span>
+              <span>Your Listing</span>
+            </div>
+
+            <h3 class="font-extrabold text-sm sm:text-base text-white mt-2 truncate">
+              {{ listing.title }}
+            </h3>
+            <p class="text-xs text-purple-200/80 flex items-center gap-1 mt-1 truncate">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-purple-300 shrink-0"></i>
+              <span>{{ listing.state.name|default:"Nigeria" }}</span>
+            </p>
+          </div>
+
+          <!-- Listing Thumbnail -->
+          <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-800 overflow-hidden shrink-0 border-2 border-purple-400/30 shadow-md">
+            {% if listing.images.first %}
+              <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full flex items-center justify-center text-purple-300/60">
+                <i data-lucide="image" class="w-6 h-6"></i>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 3-Column Tier / Duration / Processor Summary -->
+        <div class="mt-4 pt-3.5 border-t border-white/15 grid grid-cols-3 gap-2 text-xs">
+          <div class="pr-2 border-r border-white/10">
+            <p class="text-[10px] font-medium text-purple-200/70">Selected Tier</p>
+            <p id="summaryPlanName" class="font-extrabold text-purple-300 mt-0.5 truncate">—</p>
+          </div>
+
+          <div class="px-2 border-r border-white/10">
+            <p class="text-[10px] font-medium text-purple-200/70">Active Duration</p>
+            <p class="font-extrabold text-white mt-0.5 flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3 h-3 text-purple-300 shrink-0"></i>
+              <span id="summaryDuration">—</span>
+            </p>
+          </div>
+
+          <div class="pl-2">
+            <p class="text-[10px] font-medium text-purple-200/70">Payment Processor</p>
+            <p class="font-extrabold text-white mt-0.5 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-sky-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
                 <rect x="2" y="3" width="20" height="3.2" rx="1.6"/>
                 <rect x="2" y="8.2" width="20" height="3.2" rx="1.6"/>
                 <rect x="2" y="13.4" width="13" height="3.2" rx="1.6"/>
                 <rect x="2" y="18.6" width="13" height="3.2" rx="1.6"/>
               </svg>
-              <span class="text-[11px] font-extrabold text-slate-800 tracking-tight">Secured by <span class="text-sky-600">Paystack</span></span>
-            </div>
+              <span>Paystack</span>
+            </p>
           </div>
-
-          <div class="bg-white rounded-2xl p-5 border-2 border-sky-500/80 shadow-md shadow-sky-900/5 space-y-4">
-            <!-- Header Row -->
-            <div class="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-sky-500" viewBox="0 0 24 24" fill="currentColor">
-                    <rect x="2" y="3" width="20" height="3.2" rx="1.6"/>
-                    <rect x="2" y="8.2" width="20" height="3.2" rx="1.6"/>
-                    <rect x="2" y="13.4" width="13" height="3.2" rx="1.6"/>
-                    <rect x="2" y="18.6" width="13" height="3.2" rx="1.6"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-extrabold text-slate-900 text-sm">Paystack Express Checkout</span>
-                    <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">Instant Confirmation</span>
-                  </div>
-                  <p class="text-[11px] text-slate-500 mt-0.5">Pay with any Nigerian bank card, instant transfer, OPay, PalmPay, or USSD</p>
-                </div>
-              </div>
-
-              <div class="w-5 h-5 rounded-full border-2 border-sky-500 flex items-center justify-center shrink-0">
-                <div class="w-2.5 h-2.5 rounded-full bg-sky-500"></div>
-              </div>
-            </div>
-
-            <!-- High-Trust Payment Method SVG Badges Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              
-              <!-- VISA -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#1A1F71"/>
-                  <text x="24" y="19.5" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="900" font-style="italic" font-size="12" letter-spacing="0.5">VISA</text>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">Visa Card</span>
-              </div>
-
-              <!-- MASTERCARD -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#0F172A"/>
-                  <circle cx="19.5" cy="15" r="7.5" fill="#EB001B"/>
-                  <circle cx="28.5" cy="15" r="7.5" fill="#F79E1B" fill-opacity="0.9"/>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">Mastercard</span>
-              </div>
-
-              <!-- VERVE -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#FFFFFF" stroke="#E2E8F0"/>
-                  <circle cx="12" cy="15" r="5" fill="#E11D48"/>
-                  <text x="30" y="18.5" text-anchor="middle" fill="#0F172A" font-family="sans-serif" font-weight="800" font-size="10">Verve</text>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">Verve Card</span>
-              </div>
-
-              <!-- OPAY -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#00B875"/>
-                  <circle cx="13" cy="15" r="4.5" stroke="#FFFFFF" stroke-width="2.2"/>
-                  <text x="30.5" y="18.5" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="800" font-size="10">OPay</text>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">OPay Wallet</span>
-              </div>
-
-              <!-- PALMPAY -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#6D28D9"/>
-                  <text x="24" y="18.5" text-anchor="middle" fill="#FFFFFF" font-family="sans-serif" font-weight="800" font-size="9">PalmPay</text>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">PalmPay</span>
-              </div>
-
-              <!-- BANK TRANSFER & USSD -->
-              <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
-                <svg class="w-10 h-6 shrink-0" viewBox="0 0 48 30" fill="none">
-                  <rect width="48" height="30" rx="5" fill="#E0F2FE"/>
-                  <path d="M24 7L14 12V13.5H34V12L24 7ZM16 15V20H18.5V15H16ZM21.5 15V20H24V15H21.5ZM27 15V20H29.5V15H27ZM14 21.5V23H34V21.5H14Z" fill="#0284C7"/>
-                </svg>
-                <span class="text-xs font-bold text-slate-700">Bank / USSD</span>
-              </div>
-
-            </div>
-
-            <!-- Buyer/Seller Protection Guarantee Strip -->
-            <div class="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-[11px] font-semibold text-slate-600">
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                <span>PCI-DSS Level 1 Certified</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="zap" class="w-4 h-4 text-amber-500 shrink-0"></i>
-                <span>Auto-Boost in 2 Seconds</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <i data-lucide="lock" class="w-4 h-4 text-sky-600 shrink-0"></i>
-                <span>Zero Card Data Stored</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- RIGHT COLUMN: Sticky Order Summary -->
-      <div class="lg:col-span-5 min-w-0 lg:sticky lg:top-24">
-        <div class="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-900/5 overflow-hidden">
-          
-          <div class="p-5 bg-slate-950 text-white">
-            <div class="text-[10px] font-bold uppercase tracking-widest text-amber-400/90 mb-3">Ad Being Elevated</div>
-            <div class="flex items-center gap-3.5">
-              <div class="w-14 h-14 rounded-xl bg-slate-800 overflow-hidden shrink-0 border border-slate-700">
-                {% if listing.images.first %}
-                  <img src="{{ listing.images.first.image.url }}" alt="{{ listing.title }}" class="w-full h-full object-cover">
-                {% else %}
-                  <div class="w-full h-full flex items-center justify-center text-slate-500">
-                    <i data-lucide="image" class="w-5 h-5"></i>
-                  </div>
-                {% endif %}
-              </div>
-              <div class="min-w-0 flex-1">
-                <h3 class="font-bold text-sm text-white truncate">{{ listing.title }}</h3>
-                <p class="text-xs font-extrabold text-amber-300 mt-0.5">₦{{ listing.price|intcomma }}</p>
-                <p class="text-[11px] text-slate-400 truncate mt-0.5">{{ listing.state.name|default:"Nigeria" }}</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-6 space-y-5">
-            <div class="space-y-3 text-xs">
-              <div class="flex items-center justify-between text-slate-500">
-                <span>Selected Tier</span>
-                <span id="summaryPlanName" class="font-bold text-slate-900">—</span>
-              </div>
-              <div class="flex items-center justify-between text-slate-500">
-                <span>Active Duration</span>
-                <span id="summaryDuration" class="font-bold text-slate-900">—</span>
-              </div>
-              <div class="flex items-center justify-between text-slate-500">
-                <span>Payment Processor</span>
-                <span class="font-bold text-sky-700 flex items-center gap-1">
-                  Paystack (Cards, Transfer, OPay)
-                </span>
-              </div>
-              <div class="flex items-center justify-between text-slate-500">
-                <span>Activation</span>
-                <span class="font-bold text-emerald-600 flex items-center gap-1">
-                  <i data-lucide="zap" class="w-3 h-3"></i> Instant
-                </span>
-              </div>
-            </div>
-
-            <div class="border-t border-dashed border-slate-200 pt-4 flex items-baseline justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Due</span>
-              <span id="summaryTotal" class="text-2xl font-extrabold text-slate-900 tracking-tight">₦0</span>
-            </div>
-
-            <button type="submit" id="submitBtn" class="pay-btn-gradient w-full py-4 px-6 rounded-2xl text-white font-extrabold text-sm tracking-wide flex items-center justify-center gap-2 cursor-pointer">
-              <i data-lucide="shield-check" class="w-4 h-4 text-amber-300"></i>
-              <span id="submitBtnText">Pay Securely</span>
-              <i data-lucide="arrow-right" class="w-4 h-4"></i>
-            </button>
-
-            <!-- Guarantee Footer -->
-            <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/70 space-y-1.5 text-center">
-              <p class="text-[11px] font-bold text-slate-700 flex items-center justify-center gap-1.5">
-                <i data-lucide="badge-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                100% Automatic Activation Guarantee
-              </p>
-              <p class="text-[10.5px] text-slate-500 leading-relaxed">
-                Your 3D status emblem and top feed placement activate automatically the moment Paystack confirms your payment.
-              </p>
-            </div>
-          </div>
-
         </div>
+      </section>
+
+      <!-- Card 3: 100% Automatic Activation Guarantee Banner -->
+      <section class="bg-white/95 rounded-2xl p-3.5 sm:p-4 border border-purple-100 shadow-2xs flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center shrink-0">
+            <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600"></i>
+          </div>
+          <div>
+            <h4 class="text-xs sm:text-sm font-extrabold text-slate-900">100% Automatic Activation</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Your ad will be boosted immediately after payment.</p>
+          </div>
+        </div>
+        <div class="w-9 h-9 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
+          <i data-lucide="badge-check" class="w-5 h-5 text-purple-600"></i>
+        </div>
+      </section>
+
+      <!-- Primary Pay Button & Cancel Button -->
+      <div class="space-y-2.5 pt-1">
+        <button type="submit" id="submitBtn" class="pay-purple-btn w-full py-4 px-6 rounded-full text-white font-extrabold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2.5 cursor-pointer">
+          <i data-lucide="rocket" class="w-4 h-4 fill-white"></i>
+          <span id="submitBtnText">Pay Securely</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+
+        <a href="{% url 'marketplace:dashboard' %}" class="w-full py-3.5 px-6 rounded-full bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-800 font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors shadow-2xs">
+          <i data-lucide="corner-up-left" class="w-4 h-4 text-purple-700"></i>
+          <span>Cancel</span>
+        </a>
       </div>
 
     </form>
@@ -382,12 +330,17 @@
       document.querySelectorAll('.plan-radio').forEach(input => {
         const card = input.closest('label').querySelector('.plan-card');
         const dot = card.querySelector('.radio-dot');
+        const ring = card.querySelector('.radio-ring');
         if (input.checked) {
           dot.classList.remove('opacity-0', 'scale-50');
           dot.classList.add('opacity-100', 'scale-100');
+          ring.classList.add('border-purple-600');
+          ring.classList.remove('border-slate-300');
         } else {
           dot.classList.add('opacity-0', 'scale-50');
           dot.classList.remove('opacity-100', 'scale-100');
+          ring.classList.remove('border-purple-600');
+          ring.classList.add('border-slate-300');
         }
       });
 
@@ -395,7 +348,6 @@
       if (selectedPlan) {
         document.getElementById('summaryPlanName').textContent = selectedPlan.dataset.name;
         document.getElementById('summaryDuration').textContent = selectedPlan.dataset.days + ' Days';
-        document.getElementById('summaryTotal').textContent = '₦' + selectedPlan.dataset.price;
         document.getElementById('submitBtnText').textContent = 'Pay ₦' + selectedPlan.dataset.price + ' Securely';
       }
     }
