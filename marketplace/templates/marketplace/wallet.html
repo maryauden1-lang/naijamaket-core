@@ -1,191 +1,228 @@
-{% extends "marketplace/base.html" %}
 {% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0F172A">
+  <title>My Naijasale Wallet — Balance & Top-Up</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; }
+  </style>
+</head>
+<body class="text-slate-900 antialiased min-h-screen flex flex-col pb-16">
 
-{% block title %}My Naijasale Wallet — Balance & Top-Up{% endblock %}
-
-{% block content %}
-<div class="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-
-  <!-- Wallet Hero Card (Clean Fintech Card) -->
-  <div class="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 relative overflow-hidden">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-3">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          Paystack Protected • Instant Ledger
+  <!-- Clean Top Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="{% url 'marketplace:dashboard' %}" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition">
+          <i data-lucide="arrow-left" class="w-5 h-5 text-slate-700"></i>
+        </a>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold text-slate-900">Naijasale Wallet</h1>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Instant Paystack Top-Up & Ad Boost Account</p>
         </div>
-        <p class="text-slate-400 text-xs sm:text-sm font-medium">Available Naijasale Balance</p>
-        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1">
-          ₦{{ wallet.balance|floatformat:2|intcomma }}
-        </h1>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 sm:text-right bg-slate-800/70 border border-slate-700/70 rounded-2xl p-4">
-        <div>
-          <p class="text-[11px] text-slate-400 font-medium">Total Funded</p>
-          <p class="text-sm font-bold text-white mt-0.5">₦{{ wallet.total_deposited|floatformat:0|intcomma }}</p>
-        </div>
-        <div>
-          <p class="text-[11px] text-slate-400 font-medium">Total Boost Spend</p>
-          <p class="text-sm font-bold text-amber-400 mt-0.5">₦{{ wallet.total_spent|floatformat:0|intcomma }}</p>
-        </div>
-      </div>
+      <a href="{% url 'marketplace:dashboard' %}" class="text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 px-3 py-1.5 rounded-xl">
+        Seller Dashboard
+      </a>
     </div>
+  </header>
 
-    <div class="mt-5 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-      <span>Account Holder: <strong class="text-slate-200">{{ request.user.get_full_name|default:request.user.username }}</strong></span>
-      <span>🔒 256-bit Paystack Encryption & Row-Locked Receipts</span>
-    </div>
-  </div>
-
-  <!-- Two-Column Action Grid: Top-Up + 1-Click Ad Boost -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-    <!-- Top-Up Card -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900">Top Up Wallet</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Fund instantly via Card, Bank Transfer, or USSD</p>
+  <!-- Alerts -->
+  {% if messages %}
+    <div class="max-w-4xl mx-auto px-4 mt-4 w-full space-y-2">
+      {% for message in messages %}
+        <div class="p-3.5 rounded-xl text-xs font-bold flex items-center justify-between border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-900{% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-900{% else %}bg-rose-50 border-rose-200 text-rose-800{% endif %}">
+          <span>{{ message }}</span>
+          <button onclick="this.parentElement.remove()" class="text-slate-400 ml-3">✕</button>
         </div>
-        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-100">Paystack</span>
-      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 
-      <form method="post" action="{% url 'marketplace:wallet_topup_init' %}" class="space-y-4">
-        {% csrf_token %}
+  <main class="max-w-4xl mx-auto px-4 py-6 w-full space-y-6">
 
-        <!-- Quick Preset Chips -->
+    <!-- Wallet Hero Card -->
+    <div class="bg-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <label class="block text-xs font-bold text-slate-600 mb-2">Quick Select Amount</label>
-          <div class="grid grid-cols-4 gap-2">
-            <button type="button" onclick="document.getElementById('ns-topup-amount').value='1000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦1,000</button>
-            <button type="button" onclick="document.getElementById('ns-topup-amount').value='2500'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦2,500</button>
-            <button type="button" onclick="document.getElementById('ns-topup-amount').value='5000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦5,000</button>
-            <button type="button" onclick="document.getElementById('ns-topup-amount').value='10000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦10,000</button>
+          <div class="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-3">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Paystack Protected • Row-Locked Ledger
+          </div>
+          <p class="text-slate-400 text-xs sm:text-sm font-medium">Available Wallet Balance</p>
+          <h2 class="text-3xl sm:text-4xl font-black tracking-tight mt-1">
+            ₦{{ wallet.balance|floatformat:2|intcomma }}
+          </h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 sm:text-right bg-slate-800/80 border border-slate-700/70 rounded-2xl p-4">
+          <div>
+            <p class="text-[11px] text-slate-400 font-medium">Total Funded</p>
+            <p class="text-sm font-extrabold text-white mt-0.5">₦{{ wallet.total_deposited|floatformat:0|intcomma }}</p>
+          </div>
+          <div>
+            <p class="text-[11px] text-slate-400 font-medium">Total Boost Spend</p>
+            <p class="text-sm font-extrabold text-amber-400 mt-0.5">₦{{ wallet.total_spent|floatformat:0|intcomma }}</p>
           </div>
         </div>
-
-        <div>
-          <label for="ns-topup-amount" class="block text-xs font-bold text-slate-600 mb-1.5">Enter Amount (₦)</label>
-          <input
-            type="number"
-            id="ns-topup-amount"
-            name="amount"
-            min="{{ min_topup }}"
-            max="{{ max_topup }}"
-            step="100"
-            placeholder="e.g. 5000"
-            required
-            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-orange-500"
-          />
-          <p class="text-[11px] text-slate-400 mt-1">Minimum ₦{{ min_topup|intcomma }} • Credited automatically once verified</p>
-        </div>
-
-        <button
-          type="submit"
-          class="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-extrabold shadow-sm transition cursor-pointer"
-        >
-          Proceed to Secure Paystack Top-Up &rarr;
-        </button>
-      </form>
-    </div>
-
-    <!-- 1-Click Boost Using Wallet Card -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <h2 class="text-base font-extrabold text-slate-900">1-Click Ad Boost</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Promote your active ads straight from your balance</p>
-        </div>
-        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">Instant</span>
       </div>
 
-      {% if active_listings and plans %}
-      <form method="post" action="{% url 'marketplace:wallet_boost_ad' %}" class="space-y-4">
-        {% csrf_token %}
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1.5">1. Select Your Active Ad</label>
-          <select name="listing_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 bg-white">
-            {% for ad in active_listings %}
-              <option value="{{ ad.id }}">{{ ad.title|truncatechars:42 }} — ₦{{ ad.price|intcomma }}</option>
-            {% endfor %}
-          </select>
+      <div class="mt-5 pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+        <span>Account Holder: <strong class="text-slate-200">{{ request.user.get_full_name|default:request.user.username }}</strong></span>
+        <span>🔒 Verified by Paystack HMAC-SHA512</span>
+      </div>
+    </div>
+
+    <!-- Top-Up & 1-Click Boost Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Top-Up Form -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">Top Up Account</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Instant funding via Card, Transfer, or USSD</p>
+          </div>
+          <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-100">Paystack</span>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1.5">2. Choose Boost Package</label>
-          <select name="plan_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 bg-white">
-            {% for plan in plans %}
-              <option value="{{ plan.id }}">{{ plan.name }} ({{ plan.duration_days }} Days) — ₦{{ plan.price_ngn|intcomma }}</option>
-            {% endfor %}
-          </select>
+        <form method="post" action="{% url 'marketplace:wallet_topup_init' %}" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-2">Quick Select</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button type="button" onclick="document.getElementById('ns-topup-amount').value='1000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦1,000</button>
+              <button type="button" onclick="document.getElementById('ns-topup-amount').value='2500'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦2,500</button>
+              <button type="button" onclick="document.getElementById('ns-topup-amount').value='5000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦5,000</button>
+              <button type="button" onclick="document.getElementById('ns-topup-amount').value='10000'" class="py-2 rounded-xl border border-slate-200 hover:border-orange-500 hover:bg-orange-50 text-xs font-extrabold text-slate-800 transition">₦10,000</button>
+            </div>
+          </div>
+
+          <div>
+            <label for="ns-topup-amount" class="block text-xs font-bold text-slate-600 mb-1.5">Amount (₦)</label>
+            <input
+              type="number"
+              id="ns-topup-amount"
+              name="amount"
+              min="{{ min_topup }}"
+              max="{{ max_topup }}"
+              step="100"
+              placeholder="e.g. 5000"
+              required
+              class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-base sm:text-sm font-bold text-slate-900 focus:outline-none focus:border-orange-500"
+            />
+            <p class="text-[11px] text-slate-400 mt-1">Min ₦{{ min_topup|intcomma }} • Credited immediately after verification</p>
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-sm font-extrabold shadow-sm transition cursor-pointer">
+            Top Up with Paystack &rarr;
+          </button>
+        </form>
+      </div>
+
+      <!-- 1-Click Ad Boost -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900">1-Click Ad Boost</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Use your wallet balance to promote any live ad</p>
+          </div>
+          <span class="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">Instant</span>
         </div>
 
-        <button
-          type="submit"
-          class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold shadow-sm transition cursor-pointer"
-        >
-          Pay from Wallet & Boost Now
-        </button>
-      </form>
+        {% if active_listings and plans %}
+        <form method="post" action="{% url 'marketplace:wallet_boost_ad' %}" class="space-y-4">
+          {% csrf_token %}
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">1. Select Active Ad</label>
+            <select name="listing_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 bg-white">
+              {% for ad in active_listings %}
+                <option value="{{ ad.id }}">{{ ad.title|truncatechars:42 }} — ₦{{ ad.price|intcomma }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5">2. Choose Promotion Package</label>
+            <select name="plan_id" required class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 bg-white">
+              {% for plan in plans %}
+                <option value="{{ plan.id }}">{{ plan.name }} ({{ plan.duration_days }} Days) — ₦{{ plan.price_ngn|intcomma }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold shadow-sm transition cursor-pointer">
+            Pay from Wallet & Boost Now
+          </button>
+        </form>
+        {% else %}
+        <div class="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center space-y-2">
+          <p class="text-xs text-slate-600 font-medium">Post an active ad first to boost directly from your wallet.</p>
+          <a href="{% url 'marketplace:post_ad' %}" class="inline-block text-xs font-extrabold text-orange-600 hover:underline">Post an Ad &rarr;</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Statement Ledger -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-extrabold text-slate-900">Wallet Statement & Receipts</h3>
+          <p class="text-xs text-slate-500">Permanent audit trail of every deposit and boost spend</p>
+        </div>
+        <span class="text-[11px] font-bold text-slate-400">Last 30 entries</span>
+      </div>
+
+      {% if transactions %}
+      <div class="divide-y divide-slate-100">
+        {% for tx in transactions %}
+        <div class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/70 transition">
+          <div class="space-y-0.5">
+            <div class="flex items-center gap-2">
+              <span class="text-xs sm:text-sm font-bold text-slate-900">{{ tx.description }}</span>
+              {% if tx.status == "SUCCESSFUL" %}
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">CONFIRMED</span>
+              {% elif tx.status == "PENDING" %}
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">PENDING</span>
+              {% else %}
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">FAILED</span>
+              {% endif %}
+            </div>
+            <p class="text-[11px] text-slate-400 font-mono">
+              Ref: {{ tx.reference }} • {{ tx.created_at|date:"M d, Y • h:i A" }}
+            </p>
+          </div>
+
+          <div class="sm:text-right">
+            {% if tx.tx_type == "BOOST_SPEND" %}
+              <p class="text-sm font-extrabold text-slate-900">-₦{{ tx.amount|floatformat:2|intcomma }}</p>
+            {% else %}
+              <p class="text-sm font-extrabold text-emerald-600">+₦{{ tx.amount|floatformat:2|intcomma }}</p>
+            {% endif %}
+            {% if tx.status == "SUCCESSFUL" %}
+              <p class="text-[11px] text-slate-400">Bal: ₦{{ tx.balance_after|floatformat:2|intcomma }}</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
       {% else %}
-      <div class="rounded-xl bg-slate-50 border border-slate-200 p-4 text-center space-y-2">
-        <p class="text-xs text-slate-600 font-medium">You need at least one live ad to boost directly from your wallet.</p>
-        <a href="{% url 'marketplace:post_ad' %}" class="inline-block text-xs font-extrabold text-orange-600 hover:underline">Post an Ad First &rarr;</a>
+      <div class="p-8 text-center text-xs text-slate-500">
+        No wallet transactions yet. Top up above to fund your Naijasale Wallet!
       </div>
       {% endif %}
     </div>
-  </div>
 
-  <!-- Immutable Transaction Receipt Statement -->
-  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-    <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-      <div>
-        <h2 class="text-base font-extrabold text-slate-900">Wallet Statement & Receipts</h2>
-        <p class="text-xs text-slate-500">Every deposit and boost spend is permanently recorded</p>
-      </div>
-      <span class="text-[11px] font-bold text-slate-400">Last 30 entries</span>
-    </div>
+  </main>
 
-    {% if transactions %}
-    <div class="divide-y divide-slate-100">
-      {% for tx in transactions %}
-      <div class="px-5 py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 hover:bg-slate-50/70 transition">
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-2">
-            <span class="text-xs sm:text-sm font-bold text-slate-900">{{ tx.description }}</span>
-            {% if tx.status == "SUCCESSFUL" %}
-              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">CONFIRMED</span>
-            {% elif tx.status == "PENDING" %}
-              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">PENDING</span>
-            {% else %}
-              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-200">FAILED</span>
-            {% endif %}
-          </div>
-          <p class="text-[11px] text-slate-400 font-mono">
-            Ref: {{ tx.reference }} • {{ tx.created_at|date:"M d, Y • h:i A" }}
-          </p>
-        </div>
-
-        <div class="sm:text-right">
-          {% if tx.tx_type == "BOOST_SPEND" %}
-            <p class="text-sm font-extrabold text-slate-900">-₦{{ tx.amount|floatformat:2|intcomma }}</p>
-          {% else %}
-            <p class="text-sm font-extrabold text-emerald-600">+₦{{ tx.amount|floatformat:2|intcomma }}</p>
-          {% endif %}
-          {% if tx.status == "SUCCESSFUL" %}
-            <p class="text-[11px] text-slate-400">Bal: ₦{{ tx.balance_after|floatformat:2|intcomma }}</p>
-          {% endif %}
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="p-8 text-center text-xs text-slate-500">
-      No wallet transactions yet. Top up above to get started!
-    </div>
-    {% endif %}
-  </div>
-
-</div>
-{% endblock %}
+  <script>lucide.createIcons();</script>
+</body>
+</html>

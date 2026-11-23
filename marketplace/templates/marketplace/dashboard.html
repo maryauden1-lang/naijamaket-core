@@ -41,6 +41,10 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <a href="{% url 'marketplace:wallet_dashboard' %}" class="bg-emerald-500/20 hover:bg-emerald-500/30 text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-emerald-300/30">
+          <i data-lucide="wallet" class="w-3.5 h-3.5 text-emerald-300"></i>
+          <span>₦{{ user.wallet.balance|default:"0"|floatformat:0|intcomma }}</span>
+        </a>
         <a href="{% url 'marketplace:profile' %}" class="bg-white/15 hover:bg-white/25 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 border border-white/20">
           <i data-lucide="store" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">Store Settings & KYC</span>
@@ -107,6 +111,34 @@
         <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
         <span>Manage KYC Verification & Shop</span>
       </a>
+    </div>
+
+    <!-- NAIJASALE WALLET & PAYSTACK TOP-UP CARD -->
+    <div class="bg-slate-900 text-white rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center shrink-0">
+          <i data-lucide="wallet" class="w-6 h-6 text-emerald-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Naijasale Wallet Balance</p>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">Paystack Secured</span>
+          </div>
+          <p class="text-2xl sm:text-3xl font-black text-white mt-0.5">
+            ₦{{ user.wallet.balance|default:"0.00"|floatformat:2|intcomma }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 w-full sm:w-auto">
+        <a href="{% url 'marketplace:wallet_dashboard' %}" class="flex-1 sm:flex-initial text-center bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Top Up Wallet</span>
+        </a>
+        <a href="{% url 'marketplace:wallet_dashboard' %}" class="flex-1 sm:flex-initial text-center bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all">
+          Receipts & Boost
+        </a>
+      </div>
     </div>
 
     <!-- 4 STATS CARDS (MOBILE-RESPONSIVE) -->
