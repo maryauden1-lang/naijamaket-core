@@ -1,26 +1,26 @@
-<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal (iPhone & Android Ready) -->
+<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal (Purple & Gold Promo Layout) -->
 <div id="nsFlyerModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
   <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-purple-100 space-y-3.5">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-          <i data-lucide="share-2" class="w-4 h-4"></i>
+        <span class="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
         </span>
         <div>
           <h3 class="text-sm font-black text-slate-900">WhatsApp Status Flyer</h3>
-          <p class="text-[11px] text-slate-500">Save photo or post straight to Status</p>
+          <p class="text-[11px] text-slate-500">High-converting promo card for your Status</p>
         </div>
       </div>
       <button type="button" onclick="closeFlyerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
     </div>
 
     <!-- Live Flyer Preview -->
-    <div class="bg-slate-100 rounded-2xl p-2 flex items-center justify-center border border-slate-200 min-h-[220px]">
-      <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[330px] object-contain rounded-xl shadow-sm">
+    <div class="bg-slate-100 rounded-2xl p-2 flex items-center justify-center border border-slate-200 min-h-[240px]">
+      <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[360px] object-contain rounded-xl shadow-sm">
     </div>
 
     <p class="text-[10.5px] text-center text-slate-500 font-medium">
-      Tip on iPhone: Tap <strong>Save / Share Image</strong> (or press &amp; hold the flyer above → <strong>Save to Photos</strong>).
+      Tip on iPhone: Tap <strong>Save / Share Flyer</strong> (or press &amp; hold the flyer above → <strong>Save to Photos</strong>).
     </p>
 
     <canvas id="nsFlyerCanvas" width="1080" height="1350" class="hidden"></canvas>
@@ -51,7 +51,6 @@
   async function saveOrShareFlyerImage() {
     if (!currentFlyerBlob) return;
 
-    // 1. Mobile Native Share Sheet (iPhone Safari & Android Chrome)
     try {
       const file = new File([currentFlyerBlob], currentFlyerFilename, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -66,7 +65,6 @@
       if (err && err.name === 'AbortError') return;
     }
 
-    // 2. Desktop / Fallback Blob Download
     const blobUrl = URL.createObjectURL(currentFlyerBlob);
     const link = document.createElement('a');
     link.href = blobUrl;
@@ -77,29 +75,164 @@
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   }
 
-  function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-    const words = String(text || '').split(' ');
-    let line = '';
-    let lineCount = 0;
+  function wrapLines(ctx, text, maxWidth, maxLines) {
+    const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return [''];
+    const lines = [];
+    let current = words[0];
 
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + ' ';
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line.trim(), x, y);
-        line = words[n] + ' ';
-        y += lineHeight;
-        lineCount++;
-        if (lineCount >= maxLines - 1) break;
+    for (let i = 1; i < words.length; i++) {
+      const test = current + ' ' + words[i];
+      if (ctx.measureText(test).width <= maxWidth) {
+        current = test;
       } else {
-        line = testLine;
+        lines.push(current);
+        current = words[i];
+        if (lines.length >= maxLines - 1) break;
       }
     }
-    ctx.fillText(line.trim(), x, y);
+    lines.push(current);
+    return lines.slice(0, maxLines);
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function drawTopBagIcon(ctx, x, y, size) {
+    ctx.save();
+    drawRoundedRect(ctx, x, y + size * 0.22, size, size * 0.78, size * 0.22);
+    ctx.fillStyle = '#6D28D9';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x + size * 0.5, y + size * 0.24, size * 0.22, Math.PI, 0, false);
+    ctx.lineWidth = Math.max(4, size * 0.08);
+    ctx.strokeStyle = '#6D28D9';
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `900 ${Math.round(size * 0.44)}px "Plus Jakarta Sans", -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', x + size * 0.5, y + size * 0.64);
+    ctx.restore();
+  }
+
+  function drawBestSellerBadge(ctx, cx, cy) {
+    ctx.save();
+
+    // Ribbons behind badge
+    ctx.fillStyle = '#4C1D95';
+    ctx.beginPath();
+    ctx.moveTo(cx - 56, cy + 45);
+    ctx.lineTo(cx - 12, cy + 45);
+    ctx.lineTo(cx - 24, cy + 128);
+    ctx.lineTo(cx - 46, cy + 106);
+    ctx.lineTo(cx - 68, cy + 128);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(cx + 12, cy + 45);
+    ctx.lineTo(cx + 56, cy + 45);
+    ctx.lineTo(cx + 68, cy + 128);
+    ctx.lineTo(cx + 46, cy + 106);
+    ctx.lineTo(cx + 24, cy + 128);
+    ctx.closePath();
+    ctx.fill();
+
+    // Gold outer ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, 82, 0, Math.PI * 2);
+    ctx.fillStyle = '#FACC15';
+    ctx.fill();
+
+    // Deep purple inner medallion
+    ctx.beginPath();
+    ctx.arc(cx, cy, 73, 0, Math.PI * 2);
+    ctx.fillStyle = '#5B21B6';
+    ctx.fill();
+
+    // Crown above text
+    ctx.fillStyle = '#FACC15';
+    ctx.beginPath();
+    ctx.moveTo(cx - 26, cy - 26);
+    ctx.lineTo(cx - 32, cy - 48);
+    ctx.lineTo(cx - 12, cy - 36);
+    ctx.lineTo(cx, cy - 54);
+    ctx.lineTo(cx + 12, cy - 36);
+    ctx.lineTo(cx + 32, cy - 48);
+    ctx.lineTo(cx + 26, cy - 26);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '900 22px "Plus Jakarta Sans", -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('BEST', cx, cy + 2);
+    ctx.fillText('SELLER', cx, cy + 24);
+
+    // 5 stars
+    ctx.fillStyle = '#FACC15';
+    ctx.font = '900 17px "Plus Jakarta Sans", -apple-system, sans-serif';
+    ctx.fillText('★★★★★', cx, cy + 47);
+
+    ctx.restore();
+  }
+
+  function drawFeaturePill(ctx, x, y, w, h, titleText, iconType) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(76, 29, 149, 0.14)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 6;
+    drawRoundedRect(ctx, x, y, w, h, h / 2);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+    ctx.fill();
+
+    ctx.shadowColor = 'transparent';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#EDE9FE';
+    ctx.stroke();
+
+    // Purple icon circle on left
+    const icx = x + 36;
+    const icy = y + h / 2;
+    ctx.beginPath();
+    ctx.arc(icx, icy, 20, 0, Math.PI * 2);
+    ctx.fillStyle = '#EDE9FE';
+    ctx.fill();
+
+    ctx.fillStyle = '#6D28D9';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 18px "Plus Jakarta Sans", -apple-system, sans-serif';
+    const symbolMap = { gem: '◆', sofa: '🛋', shield: '✓', home: '⌂' };
+    ctx.fillText(symbolMap[iconType] || '★', icx, icy + 1);
+
+    // Two-line label
+    ctx.fillStyle = '#1E1B4B';
+    ctx.textAlign = 'left';
+    ctx.font = '800 19px "Plus Jakarta Sans", -apple-system, sans-serif';
+    const parts = titleText.split('\n');
+    if (parts.length > 1) {
+      ctx.fillText(parts[0], x + 66, y + h * 0.36);
+      ctx.fillText(parts[1], x + 66, y + h * 0.68);
+    } else {
+      ctx.fillText(parts[0], x + 66, y + h * 0.52);
+    }
+    ctx.restore();
   }
 
   function openWhatsAppFlyer(btn) {
-    const title = btn.dataset.title || 'Item For Sale';
+    const title = btn.dataset.title || 'Quality Item For Sale';
     const price = btn.dataset.price || '';
     const location = btn.dataset.location || 'Nigeria';
     const imgUrl = btn.dataset.img || '';
@@ -117,81 +250,297 @@
     const waText = encodeURIComponent(`🔥 ${title} — ₦${price}\n📍 ${location}\n\nView full photos & chat with me on NaijaSale:\n${adUrl}`);
     shareWaBtn.href = `https://wa.me/?text=${waText}`;
 
-    function drawRoundedBox(x, y, w, h, r) {
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
-      ctx.closePath();
-    }
+    function renderFlyer(loadedImg) {
+      const W = 1080;
+      const H = 1350;
 
-    function renderCard(loadedImg) {
-      // 1. Purple Gradient Background
-      const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1350);
-      bgGrad.addColorStop(0, '#2D1B5A');
-      bgGrad.addColorStop(0.55, '#5B21B6');
-      bgGrad.addColorStop(1, '#7C3AED');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 1080, 1350);
-
-      // 2. Top Brand Header
+      // 1. Clean white base with soft purple top & side accents
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '900 44px "Plus Jakarta Sans", -apple-system, sans-serif';
-      ctx.fillText('NaijaSale.com', 70, 95);
+      ctx.fillRect(0, 0, W, H);
 
-      ctx.fillStyle = '#FDE68A';
-      ctx.font = '800 26px "Plus Jakarta Sans", -apple-system, sans-serif';
-      ctx.fillText('AVAILABLE FOR SALE', 740, 92);
+      const topWash = ctx.createLinearGradient(0, 0, W, 240);
+      topWash.addColorStop(0, '#F3E8FF');
+      topWash.addColorStop(0.6, '#FAF5FF');
+      topWash.addColorStop(1, '#EDE9FE');
+      ctx.fillStyle = topWash;
+      ctx.fillRect(0, 0, W, 165);
 
-      // 3. White Product Card Container
-      ctx.fillStyle = '#FFFFFF';
-      drawRoundedBox(60, 140, 960, 1030, 44);
-      ctx.fill();
-
-      // 4. Product Image Area
+      // Top-right purple swoosh accent
       ctx.save();
-      drawRoundedBox(90, 170, 900, 640, 32);
+      ctx.fillStyle = '#6D28D9';
+      ctx.beginPath();
+      ctx.moveTo(760, 0);
+      ctx.quadraticCurveTo(950, 10, 1080, 130);
+      ctx.lineTo(1080, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // 2. Top Brand Header + Trusted Badge
+      drawTopBagIcon(ctx, 42, 32, 68);
+
+      ctx.fillStyle = '#5B21B6';
+      ctx.font = '900 44px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('NaijaSale.com', 124, 78);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '700 21px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('Buy • Sell • Shop Smarter', 126, 109);
+
+      // Right "Trusted Marketplace in Nigeria" pill
+      drawRoundedRect(ctx, 710, 42, 324, 66, 33);
+      ctx.fillStyle = '#F5F3FF';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#DDD6FE';
+      ctx.stroke();
+
+      ctx.fillStyle = '#7C3AED';
+      ctx.font = '900 22px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('✓', 732, 83);
+
+      ctx.fillStyle = '#1E1B4B';
+      ctx.font = '800 18px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('Trusted Marketplace', 764, 70);
+      ctx.fillStyle = '#6D28D9';
+      ctx.font = '700 17px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('in Nigeria', 764, 93);
+
+      // 3. Main Product Showcase Area
+      const photoX = 48;
+      const photoY = 152;
+      const photoW = 984;
+      const photoH = 665;
+
+      ctx.save();
+      drawRoundedRect(ctx, photoX, photoY, photoW, photoH, 36);
       ctx.clip();
-      ctx.fillStyle = '#F1F5F9';
-      ctx.fillRect(90, 170, 900, 640);
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(photoX, photoY, photoW, photoH);
 
       if (loadedImg && loadedImg.width > 0) {
-        const scale = Math.max(900 / loadedImg.width, 640 / loadedImg.height);
-        const w = loadedImg.width * scale;
-        const h = loadedImg.height * scale;
-        ctx.drawImage(loadedImg, 90 + (900 - w) / 2, 170 + (640 - h) / 2, w, h);
+        const scale = Math.max(photoW / loadedImg.width, photoH / loadedImg.height);
+        const dw = loadedImg.width * scale;
+        const dh = loadedImg.height * scale;
+        ctx.drawImage(loadedImg, photoX + (photoW - dw) / 2, photoY + (photoH - dh) / 2, dw, dh);
       } else {
-        ctx.fillStyle = '#6D28D9';
-        ctx.font = '800 36px "Plus Jakarta Sans", -apple-system, sans-serif';
-        ctx.fillText('Verified Listing on NaijaSale.com', 240, 500);
+        ctx.fillStyle = '#EDE9FE';
+        ctx.fillRect(photoX, photoY, photoW, photoH);
+        ctx.fillStyle = '#5B21B6';
+        ctx.font = '900 42px "Plus Jakarta Sans", -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('NaijaSale Verified Ad', W / 2, photoY + photoH / 2);
       }
       ctx.restore();
 
-      // 5. Price Pill Badge
-      ctx.fillStyle = '#6D28D9';
-      drawRoundedBox(90, 845, 460, 86, 43);
+      // Soft bottom fade blending product photo into white lower card
+      const fadeGrad = ctx.createLinearGradient(0, photoY + photoH - 180, 0, photoY + photoH + 20);
+      fadeGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      fadeGrad.addColorStop(1, 'rgba(255, 255, 255, 0.96)');
+      ctx.fillStyle = fadeGrad;
+      ctx.fillRect(photoX, photoY + photoH - 180, photoW, 200);
+
+      // 4. Floating "BEST SELLER" Medallion (Top-Left of Photo)
+      drawBestSellerBadge(ctx, 132, 232);
+
+      // 5. Floating Feature Pills Stack (Right Side of Photo)
+      const pillX = 774;
+      const pillW = 242;
+      const pillH = 68;
+      drawFeaturePill(ctx, pillX, 188, pillW, pillH, 'Premium\nQuality', 'gem');
+      drawFeaturePill(ctx, pillX, 272, pillW, pillH, 'Stylish\nDesign', 'sofa');
+      drawFeaturePill(ctx, pillX, 356, pillW, pillH, 'Durable &\nLong-Lasting', 'shield');
+      drawFeaturePill(ctx, pillX, 440, pillW, pillH, 'Perfect for\nYour Home', 'home');
+
+      // 6. Circular Detail Inset + "Elegant Finish" Tag (Bottom-Right)
+      const circX = 892;
+      const circY = 695;
+      const circR = 96;
+
+      ctx.save();
+      ctx.shadowColor = 'rgba(15, 23, 42, 0.22)';
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      ctx.arc(circX, circY, circR + 7, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.beginPath();
+      ctx.arc(circX, circY, circR, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#F1F5F9';
+      ctx.fillRect(circX - circR, circY - circR, circR * 2, circR * 2);
+
+      if (loadedImg && loadedImg.width > 0) {
+        // Zoomed-in crop of product detail
+        const cropSize = Math.min(loadedImg.width, loadedImg.height) * 0.45;
+        const sx = Math.max(0, (loadedImg.width - cropSize) * 0.65);
+        const sy = Math.max(0, (loadedImg.height - cropSize) * 0.55);
+        ctx.drawImage(loadedImg, sx, sy, cropSize, cropSize, circX - circR, circY - circR, circR * 2, circR * 2);
+      }
+      ctx.restore();
+
+      // Gold/purple "Elegant Finish" pill overlapping bottom of circle
+      drawRoundedRect(ctx, circX - 88, circY + 56, 176, 44, 22);
+      const finishGrad = ctx.createLinearGradient(circX - 88, 0, circX + 88, 0);
+      finishGrad.addColorStop(0, '#FACC15');
+      finishGrad.addColorStop(0.2, '#6D28D9');
+      finishGrad.addColorStop(1, '#5B21B6');
+      ctx.fillStyle = finishGrad;
       ctx.fill();
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '900 44px "Plus Jakarta Sans", -apple-system, sans-serif';
-      ctx.fillText('₦' + price, 128, 903);
+      ctx.font = '800 18px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Elegant Finish', circX, circY + 84);
 
-      // 6. Item Title
-      ctx.fillStyle = '#0F172A';
-      ctx.font = '800 44px "Plus Jakarta Sans", -apple-system, sans-serif';
-      wrapCanvasText(ctx, title, 95, 995, 880, 56, 2);
+      // 7. Bold Purple & Gold Price Ribbon
+      const ribbonX = 48;
+      const ribbonY = 742;
+      const ribbonW = 635;
+      const ribbonH = 104;
 
-      // 7. Location Strip
-      ctx.fillStyle = '#475569';
-      ctx.font = '700 30px "Plus Jakarta Sans", -apple-system, sans-serif';
-      ctx.fillText('📍 ' + location, 95, 1125);
+      // Gold accent bar underneath ribbon
+      drawRoundedRect(ctx, ribbonX + 26, ribbonY + ribbonH - 8, ribbonW - 52, 22, 11);
+      ctx.fillStyle = '#FACC15';
+      ctx.fill();
 
-      // 8. Bottom Call-to-Action Footer
+      // Main purple ribbon pill
+      drawRoundedRect(ctx, ribbonX, ribbonY, ribbonW, ribbonH, 52);
+      const priceGrad = ctx.createLinearGradient(ribbonX, ribbonY, ribbonX + ribbonW, ribbonY + ribbonH);
+      priceGrad.addColorStop(0, '#7C3AED');
+      priceGrad.addColorStop(0.55, '#5B21B6');
+      priceGrad.addColorStop(1, '#4C1D95');
+      ctx.fillStyle = priceGrad;
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#EDE9FE';
+      ctx.stroke();
+
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '800 32px "Plus Jakarta Sans", -apple-system, sans-serif';
-      ctx.fillText('Search on NaijaSale.com or DM me to buy now!', 145, 1255);
+      ctx.textAlign = 'left';
+      ctx.font = '900 54px "Plus Jakarta Sans", -apple-system, sans-serif';
+      const displayPrice = price ? (price.startsWith('₦') ? price : '₦' + price) : 'Contact for Price';
+      ctx.fillText(displayPrice, ribbonX + 46, ribbonY + 71);
+
+      // 8. Item Title (Dark line + Purple second line)
+      const titleX = 52;
+      const titleY = 918;
+      ctx.font = '900 50px "Plus Jakarta Sans", -apple-system, sans-serif';
+      const titleLines = wrapLines(ctx, title, 970, 2);
+
+      ctx.fillStyle = '#0F172A';
+      ctx.fillText(titleLines[0] || '', titleX, titleY);
+
+      if (titleLines[1]) {
+        ctx.fillStyle = '#6D28D9';
+        ctx.fillText(titleLines[1], titleX, titleY + 58);
+      }
+
+      // 9. Trust Strip: Comfort Guaranteed | Great Value | Nationwide Delivery
+      const trustY = 1056;
+      ctx.textAlign = 'left';
+      ctx.font = '800 22px "Plus Jakarta Sans", -apple-system, sans-serif';
+
+      ctx.fillStyle = '#6D28D9';
+      ctx.fillText('☺', 52, trustY);
+      ctx.fillStyle = '#1E1B4B';
+      ctx.fillText('Comfort\nGuaranteed'.split('\n')[0], 84, trustY - 10);
+      ctx.fillText('Guaranteed', 84, trustY + 13);
+
+      ctx.fillStyle = '#DDD6FE';
+      ctx.fillRect(245, trustY - 26, 2, 48);
+
+      ctx.fillStyle = '#6D28D9';
+      ctx.fillText('👍', 268, trustY);
+      ctx.fillStyle = '#1E1B4B';
+      ctx.fillText('Great', 302, trustY - 10);
+      ctx.fillText('Value', 302, trustY + 13);
+
+      ctx.fillStyle = '#DDD6FE';
+      ctx.fillRect(408, trustY - 26, 2, 48);
+
+      ctx.fillStyle = '#6D28D9';
+      ctx.fillText('🚚', 432, trustY);
+      ctx.fillStyle = '#1E1B4B';
+      ctx.fillText('Nationwide', 468, trustY - 10);
+      ctx.fillText('Delivery', 468, trustY + 13);
+
+      // 10. Location Pin Line
+      const locY = 1134;
+      ctx.fillStyle = '#6D28D9';
+      ctx.font = '900 28px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('📍', 50, locY);
+
+      ctx.fillStyle = '#1E1B4B';
+      ctx.font = '800 27px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText(location, 92, locY);
+
+      // 11. Bottom Purple Wave Banner + Yellow "Buy Now >" CTA Pill
+      ctx.save();
+      const footGrad = ctx.createLinearGradient(0, 1165, W, H);
+      footGrad.addColorStop(0, '#5B21B6');
+      footGrad.addColorStop(0.55, '#6D28D9');
+      footGrad.addColorStop(1, '#4C1D95');
+      ctx.fillStyle = footGrad;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 1205);
+      ctx.quadraticCurveTo(280, 1155, 620, 1185);
+      ctx.quadraticCurveTo(880, 1205, W, 1168);
+      ctx.lineTo(W, H);
+      ctx.lineTo(0, H);
+      ctx.closePath();
+      ctx.fill();
+
+      // Search icon circle on left
+      ctx.beginPath();
+      ctx.arc(92, 1272, 42, 0, Math.PI * 2);
+      ctx.fillStyle = '#7C3AED';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#DDD6FE';
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 32px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔍', 92, 1283);
+
+      // "Search on NaijaSale.com — or DM me to buy now!"
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 32px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('Search on NaijaSale.com', 152, 1264);
+
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = '700 23px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('— or DM me to buy now! —', 165, 1296);
+
+      // Bright Yellow "Buy Now >" button on right
+      const ctaX = 720;
+      const ctaY = 1226;
+      const ctaW = 316;
+      const ctaH = 88;
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 6;
+      drawRoundedRect(ctx, ctaX, ctaY, ctaW, ctaH, 44);
+      const ctaGrad = ctx.createLinearGradient(ctaX, ctaY, ctaX, ctaY + ctaH);
+      ctaGrad.addColorStop(0, '#FDE047');
+      ctaGrad.addColorStop(1, '#F59E0B');
+      ctx.fillStyle = ctaGrad;
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = '#0F172A';
+      ctx.font = '900 34px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.fillText('🛒 Buy Now >', ctaX + 36, ctaY + 56);
+      ctx.restore();
 
       canvas.toBlob((blob) => {
         currentFlyerBlob = blob;
@@ -201,16 +550,17 @@
           previewImg.src = canvas.toDataURL('image/png');
         }
         modal.classList.remove('hidden');
+        if (window.lucide) lucide.createIcons();
       }, 'image/png');
     }
 
     if (imgUrl) {
       const img = new Image();
-      img.onload = () => renderCard(img);
-      img.onerror = () => renderCard(null);
+      img.onload = () => renderFlyer(img);
+      img.onerror = () => renderFlyer(null);
       img.src = imgUrl;
     } else {
-      renderCard(null);
+      renderFlyer(null);
     }
   }
 </script>
