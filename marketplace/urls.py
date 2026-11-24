@@ -10,6 +10,7 @@ from . import support_sync
 from . import views_wallet
 from . import intent_tracker
 from . import flyer_maker
+from . import seller_comments
 
 app_name = 'marketplace'
 
@@ -42,6 +43,8 @@ urlpatterns = [
     path('sw.js', views.pwa_service_worker_view, name='pwa_sw'),
     path('item/<slug:slug>/', views.listing_detail_view, name='listing_detail'),
     path('flyer-image/<int:listing_id>/', flyer_maker.flyer_listing_image_proxy_view, name='flyer_image_proxy'),
+    path('seller/<int:seller_id>/comment/', seller_comments.post_seller_comment_view, name='post_seller_comment'),
+    path('seller/comment/<int:comment_id>/delete/', seller_comments.SellerCommentDeleteView.as_view(), name='delete_seller_comment'),
     path('favorite/<int:listing_id>/', views.toggle_favorite_view, name='toggle_favorite'),
     path('saved/', views.saved_items_view, name='saved_items'),
     path('dashboard/', views.dashboard_view, name='dashboard'),

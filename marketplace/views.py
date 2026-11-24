@@ -32,6 +32,7 @@ from .forms import (
     ReportListingForm, SellerReviewForm
 )
 from .image_processor import process_and_watermark_image
+from . import seller_comments
 
 
 BOT_USER_AGENT_KEYWORDS = (
@@ -55,12 +56,12 @@ def is_bot_request(request):
 def apply_jiji_ranking(queryset):
     """
     Enterprise Jiji-Style Marketplace Ranking Engine:
-    1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
-    2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
+1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
+2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
        so a lower tier never outranks a higher-paying tier.
-    3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
+3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
        so every paying customer gets fair #1 top-slot visibility without cron jobs.
-    4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
+4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
     """
     now = timezone.now()
     day_1 = now - timedelta(days=1)
@@ -346,6 +347,12 @@ def listing_detail_view(request, slug):
     review_form = SellerReviewForm()
     seller_reviews = SellerReview.objects.filter(seller=listing.seller).select_related('reviewer')[:5]
 
+    seller_comment_threads = []
+    try:
+        seller_comment_threads = seller_comments.get_seller_comment_threads(listing.seller)
+    except Exception:
+        seller_comment_threads = []
+
     return render(request, 'marketplace/listing_detail.html', {
         'settings': site_settings,
         'listing': listing,
@@ -354,6 +361,8 @@ def listing_detail_view(request, slug):
         'report_form': report_form,
         'review_form': review_form,
         'seller_reviews': seller_reviews,
+        'target_seller': listing.seller,
+        'seller_comment_threads': seller_comment_threads,
     })
 
 

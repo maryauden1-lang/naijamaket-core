@@ -1,0 +1,131 @@
+{% load humanize %}
+<section id="seller-comments" class="bg-white rounded-3xl p-4 sm:p-5 border border-purple-100 shadow-2xs space-y-4">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="w-8 h-8 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center">
+        <i data-lucide="message-square-text" class="w-4 h-4"></i>
+      </span>
+      <div>
+        <h3 class="text-sm sm:text-base font-black text-slate-900">
+          Comments on {{ target_seller.first_name|default:target_seller.username }}
+        </h3>
+        <p class="text-[11px] text-slate-500">Buyer feedback &amp; seller replies</p>
+      </div>
+    </div>
+    <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700">
+      {{ seller_comment_threads|length }}
+    </span>
+  </div>
+
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'marketplace:post_seller_comment' target_seller.id %}" class="space-y-2.5">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <textarea
+        name="body"
+        rows="2"
+        maxlength="600"
+        required
+        placeholder="Share your experience or ask about this seller..."
+        class="w-full rounded-2xl border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 px-3.5 py-2.5 text-xs sm:text-sm text-slate-800 outline-none"
+      ></textarea>
+      <div class="flex justify-end">
+        <button
+          type="submit"
+          class="px-4 py-2 rounded-full bg-purple-700 hover:bg-purple-800 text-white text-xs font-extrabold transition-colors cursor-pointer"
+        >
+          Post Comment
+        </button>
+      </div>
+    </form>
+  {% else %}
+    <div class="rounded-2xl bg-purple-50/70 border border-purple-100 p-3 text-xs text-slate-700 flex items-center justify-between gap-2">
+      <span>Sign in to comment or reply under this seller.</span>
+      <a href="{% url 'marketplace:login' %}?next={{ request.get_full_path|urlencode }}" class="font-extrabold text-purple-700 hover:underline shrink-0">
+        Sign In
+      </a>
+    </div>
+  {% endif %}
+
+  <div class="divide-y divide-slate-100">
+    {% for comment in seller_comment_threads %}
+      <div class="py-3.5 first:pt-1 last:pb-1 space-y-2.5">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-xs font-extrabold text-slate-900">
+                {{ comment.author.first_name|default:comment.author.username }}
+              </span>
+              {% if comment.author_id == target_seller.id %}
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                  Seller
+                </span>
+              {% endif %}
+              <span class="text-[11px] text-slate-400">• {{ comment.created_at|naturaltime }}</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-700 mt-1 whitespace-pre-line">{{ comment.body }}</p>
+          </div>
+
+          {% if user.is_authenticated and user.id == comment.author_id or user.id == target_seller.id or user.is_staff %}
+            <form method="post" action="{% url 'marketplace:delete_seller_comment' comment.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="text-[11px] font-bold text-rose-600 hover:underline cursor-pointer">
+                Remove
+              </button>
+            </form>
+          {% endif %}
+        </div>
+
+        <!-- 1-Level Replies Under This Comment -->
+        {% if comment.thread_replies %}
+          <div class="ml-3 sm:ml-5 pl-3 border-l-2 border-purple-200 space-y-2">
+            {% for reply in comment.thread_replies %}
+              <div class="bg-slate-50/90 rounded-2xl p-2.5">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-extrabold text-slate-900">
+                    {{ reply.author.first_name|default:reply.author.username }}
+                  </span>
+                  {% if reply.author_id == target_seller.id %}
+                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                      Seller
+                    </span>
+                  {% endif %}
+                  <span class="text-[11px] text-slate-400">• {{ reply.created_at|naturaltime }}</span>
+                </div>
+                <p class="text-xs text-slate-700 mt-1 whitespace-pre-line">{{ reply.body }}</p>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Reply Form Under This Comment -->
+        {% if user.is_authenticated %}
+          <form method="post" action="{% url 'marketplace:post_seller_comment' target_seller.id %}" class="ml-3 sm:ml-5 flex items-center gap-2 pt-0.5">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" name="parent_id" value="{{ comment.id }}">
+            <input
+              type="text"
+              name="body"
+              maxlength="600"
+              required
+              placeholder="Write a reply..."
+              class="flex-1 rounded-full border border-slate-200 focus:border-purple-500 px-3.5 py-1.5 text-xs text-slate-800 outline-none"
+            >
+            <button
+              type="submit"
+              class="px-3.5 py-1.5 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-extrabold transition-colors cursor-pointer"
+            >
+              Reply
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    {% empty %}
+      <p class="py-4 text-xs text-slate-500 text-center">
+        No comments yet. Be the first to leave feedback or a question for this seller.
+      </p>
+    {% endfor %}
+  </div>
+</section>

@@ -939,3 +939,42 @@ class AbandonedIntent(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — {self.get_intent_type_display()} ({self.status})"
+
+
+# ==========================================
+# 15. SELLER COMMENTS & 1-LEVEL REPLIES
+# ==========================================
+class SellerComment(models.Model):
+    seller = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_seller_comments",
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="authored_seller_comments",
+    )
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="replies",
+    )
+    body = models.TextField(max_length=600)
+    is_hidden = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["seller", "is_hidden", "-created_at"]),
+            models.Index(fields=["parent", "created_at"]),
+        ]
+        verbose_name = "Seller Comment"
+        verbose_name_plural = "Seller Comments"
+
+    def __str__(self):
+        return f"Comment by {self.author.username} on seller {self.seller.username}"
