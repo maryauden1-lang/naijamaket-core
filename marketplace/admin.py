@@ -72,20 +72,40 @@ def live_online_stats_view(request):
     pending_listings = Listing.objects.filter(status='pending').count()
     pending_kyc = SellerProfile.objects.filter(verification_status='pending').count()
     unresolved_reports = ReportedListing.objects.filter(is_resolved=False).count()
-    total_notifications = pending_listings + pending_kyc + unresolved_reports
+    abandoned_count = AbandonedIntent.objects.filter(status='ABANDONED').count()
+    total_notifications = pending_listings + pending_kyc + unresolved_reports + abandoned_count
 
     total_revenue = (
         PaymentTransaction.objects.filter(status='SUCCESSFUL').aggregate(total=Sum('amount_paid'))['total']
         or 0
     )
 
+    recent_leads_data = []
+    for lead in AbandonedIntent.objects.filter(status='ABANDONED').select_related('user', 'user__seller_profile', 'listing')[:5]:
+        name = lead.user.get_full_name() or lead.user.username
+        action_text = (
+            f"Boost '{lead.listing.title[:28]}'"
+            if lead.intent_type == "AD_BOOST" and lead.listing
+            else f"Wallet Top-Up (₦{lead.amount_ngn:,.0f})"
+        )
+        recent_leads_data.append({
+            'id': lead.id,
+            'name': name,
+            'action': action_text,
+            'wa_url': lead.whatsapp_recovery_url,
+            'chat_url': f"/portal-management-99/marketplace/abandonedintent/{lead.id}/push-chat/?next=/portal-management-99/",
+            'time_ago': timezone.localtime(lead.updated_at).strftime("%I:%M %p"),
+        })
+
     return JsonResponse({
         'online_count': online_count,
         'pending_listings': pending_listings,
         'pending_kyc': pending_kyc,
         'unresolved_reports': unresolved_reports,
+        'abandoned_count': abandoned_count,
         'total_notifications': total_notifications,
         'total_revenue': f"{total_revenue:,.2f}",
+        'recent_abandoned_leads': recent_leads_data,
     })
 
 
@@ -111,8 +131,19 @@ def custom_admin_index(request, extra_context=None):
     pending_listings_count = Listing.objects.filter(status='pending').count()
     pending_kyc_count = SellerProfile.objects.filter(verification_status='pending').count()
     unresolved_reports_count = ReportedListing.objects.filter(is_resolved=False).count()
+    abandoned_count = AbandonedIntent.objects.filter(status='ABANDONED').count()
 
-    total_notifications = pending_listings_count + pending_kyc_count + unresolved_reports_count
+    total_notifications = (
+        pending_listings_count
+        + pending_kyc_count
+        + unresolved_reports_count
+        + abandoned_count
+    )
+
+    recent_abandoned_leads = (
+        AbandonedIntent.objects.filter(status='ABANDONED')
+        .select_related('user', 'user__seller_profile', 'listing')[:5]
+    )
 
     total_conversations = Conversation.objects.count()
     total_favorites = Favorite.objects.count()
@@ -159,6 +190,8 @@ def custom_admin_index(request, extra_context=None):
         'pending_listings_count': pending_listings_count,
         'pending_kyc_count': pending_kyc_count,
         'unresolved_reports_count': unresolved_reports_count,
+        'abandoned_count': abandoned_count,
+        'recent_abandoned_leads': recent_abandoned_leads,
         'total_notifications': total_notifications,
         'total_conversations': total_conversations,
         'total_favorites': total_favorites,
@@ -768,10 +801,14 @@ class AbandonedIntentAdmin(admin.ModelAdmin):
             messages.error(request, "Unauthorized")
             return redirect("admin:index")
 
+        next_url = request.GET.get("next") or "/portal-management-99/marketplace/abandonedintent/"
+        if not next_url.startswith("/"):
+            next_url = "/portal-management-99/marketplace/abandonedintent/"
+
         intent = AbandonedIntent.objects.filter(id=intent_id).select_related("user", "listing").first()
         if not intent:
             messages.error(request, "Lead not found.")
-            return redirect("/portal-management-99/marketplace/abandonedintent/")
+            return redirect(next_url)
 
         name = intent.user.first_name or intent.user.username
         if intent.intent_type == "AD_BOOST":
@@ -804,7 +841,7 @@ class AbandonedIntentAdmin(admin.ModelAdmin):
         intent.save(update_fields=["status", "contacted_by", "updated_at"])
 
         messages.success(request, f"✅ Sent helpful follow-up to {name} via Live Chat & Notification Bell!")
-        return redirect("/portal-management-99/marketplace/abandonedintent/")
+        return redirect(next_url)
 
 
 # ==============================================================================

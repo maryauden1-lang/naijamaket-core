@@ -332,6 +332,54 @@
         }
         .kpi-card.treasury .kpi-meta { color: #cbd5e1; }
 
+        /* LIVE HOT LEADS RECOVERY BANNER */
+        .hot-leads-panel {
+            background: #ffffff;
+            border: 1px solid #ddd6fe;
+            border-left: 4px solid #6d28d9;
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(109, 40, 217, 0.06);
+        }
+
+        .lead-pill-badge {
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 0.66rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 9999px;
+        }
+
+        .btn-lead-wa {
+            background: #16a34a;
+            color: #ffffff !important;
+            padding: 4px 9px;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-lead-wa:hover { background: #15803d; }
+
+        .btn-lead-chat {
+            background: #6d28d9;
+            color: #ffffff !important;
+            padding: 4px 9px;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-lead-chat:hover { background: #5b21b6; }
+
         /* MAIN DENSE 3-COLUMN WORKSPACE */
         .workspace-grid {
             display: grid;
@@ -536,6 +584,12 @@
         <div class="sidebar-section-title">Monetization & Billing</div>
         <ul class="sidebar-menu">
             <li>
+                <a href="/portal-management-99/marketplace/abandonedintent/">
+                    <div><i class="fa-solid fa-fire nav-icon" style="color: #6d28d9;"></i> Hot Leads & Abandoned</div>
+                    <span id="sidebarLeadsBadge" style="background:#fef3c7;color:#92400e;font-size:0.64rem;font-weight:800;padding:1px 6px;border-radius:9999px;">{{ abandoned_count|default:0 }}</span>
+                </a>
+            </li>
+            <li>
                 <a href="/portal-management-99/marketplace/paymenttransaction/">
                     <div><i class="fa-solid fa-receipt nav-icon" style="color: #059669;"></i> Payment Ledger</div>
                     <i class="fa-solid fa-chevron-right chevron"></i>
@@ -603,12 +657,16 @@
                         <span class="notif-badge" id="notifBadgeCounter" style="{% if total_notifications == 0 %}display:none;{% endif %}">{{ total_notifications }}</span>
                     </div>
 
-                    <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 38px; width: 280px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); z-index: 999; overflow: hidden;">
+                    <div id="notifDropdownMenu" style="display: none; position: absolute; right: 0; top: 38px; width: 295px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); z-index: 999; overflow: hidden;">
                         <div style="padding: 8px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-weight: 800; font-size: 0.75rem;">Action Queue</span>
                             <span id="dropdownPendingPill" style="background: #ef4444; color: white; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 9999px;">{{ total_notifications }} Pending</span>
                         </div>
                         <div>
+                            <a href="/portal-management-99/marketplace/abandonedintent/?status__exact=ABANDONED" class="list-row" style="padding: 8px 12px; text-decoration: none; color: inherit; background: #faf5ff;">
+                                <span style="font-weight: 700; color: #5b21b6;"><i class="fa-solid fa-fire" style="color:#6d28d9;margin-right:4px;"></i> Abandoned Top-Ups / Boosts</span>
+                                <strong id="abandonedLeadsCounter" style="color: #6d28d9;">{{ abandoned_count|default:0 }}</strong>
+                            </a>
                             <a href="/portal-management-99/marketplace/listing/?status__exact=pending" class="list-row" style="padding: 8px 12px; text-decoration: none; color: inherit;">
                                 <span>Pending Ads</span>
                                 <strong id="pendingListingsCounter" style="color: #ea580c;">{{ pending_listings_count }}</strong>
@@ -631,6 +689,17 @@
                 </a>
             </div>
         </div>
+
+        {% if messages %}
+        <div style="margin-bottom: 0.85rem;">
+            {% for message in messages %}
+            <div style="padding: 0.6rem 0.9rem; border-radius: 8px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-weight: 700; font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>{{ message }}</span>
+                <button onclick="this.parentElement.remove()" style="background:none;border:none;color:#065f46;font-weight:800;cursor:pointer;">✕</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <!-- ROW 1: COMPACT 5-CARD EXECUTIVE KPI & TREASURY STRIP -->
         <div class="kpi-strip">
@@ -698,6 +767,52 @@
                     <span>Reports: <strong>{{ unresolved_reports_count }}</strong></span>
                 </div>
             </div>
+        </div>
+
+        <!-- LIVE HOT LEADS / ABANDONED TOP-UPS & BOOSTS PANEL (UPDATES AUTOMATICALLY EVERY 5s) -->
+        <div class="hot-leads-panel" id="liveHotLeadsPanel" style="{% if not recent_abandoned_leads %}display:none;{% endif %}">
+            <div class="panel-header" style="margin-bottom: 0.45rem; padding-bottom: 0.45rem;">
+                <div class="panel-title" style="color: #4c1d95;">
+                    <i class="fa-solid fa-fire" style="color: #6d28d9;"></i> Live Hot Leads — Stopped Top-Ups &amp; Ad Boosts
+                    <span class="lead-pill-badge" id="hotLeadsCountPill">{{ abandoned_count|default:0 }} Waiting</span>
+                </div>
+                <a href="/portal-management-99/marketplace/abandonedintent/" class="pill-btn">Open Full Queue &rarr;</a>
+            </div>
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th>Seller</th>
+                        <th>Stopped Action</th>
+                        <th>Updated</th>
+                        <th style="text-align: right;">1-Click Recovery</th>
+                    </tr>
+                </thead>
+                <tbody id="liveHotLeadsBody">
+                    {% for lead in recent_abandoned_leads %}
+                    <tr>
+                        <td><strong>{{ lead.user.get_full_name|default:lead.user.username }}</strong></td>
+                        <td>
+                            {% if lead.intent_type == "AD_BOOST" and lead.listing %}
+                                Boost '{{ lead.listing.title|truncatechars:32 }}' ({{ lead.plan_name|default:"VIP" }})
+                            {% else %}
+                                Wallet Top-Up (₦{{ lead.amount_ngn|floatformat:0|intcomma }})
+                            {% endif %}
+                        </td>
+                        <td style="color: #64748b;">{{ lead.updated_at|timesince }} ago</td>
+                        <td style="text-align: right;">
+                            {% if lead.whatsapp_recovery_url %}
+                                <a href="{{ lead.whatsapp_recovery_url }}" target="_blank" class="btn-lead-wa" style="margin-right: 4px;">
+                                    <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                                </a>
+                            {% endif %}
+                            <a href="/portal-management-99/marketplace/abandonedintent/{{ lead.id }}/push-chat/?next=/portal-management-99/" class="btn-lead-chat">
+                                <i class="fa-solid fa-comment-dots"></i> In-App Chat
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
         <!-- ROW 2: LIVE TRANSACTIONS + RECENT USERS + TOP CATEGORIES & ACCESS -->
@@ -915,7 +1030,15 @@
             }
         });
 
-        // Live 5-second background polling
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // Live 5-second background polling (updates bell, counters & live hot leads without refresh)
         function pollLiveStats() {
             fetch('/portal-management-99/live-stats-ping/')
                 .then(response => {
@@ -937,6 +1060,37 @@
                     }
                     if (dropPill && data.total_notifications !== undefined) {
                         dropPill.innerText = data.total_notifications + ' Pending';
+                    }
+
+                    const abandonedCounter = document.getElementById('abandonedLeadsCounter');
+                    const sidebarLeadsBadge = document.getElementById('sidebarLeadsBadge');
+                    const hotLeadsCountPill = document.getElementById('hotLeadsCountPill');
+                    if (data.abandoned_count !== undefined) {
+                        if (abandonedCounter) abandonedCounter.innerText = data.abandoned_count;
+                        if (sidebarLeadsBadge) sidebarLeadsBadge.innerText = data.abandoned_count;
+                        if (hotLeadsCountPill) hotLeadsCountPill.innerText = data.abandoned_count + ' Waiting';
+                    }
+
+                    const leadsPanel = document.getElementById('liveHotLeadsPanel');
+                    const leadsBody = document.getElementById('liveHotLeadsBody');
+                    if (leadsPanel && leadsBody && Array.isArray(data.recent_abandoned_leads)) {
+                        if (data.recent_abandoned_leads.length === 0) {
+                            leadsPanel.style.display = 'none';
+                        } else {
+                            leadsPanel.style.display = 'block';
+                            leadsBody.innerHTML = data.recent_abandoned_leads.map(lead => {
+                                const waBtn = lead.wa_url
+                                    ? `<a href="${escapeHtml(lead.wa_url)}" target="_blank" class="btn-lead-wa" style="margin-right:4px;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>`
+                                    : '';
+                                const chatBtn = `<a href="${escapeHtml(lead.chat_url)}" class="btn-lead-chat"><i class="fa-solid fa-comment-dots"></i> In-App Chat</a>`;
+                                return `<tr>
+                                    <td><strong>${escapeHtml(lead.name)}</strong></td>
+                                    <td>${escapeHtml(lead.action)}</td>
+                                    <td style="color:#64748b;">${escapeHtml(lead.time_ago)}</td>
+                                    <td style="text-align:right;">${waBtn}${chatBtn}</td>
+                                </tr>`;
+                            }).join('');
+                        }
                     }
 
                     const pendingAds = document.getElementById('pendingListingsCounter');
