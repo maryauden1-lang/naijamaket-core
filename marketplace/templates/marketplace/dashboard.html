@@ -294,6 +294,7 @@
                   data-price="{{ item.price|intcomma }}"
                   data-location="{% if item.area %}{{ item.area.name }}, {% endif %}{{ item.state.name|default:'Nigeria' }}"
                   data-img="{% if item.images.first %}{% url 'marketplace:flyer_image_proxy' item.id %}{% endif %}"
+                  data-logo="{% if site_settings and site_settings.logo %}{{ site_settings.logo.url }}{% elif settings and settings.logo %}{{ settings.logo.url }}{% endif %}"
                   data-url="{{ request.scheme }}://{{ request.get_host }}{% url 'marketplace:listing_detail' item.slug %}"
                   class="w-8 h-8 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 cursor-pointer"
                   title="Create WhatsApp Status Flyer"
