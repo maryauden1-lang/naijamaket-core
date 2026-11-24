@@ -3,8 +3,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Viewport settings to completely lock auto-zoom on mobile keyboards -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- Viewport settings to lock auto-zoom and support dynamic mobile keyboard height -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title id="chatPageTitle">Chat with {{ other_user.first_name|default:other_user.username }} - {{ settings.site_name|default:"Naijamaket" }}</title>
   
   <!-- FAVICON & APP ICONS -->
@@ -19,10 +19,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <style>
-    body { 
-      font-family: 'Plus Jakarta Sans', sans-serif; 
-      background: #F8FAFC; 
-      touch-action: pan-y;
+    html, body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #F8FAFC;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    #chatAppShell {
+      height: 100dvh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     .glass-surface {
       background: rgba(255, 255, 255, 0.96);
@@ -53,235 +64,231 @@
     }
   </style>
 </head>
-<body class="text-slate-900 min-h-screen flex flex-col relative antialiased">
+<body class="text-slate-900 antialiased">
+  <div id="chatAppShell">
 
-  <!-- Chat Top Bar -->
-  <header class="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
-      
-      <!-- Left: Back Button & User Profile -->
-      <div class="flex items-center gap-3 min-w-0">
-        <a href="{% url 'marketplace:inbox' %}" class="w-10 h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors shrink-0">
-          <i data-lucide="arrow-left" class="w-5 h-5"></i>
-        </a>
+    <!-- Chat Top Bar (Always Pinned at Top) -->
+    <header class="bg-white border-b border-slate-200/90 z-40 shadow-2xs shrink-0">
+      <div class="max-w-4xl mx-auto px-3 sm:px-4 h-16 sm:h-20 flex items-center justify-between gap-2">
         
-        <div class="relative shrink-0">
-          <div class="w-11 h-11 rounded-2xl bg-purple-100 text-purple-700 font-extrabold flex items-center justify-center border border-purple-200 shadow-xs">
-            {% if other_profile.avatar %}
-              <img src="{{ other_profile.avatar.url }}" alt="{{ other_user.username }}" class="w-full h-full object-cover rounded-2xl">
-            {% else %}
-              {{ other_user.first_name|default:other_user.username|slice:":1"|upper }}
+        <!-- Left: Back Button & User Profile -->
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <a href="{% url 'marketplace:inbox' %}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 transition-colors shrink-0">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </a>
+          
+          <div class="relative shrink-0">
+            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-purple-100 text-purple-700 font-extrabold flex items-center justify-center border border-purple-200 shadow-2xs">
+              {% if other_profile.avatar %}
+                <img src="{{ other_profile.avatar.url }}" alt="{{ other_user.username }}" class="w-full h-full object-cover rounded-2xl">
+              {% else %}
+                {{ other_user.first_name|default:other_user.username|slice:":1"|upper }}
+              {% endif %}
+            </div>
+            {% if other_profile.is_nin_verified %}
+              <span class="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5" title="Verified">
+                <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
+              </span>
             {% endif %}
           </div>
-          {% if other_profile.is_nin_verified %}
-            <span class="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-0.5" title="Verified">
-              <i data-lucide="check" class="w-2.5 h-2.5 stroke-[3]"></i>
-            </span>
+
+          <div class="min-w-0">
+            <h1 class="text-sm font-black text-slate-900 truncate">
+              {{ other_user.first_name|default:other_user.username }}
+            </h1>
+            <p class="text-[11px] font-bold text-emerald-600 truncate">
+              {% if conversation.listing %}{{ conversation.listing.title }} • ₦{{ conversation.listing.price|intcomma }}{% else %}Naijasale Support & System Notice{% endif %}
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: Action Buttons -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {% if user == conversation.buyer and whatsapp_ping_url %}
+          <a 
+            href="{{ whatsapp_ping_url }}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-all shadow-2xs hover:scale-102"
+            title="Notify seller on WhatsApp"
+          >
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.35 7.35 9.17 7.35 9.03 7.36C8.85 7.37 8.63 7.44 8.44 7.64C8.22 7.87 7.6 8.46 7.6 9.66C7.6 10.87 8.47 12.03 8.6 12.2C8.72 12.38 10.31 14.83 12.75 15.88C13.33 16.13 13.78 16.28 14.13 16.39C14.71 16.58 15.24 16.55 15.66 16.49C16.13 16.42 17.11 15.9 17.31 15.32C17.52 14.75 17.52 14.26 17.46 14.16C17.39 14.05 17.23 13.99 16.98 13.87C16.74 13.74 15.53 13.15 15.3 13.07C15.08 12.98 14.92 12.94 14.76 13.18C14.6 13.43 14.13 13.99 13.99 14.15C13.85 14.32 13.71 14.34 13.46 14.21C13.22 14.09 12.44 13.83 11.51 13C10.79 12.36 10.3 11.56 10.16 11.31C10.02 11.07 10.14 10.94 10.27 10.82C10.38 10.7 10.53 10.51 10.65 10.36C10.78 10.22 10.82 10.12 10.9 9.95C10.99 9.79 10.94 9.64 10.88 9.53C10.82 9.41 10.32 8.19 10.12 7.7C9.92 7.21 9.72 7.28 9.53 7.34Z"/>
+            </svg>
+            <span>Ping WhatsApp</span>
+          </a>
           {% endif %}
+
+          {% if user == conversation.buyer %}
+          <button 
+            type="button" 
+            onclick="openOfferModal()" 
+            class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-2 rounded-xl transition-all shadow-2xs flex items-center gap-1"
+          >
+            <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+            <span>Offer</span>
+          </button>
+          {% endif %}
+
+          <a href="{% if conversation.listing %}{% url 'marketplace:listing_detail' conversation.listing.slug %}{% else %}#{% endif %}" class="text-xs font-bold text-slate-600 hover:text-purple-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
+            Ad
+          </a>
         </div>
 
-        <div class="min-w-0">
-          <h1 class="text-sm font-black text-slate-900 truncate">
-            {{ other_user.first_name|default:other_user.username }}
-          </h1>
-          <p class="text-[11px] font-bold text-emerald-600 truncate">
-            {% if conversation.listing %}{{ conversation.listing.title }} • ₦{{ conversation.listing.price|intcomma }}{% else %}Naijasale Support & System Notice{% endif %}
-          </p>
-        </div>
+      </div>
+    </header>
+
+    <!-- Messages Stage (Fills Remaining Space Above Keyboard) -->
+    <main class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-4 flex-1 w-full flex flex-col min-h-0 overflow-hidden">
+      
+      <!-- Compact Safety Reminder -->
+      <div class="bg-amber-50 border border-amber-200 px-3 py-2 rounded-2xl mb-2 text-[11px] text-amber-900 flex items-center gap-2 shrink-0">
+        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-600 shrink-0"></i>
+        <span class="truncate"><strong>Safety:</strong> Meet in public places; inspect before paying.</span>
       </div>
 
-      <!-- Right: Action Buttons -->
-      <div class="flex items-center gap-2 shrink-0">
-        {% if user == conversation.buyer and whatsapp_ping_url %}
-        <!-- Direct Top Bar WhatsApp Ping Pill -->
-        <a 
-          href="{{ whatsapp_ping_url }}" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          class="hidden sm:inline-flex items-center gap-1.5 text-xs font-black text-white bg-[#25D366] hover:bg-[#20bd5a] px-3.5 py-2 rounded-xl transition-all shadow-xs hover:scale-102"
-          title="Notify seller on WhatsApp"
-        >
-          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.35 7.35 9.17 7.35 9.03 7.36C8.85 7.37 8.63 7.44 8.44 7.64C8.22 7.87 7.6 8.46 7.6 9.66C7.6 10.87 8.47 12.03 8.6 12.2C8.72 12.38 10.31 14.83 12.75 15.88C13.33 16.13 13.78 16.28 14.13 16.39C14.71 16.58 15.24 16.55 15.66 16.49C16.13 16.42 17.11 15.9 17.31 15.32C17.52 14.75 17.52 14.26 17.46 14.16C17.39 14.05 17.23 13.99 16.98 13.87C16.74 13.74 15.53 13.15 15.3 13.07C15.08 12.98 14.92 12.94 14.76 13.18C14.6 13.43 14.13 13.99 13.99 14.15C13.85 14.32 13.71 14.34 13.46 14.21C13.22 14.09 12.44 13.83 11.51 13C10.79 12.36 10.3 11.56 10.16 11.31C10.02 11.07 10.14 10.94 10.27 10.82C10.38 10.7 10.53 10.51 10.65 10.36C10.78 10.22 10.82 10.12 10.9 9.95C10.99 9.79 10.94 9.64 10.88 9.53C10.82 9.41 10.32 8.19 10.12 7.7C9.92 7.21 9.72 7.28 9.53 7.34Z"/>
-          </svg>
-          <span>Ping WhatsApp</span>
-        </a>
-        {% endif %}
+      <!-- Messages Scroll Container -->
+      <div id="messagesContainer" class="glass-surface rounded-3xl p-3.5 sm:p-6 shadow-2xs flex-1 min-h-0 overflow-y-auto space-y-3">
+        {% for msg in chat_messages %}
+          <div class="message-row flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %} group" data-id="{{ msg.id }}">
+            
+            {% if msg.msg_type == 'offer' %}
+              <!-- Price Offer Card -->
+              <div class="max-w-[85%] sm:max-w-md w-full border rounded-2xl p-3.5 sm:p-4 text-xs shadow-2xs transition-all {% if msg.sender == user %}bg-emerald-50/70 border-emerald-200 rounded-br-none{% else %}bg-slate-50 border-slate-200 rounded-bl-none{% endif %}">
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="inline-flex items-center gap-1 font-bold text-slate-700">
+                    <i data-lucide="banknote" class="w-3.5 h-3.5 text-emerald-600"></i>
+                    Price Offer
+                  </span>
+                  {% if msg.offer_status == 'pending' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pending</span>
+                  {% elif msg.offer_status == 'accepted' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 font-extrabold">✓ Accepted</span>
+                  {% elif msg.offer_status == 'declined' %}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Declined</span>
+                  {% endif %}
+                </div>
 
-        {% if user == conversation.buyer %}
-        <button 
-          type="button" 
-          onclick="openOfferModal()" 
-          class="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
-        >
-          <i data-lucide="tag" class="w-3.5 h-3.5"></i>
-          <span>Make Offer</span>
-        </button>
-        {% endif %}
+                <div class="text-base font-extrabold text-emerald-700 mb-1">
+                  ₦{{ msg.offer_amount|intcomma }}
+                </div>
+                <p class="text-slate-600 mb-2.5">{{ msg.text }}</p>
 
-        <a href="{% if conversation.listing %}{% url 'marketplace:listing_detail' conversation.listing.slug %}{% else %}#{% endif %}" class="text-xs font-bold text-slate-600 hover:text-purple-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl transition-colors">
-          View Ad
-        </a>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- Messages Stage -->
-  <main class="max-w-4xl mx-auto px-4 py-4 sm:py-6 flex-1 w-full flex flex-col justify-between">
-    
-    <!-- Safety Reminder -->
-    <div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl mb-3 text-xs text-amber-900 flex items-center gap-2 shrink-0">
-      <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0"></i>
-      <span><strong>Safety Reminder:</strong> Meet in public spaces and never pay advance commitment fees before physical inspection.</span>
-    </div>
-
-    <!-- Messages Container -->
-    <div id="messagesContainer" class="glass-surface rounded-3xl p-4 sm:p-6 shadow-xs flex-1 overflow-y-auto space-y-3.5 min-h-[380px] max-h-[520px]">
-      {% for msg in chat_messages %}
-        <div class="message-row flex flex-col {% if msg.sender == user %}items-end{% else %}items-start{% endif %} group" data-id="{{ msg.id }}">
-          
-          {% if msg.msg_type == 'offer' %}
-            <!-- Price Offer Card -->
-            <div class="max-w-sm sm:max-w-md w-full border rounded-2xl p-4 text-xs shadow-xs transition-all {% if msg.sender == user %}bg-emerald-50/70 border-emerald-200 rounded-br-none{% else %}bg-slate-50 border-slate-200 rounded-bl-none{% endif %}">
-              <div class="flex items-center justify-between mb-2">
-                <span class="inline-flex items-center gap-1 font-bold text-slate-700">
-                  <i data-lucide="banknote" class="w-3.5 h-3.5 text-emerald-600"></i>
-                  Price Offer
-                </span>
-                {% if msg.offer_status == 'pending' %}
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Pending</span>
-                {% elif msg.offer_status == 'accepted' %}
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 font-extrabold">✓ Accepted</span>
-                {% elif msg.offer_status == 'declined' %}
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">Declined</span>
+                {% if user == conversation.seller and msg.offer_status == 'pending' %}
+                  <div class="flex items-center gap-2 pt-2 border-t border-slate-200/80">
+                    <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
+                      {% csrf_token %}
+                      <input type="hidden" name="response" value="accept">
+                      <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl transition text-[11px] shadow-2xs">
+                        Accept Offer
+                      </button>
+                    </form>
+                    <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
+                      {% csrf_token %}
+                      <input type="hidden" name="response" value="decline">
+                      <button type="submit" class="w-full bg-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold py-1.5 px-3 rounded-xl transition text-[11px]">
+                        Decline
+                      </button>
+                    </form>
+                  </div>
                 {% endif %}
               </div>
-
-              <div class="text-base font-extrabold text-emerald-700 mb-1">
-                ₦{{ msg.offer_amount|intcomma }}
-              </div>
-              <p class="text-slate-600 mb-3">{{ msg.text }}</p>
-
-              {% if user == conversation.seller and msg.offer_status == 'pending' %}
-                <div class="flex items-center gap-2 pt-2 border-t border-slate-200/80">
-                  <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
-                    {% csrf_token %}
-                    <input type="hidden" name="response" value="accept">
-                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl transition text-[11px] shadow-xs">
-                      Accept Offer
-                    </button>
-                  </form>
-                  <form method="POST" action="{% url 'marketplace:respond_offer' msg.id %}" class="flex-1">
-                    {% csrf_token %}
-                    <input type="hidden" name="response" value="decline">
-                    <button type="submit" class="w-full bg-slate-200 hover:bg-rose-50 hover:text-rose-600 text-slate-700 font-bold py-1.5 px-3 rounded-xl transition text-[11px]">
-                      Decline
-                    </button>
-                  </form>
+            {% else %}
+              <!-- Standard Message Bubble with Modern Delete Action -->
+              <div class="flex items-center gap-1.5 {% if msg.sender == user %}flex-row-reverse{% else %}flex-row{% endif %}">
+                <div class="max-w-[82%] sm:max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed {% if msg.sender == user %}bg-purple-700 text-white rounded-br-none shadow-2xs{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
+                  {{ msg.text }}
                 </div>
-              {% endif %}
-            </div>
-          {% else %}
-            <!-- Standard Message Bubble with Modern Delete Action -->
-            <div class="flex items-center gap-1.5 {% if msg.sender == user %}flex-row-reverse{% else %}flex-row{% endif %}">
-              <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed {% if msg.sender == user %}bg-purple-700 text-white rounded-br-none shadow-xs{% else %}bg-slate-100 text-slate-800 rounded-bl-none{% endif %}">
-                {{ msg.text }}
+
+                {% if msg.sender == user %}
+                  <button type="button" onclick="deleteMessage({{ msg.id }})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity" title="Delete message">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                {% endif %}
               </div>
+            {% endif %}
 
-              {% if msg.sender == user %}
-                <button type="button" onclick="deleteMessage({{ msg.id }})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity" title="Delete message">
-                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                </button>
-              {% endif %}
-            </div>
-          {% endif %}
+            <span class="text-[9.5px] text-slate-400 mt-1 px-1">{{ msg.created_at|date:"h:i A" }}</span>
+          </div>
+        {% empty %}
+          <div id="emptyPlaceholder" class="text-center py-12 text-slate-400 text-xs">
+            <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+            Say hello! Ask {{ other_user.first_name|default:other_user.username }} about availability and inspection location.
+          </div>
+        {% endfor %}
 
-          <span class="text-[9.5px] text-slate-400 mt-1 px-1">{{ msg.created_at|date:"h:i A" }}</span>
+        <!-- Animated 3-Dot Typing Wave Indicator -->
+        <div id="typingIndicator" class="hidden items-center gap-2 text-slate-400 text-xs pt-1">
+          <div class="bg-slate-100 px-3.5 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5 shadow-2xs">
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+            <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
+          </div>
+          <span class="text-[10px] font-semibold text-slate-400" id="typingText">{{ other_user.first_name|default:other_user.username }} is typing...</span>
         </div>
-      {% empty %}
-        <div id="emptyPlaceholder" class="text-center py-16 text-slate-400 text-xs">
-          <i data-lucide="message-square" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
-          Say hello! Ask {{ other_user.first_name|default:other_user.username }} about availability and inspection location.
-        </div>
-      {% endfor %}
 
-      <!-- Animated 3-Dot Typing Wave Indicator -->
-      <div id="typingIndicator" class="hidden items-center gap-2 text-slate-400 text-xs pt-1">
-        <div class="bg-slate-100 px-3.5 py-2 rounded-2xl rounded-bl-none flex items-center gap-1.5 shadow-2xs">
-          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
-          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
-          <span class="w-1.5 h-1.5 bg-slate-400 rounded-full typing-dot"></span>
-        </div>
-        <span class="text-[10px] font-semibold text-slate-400" id="typingText">{{ other_user.first_name|default:other_user.username }} is typing...</span>
       </div>
 
-    </div>
-
-    <!-- ========================================================= -->
-    <!-- AUTOMATED POST-SEND WHATSAPP PING BANNER                   -->
-    <!-- ========================================================= -->
-    {% if whatsapp_ping_url %}
-    <div 
-      id="whatsappPingBanner" 
-      class="{% if not just_sent %}hidden{% endif %} mt-3 bg-gradient-to-r from-emerald-500/10 via-[#25D366]/15 to-emerald-500/5 border border-[#25D366]/30 p-3 sm:p-3.5 rounded-2xl flex items-center justify-between gap-3 animate-slide-up"
-    >
-      <div class="flex items-center gap-2.5 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0 shadow-sm">
-          <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.35 7.35 9.17 7.35 9.03 7.36C8.85 7.37 8.63 7.44 8.44 7.64C8.22 7.87 7.6 8.46 7.6 9.66C7.6 10.87 8.47 12.03 8.6 12.2C8.72 12.38 10.31 14.83 12.75 15.88C13.33 16.13 13.78 16.28 14.13 16.39C14.71 16.58 15.24 16.55 15.66 16.49C16.13 16.42 17.11 15.9 17.31 15.32C17.52 14.75 17.52 14.26 17.46 14.16C17.39 14.05 17.23 13.99 16.98 13.87C16.74 13.74 15.53 13.15 15.3 13.07C15.08 12.98 14.92 12.94 14.76 13.18C14.6 13.43 14.13 13.99 13.99 14.15C13.85 14.32 13.71 14.34 13.46 14.21C13.22 14.09 12.44 13.83 11.51 13C10.79 12.36 10.3 11.56 10.16 11.31C10.02 11.07 10.14 10.94 10.27 10.82C10.38 10.7 10.53 10.51 10.65 10.36C10.78 10.22 10.82 10.12 10.9 9.95C10.99 9.79 10.94 9.64 10.88 9.53C10.82 9.41 10.32 8.19 10.12 7.7C9.92 7.21 9.72 7.28 9.53 7.34Z"/>
-          </svg>
-        </div>
-        <div class="min-w-0">
-          <p class="text-xs font-black text-slate-900 leading-tight">
-            Inquiry sent to seller's Naijasale inbox! 🚀
-          </p>
-          <p class="text-[11px] font-medium text-slate-500 truncate">
-            Ping {{ other_user.first_name|default:other_user.username }} on WhatsApp for an instant reply.
-          </p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-1.5 shrink-0">
-        <a 
-          id="whatsappPingLink"
-          href="{{ whatsapp_ping_url }}" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          class="inline-flex items-center gap-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-extrabold px-3 py-1.5 rounded-xl transition-all shadow-xs hover:scale-102"
-        >
-          <span>Ping on WhatsApp</span>
-        </a>
-        <button 
-          type="button" 
-          onclick="dismissWhatsAppPing()" 
-          class="w-7 h-7 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 flex items-center justify-center transition-colors"
-          title="Dismiss"
-        >
-          ✕
-        </button>
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Message Input Bar (text-base stops keyboard auto-zoom) -->
-    <form id="messageForm" method="POST" class="mt-3 flex gap-2">
-      {% csrf_token %}
-      <input 
-        type="text" 
-        name="message" 
-        id="messageInput" 
-        required 
-        placeholder="Type your message here..." 
-        autocomplete="off" 
-        class="flex-1 px-4 py-3.5 rounded-2xl border border-slate-200 bg-white text-base focus:ring-2 focus:ring-purple-500 focus:outline-hidden shadow-2xs"
+      <!-- ========================================================= -->
+      <!-- AUTOMATED POST-SEND WHATSAPP PING BANNER                   -->
+      <!-- ========================================================= -->
+      {% if whatsapp_ping_url %}
+      <div 
+        id="whatsappPingBanner" 
+        class="{% if not just_sent %}hidden{% endif %} mt-2 bg-gradient-to-r from-emerald-500/10 via-[#25D366]/15 to-emerald-500/5 border border-[#25D366]/30 px-3 py-2 rounded-2xl flex items-center justify-between gap-2 shrink-0 animate-slide-up"
       >
-      <button id="sendBtn" type="submit" class="bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs px-6 rounded-2xl shadow-md transition-all flex items-center justify-center shrink-0">
-        <span>Send</span>
-      </button>
-    </form>
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-7 h-7 rounded-xl bg-[#25D366] text-white flex items-center justify-center shrink-0">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+              <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 14.99 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.34C9.35 7.35 9.17 7.35 9.03 7.36C8.85 7.37 8.63 7.44 8.44 7.64C8.22 7.87 7.6 8.46 7.6 9.66C7.6 10.87 8.47 12.03 8.6 12.2C8.72 12.38 10.31 14.83 12.75 15.88C13.33 16.13 13.78 16.28 14.13 16.39C14.71 16.58 15.24 16.55 15.66 16.49C16.13 16.42 17.11 15.9 17.31 15.32C17.52 14.75 17.52 14.26 17.46 14.16C17.39 14.05 17.23 13.99 16.98 13.87C16.74 13.74 15.53 13.15 15.3 13.07C15.08 12.98 14.92 12.94 14.76 13.18C14.6 13.43 14.13 13.99 13.99 14.15C13.85 14.32 13.71 14.34 13.46 14.21C13.22 14.09 12.44 13.83 11.51 13C10.79 12.36 10.3 11.56 10.16 11.31C10.02 11.07 10.14 10.94 10.27 10.82C10.38 10.7 10.53 10.51 10.65 10.36C10.78 10.22 10.82 10.12 10.9 9.95C10.99 9.79 10.94 9.64 10.88 9.53C10.82 9.41 10.32 8.19 10.12 7.7C9.92 7.21 9.72 7.28 9.53 7.34Z"/>
+            </svg>
+          </div>
+          <p class="text-[11px] font-bold text-slate-800 truncate">
+            Sent! Ping on WhatsApp for faster reply.
+          </p>
+        </div>
 
-  </main>
+        <div class="flex items-center gap-1 shrink-0">
+          <a 
+            id="whatsappPingLink"
+            href="{{ whatsapp_ping_url }}" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="inline-flex items-center gap-1 bg-[#25D366] hover:bg-[#20bd5a] text-white text-[11px] font-extrabold px-2.5 py-1 rounded-xl transition-all"
+          >
+            <span>WhatsApp</span>
+          </a>
+          <button 
+            type="button" 
+            onclick="dismissWhatsAppPing()" 
+            class="w-6 h-6 rounded-lg text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs"
+            title="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Message Input Bar (Pinned at Bottom Above Keyboard) -->
+      <form id="messageForm" method="POST" class="mt-2.5 flex gap-2 shrink-0 pb-[env(safe-area-inset-bottom)]">
+        {% csrf_token %}
+        <input 
+          type="text" 
+          name="message" 
+          id="messageInput" 
+          required 
+          placeholder="Message..." 
+          autocomplete="off" 
+          class="flex-1 min-w-0 px-4 py-3 rounded-full border border-slate-200 bg-white text-base focus:ring-2 focus:ring-purple-500 focus:outline-hidden shadow-2xs"
+        >
+        <button id="sendBtn" type="submit" class="bg-purple-700 hover:bg-purple-800 active:scale-95 text-white font-extrabold text-xs px-5 rounded-full shadow-sm transition-all flex items-center justify-center shrink-0">
+          <span>Send</span>
+        </button>
+      </form>
+
+    </main>
+  </div>
 
   <!-- Make Offer Modal -->
   <div id="offerModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
@@ -345,14 +352,42 @@
       if (banner) banner.classList.add('hidden');
     }
 
+    const chatAppShell = document.getElementById('chatAppShell');
     const messagesContainer = document.getElementById('messagesContainer');
     const messageInput = document.getElementById('messageInput');
     const messageForm = document.getElementById('messageForm');
     const typingIndicator = document.getElementById('typingIndicator');
 
     function scrollToBottom() {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      if (!messagesContainer) return;
+      requestAnimationFrame(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      });
     }
+
+    // Sync shell height to visualViewport so mobile keyboard never pushes header or hides input
+    function syncViewportToKeyboard() {
+      if (!window.visualViewport || !chatAppShell) return;
+      const vv = window.visualViewport;
+      const offsetTop = Math.max(0, vv.offsetTop || 0);
+      chatAppShell.style.height = `${vv.height}px`;
+      chatAppShell.style.transform = `translateY(${offsetTop}px)`;
+      scrollToBottom();
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', syncViewportToKeyboard);
+      window.visualViewport.addEventListener('scroll', syncViewportToKeyboard);
+      syncViewportToKeyboard();
+    }
+
+    messageInput.addEventListener('focus', () => {
+      setTimeout(() => {
+        syncViewportToKeyboard();
+        scrollToBottom();
+      }, 180);
+    });
+
     scrollToBottom();
 
     // Automated Chat Sound Effects (Web Audio API - synchronous unlock for iOS & Desktop)
@@ -389,7 +424,6 @@
         gain.connect(chatAudioCtx.destination);
 
         if (type === 'send') {
-          // Crisp upward pop when sending a message
           osc.type = 'sine';
           osc.frequency.setValueAtTime(520, now);
           osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
@@ -398,7 +432,6 @@
           osc.start(now);
           osc.stop(now + 0.11);
         } else {
-          // Warm two-note chime when receiving a message
           osc.type = 'sine';
           osc.frequency.setValueAtTime(660, now);
           osc.frequency.setValueAtTime(880, now + 0.09);
@@ -455,7 +488,7 @@
             row.setAttribute('data-id', data.message_id);
             row.innerHTML = `
               <div class="flex items-center gap-1.5 flex-row-reverse">
-                <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed bg-purple-700 text-white rounded-br-none shadow-xs">
+                <div class="max-w-[82%] sm:max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed bg-purple-700 text-white rounded-br-none shadow-2xs">
                   ${data.text}
                 </div>
                 <button type="button" onclick="deleteMessage(${data.message_id})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-rose-600 transition-opacity" title="Delete message">
@@ -470,7 +503,6 @@
             playChatSound('send');
             lucide.createIcons();
 
-            // Reveal the WhatsApp Ping Banner if available
             const banner = document.getElementById('whatsappPingBanner');
             const link = document.getElementById('whatsappPingLink');
             if (banner && (data.whatsapp_ping_url || link)) {
@@ -508,8 +540,8 @@
 
             if (msg.msg_type === 'offer') {
               row.innerHTML = `
-                <div class="max-w-sm sm:max-w-md w-full border rounded-2xl p-4 text-xs shadow-xs ${msg.is_me ? 'bg-emerald-50/70 border-emerald-200 rounded-br-none' : 'bg-slate-50 border-slate-200 rounded-bl-none'}">
-                  <div class="flex items-center justify-between mb-2">
+                <div class="max-w-[85%] sm:max-w-md w-full border rounded-2xl p-3.5 sm:p-4 text-xs shadow-2xs ${msg.is_me ? 'bg-emerald-50/70 border-emerald-200 rounded-br-none' : 'bg-slate-50 border-slate-200 rounded-bl-none'}">
+                  <div class="flex items-center justify-between mb-1.5">
                     <span class="inline-flex items-center gap-1 font-bold text-slate-700">Price Offer</span>
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">${msg.offer_status}</span>
                   </div>
@@ -521,7 +553,7 @@
             } else {
               row.innerHTML = `
                 <div class="flex items-center gap-1.5 ${msg.is_me ? 'flex-row-reverse' : 'flex-row'}">
-                  <div class="max-w-sm sm:max-w-md rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${msg.is_me ? 'bg-purple-700 text-white rounded-br-none shadow-xs' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
+                  <div class="max-w-[82%] sm:max-w-md rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed ${msg.is_me ? 'bg-purple-700 text-white rounded-br-none shadow-2xs' : 'bg-slate-100 text-slate-800 rounded-bl-none'}">
                     ${msg.text}
                   </div>
                   ${msg.is_me ? `
