@@ -1,4 +1,4 @@
-<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal (Smart Framing + iPhone/Android Ready) -->
+<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal (Large Showcase + iPhone/Android Ready) -->
 <div id="nsFlyerModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
   <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-purple-100 space-y-3">
     <div class="flex items-center justify-between">
@@ -8,7 +8,7 @@
         </span>
         <div>
           <h3 class="text-sm font-black text-slate-900">WhatsApp Status Flyer</h3>
-          <p class="text-[11px] text-slate-500">Auto-framed so close-up photos stay clear</p>
+          <p class="text-[11px] text-slate-500">Large item showcase • Ready for WhatsApp Status</p>
         </div>
       </div>
       <button type="button" onclick="closeFlyerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
@@ -19,7 +19,7 @@
       <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[350px] object-contain rounded-xl shadow-sm">
     </div>
 
-    <!-- Photo Framing Toggle (Pull Back / Fit Whole Photo vs Full Fill) -->
+    <!-- Photo Framing Toggle (Bold Large vs Fit Full Photo) -->
     <div class="flex items-center justify-between bg-purple-50/80 border border-purple-100 rounded-2xl px-3 py-2">
       <span class="text-[11px] font-bold text-purple-950">Photo Framing:</span>
       <button
@@ -28,7 +28,7 @@
         onclick="toggleFlyerFramingMode()"
         class="text-[11px] font-extrabold px-3 py-1 rounded-full bg-white hover:bg-purple-100 text-purple-700 border border-purple-200 shadow-2xs transition-colors cursor-pointer"
       >
-        Fit Whole Photo (Recommended)
+        Mode: Bold Large (Recommended)
       </button>
     </div>
 
@@ -59,7 +59,7 @@
   let currentFlyerData = null;
   let currentLoadedImg = null;
   let currentLoadedLogo = null;
-  // 'smart' pulls close-up / full photos back cleanly; 'fill' stretches edge-to-edge
+  // 'smart' fills the expanded green-marked zone boldly; 'full' fits whole photo without cropping
   let flyerFramingMode = 'smart';
 
   function closeFlyerModal() {
@@ -70,14 +70,14 @@
     const btn = document.getElementById('nsFramingToggleBtn');
     if (!btn) return;
     if (flyerFramingMode === 'smart') {
-      btn.textContent = 'Mode: Pulled Back (Clear)';
+      btn.textContent = 'Mode: Bold Large (Recommended)';
     } else {
-      btn.textContent = 'Mode: Full Fill (Edge-to-Edge)';
+      btn.textContent = 'Mode: Fit Whole Photo';
     }
   }
 
   function toggleFlyerFramingMode() {
-    flyerFramingMode = (flyerFramingMode === 'smart') ? 'fill' : 'smart';
+    flyerFramingMode = (flyerFramingMode === 'smart') ? 'full' : 'smart';
     updateFramingButtonLabel();
     if (currentFlyerData) {
       paintFlyerCanvas(currentFlyerData, currentLoadedImg, currentLoadedLogo);
@@ -355,67 +355,75 @@
     ctx.font = '700 17px "Plus Jakarta Sans", -apple-system, sans-serif';
     ctx.fillText('in Nigeria', 764, 93);
 
-    // 3. Main Product Showcase Area (Auto-pulled back so close-up shots aren't clipped/blocked)
-    const photoX = 48;
-    const photoY = 152;
-    const photoW = 984;
-    const photoH = 665;
+    // 3. Soft Showcase Backdrop
+    const stageX = 48;
+    const stageY = 152;
+    const stageW = 984;
+    const stageH = 665;
 
     ctx.save();
-    drawRoundedRect(ctx, photoX, photoY, photoW, photoH, 36);
+    drawRoundedRect(ctx, stageX, stageY, stageW, stageH, 36);
     ctx.clip();
 
-    const stageGrad = ctx.createLinearGradient(photoX, photoY, photoX, photoY + photoH);
+    const stageGrad = ctx.createLinearGradient(stageX, stageY, stageX, stageY + stageH);
     stageGrad.addColorStop(0, '#F5F3FF');
     stageGrad.addColorStop(1, '#F8FAFC');
     ctx.fillStyle = stageGrad;
-    ctx.fillRect(photoX, photoY, photoW, photoH);
+    ctx.fillRect(stageX, stageY, stageW, stageH);
+
+    // Expanded Photo Box matching your green outline (reaching down to the price badge)
+    const picX = 205;
+    const picY = 158;
+    const picW = 562;
+    const picH = 592;
 
     if (loadedImg && loadedImg.width > 0) {
+      ctx.save();
+      drawRoundedRect(ctx, picX, picY, picW, picH, 28);
+      ctx.clip();
+
       if (flyerFramingMode === 'smart') {
-        // Pull back slightly into a balanced center frame with breathing room around edges
-        const padX = 110;
-        const padTop = 36;
-        const padBottom = 115;
-        const innerW = photoW - padX * 2;
-        const innerH = photoH - padTop - padBottom;
-        const fitScale = Math.min(innerW / loadedImg.width, innerH / loadedImg.height);
+        const scale = Math.max(picW / loadedImg.width, picH / loadedImg.height);
+        const dw = loadedImg.width * scale;
+        const dh = loadedImg.height * scale;
+        ctx.drawImage(
+          loadedImg,
+          picX + (picW - dw) / 2,
+          picY + (picH - dh) / 2,
+          dw,
+          dh
+        );
+      } else {
+        const fitScale = Math.min(picW / loadedImg.width, picH / loadedImg.height);
         const dw = loadedImg.width * fitScale;
         const dh = loadedImg.height * fitScale;
-        const dx = photoX + padX + (innerW - dw) / 2;
-        const dy = photoY + padTop + (innerH - dh) / 2;
-
-        drawRoundedRect(ctx, dx - 10, dy - 10, dw + 20, dh + 20, 24);
         ctx.fillStyle = '#FFFFFF';
-        ctx.fill();
-
-        ctx.save();
-        drawRoundedRect(ctx, dx, dy, dw, dh, 18);
-        ctx.clip();
-        ctx.drawImage(loadedImg, dx, dy, dw, dh);
-        ctx.restore();
-      } else {
-        // Edge-to-edge fill mode
-        const fillScale = Math.max(photoW / loadedImg.width, photoH / loadedImg.height);
-        const dw = loadedImg.width * fillScale;
-        const dh = loadedImg.height * fillScale;
-        ctx.drawImage(loadedImg, photoX + (photoW - dw) / 2, photoY + (photoH - dh) / 2, dw, dh);
+        ctx.fillRect(picX, picY, picW, picH);
+        ctx.drawImage(
+          loadedImg,
+          picX + (picW - dw) / 2,
+          picY + (picH - dh) / 2,
+          dw,
+          dh
+        );
       }
+      ctx.restore();
     } else {
       ctx.fillStyle = '#EDE9FE';
-      ctx.fillRect(photoX, photoY, photoW, photoH);
+      drawRoundedRect(ctx, picX, picY, picW, picH, 28);
+      ctx.fill();
       ctx.fillStyle = '#5B21B6';
-      ctx.font = '900 42px "Plus Jakarta Sans", -apple-system, sans-serif';
+      ctx.font = '900 38px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('NaijaSale Verified Ad', W / 2, photoY + photoH / 2);
+      ctx.fillText('NaijaSale Verified Ad', picX + picW / 2, picY + picH / 2);
     }
-    ctx.restore();
 
-    const fadeGrad = ctx.createLinearGradient(0, photoY + photoH - 150, 0, photoY + photoH + 20);
+    const fadeGrad = ctx.createLinearGradient(0, stageY + stageH - 140, 0, stageY + stageH + 20);
     fadeGrad.addColorStop(0, 'rgba(255, 255, 255, 0)');
     fadeGrad.addColorStop(1, 'rgba(255, 255, 255, 0.96)');
     ctx.fillStyle = fadeGrad;
-    ctx.fillRect(photoX, photoY + photoH - 150, photoW, 170);
+    ctx.fillRect(stageX, stageY + stageH - 140, stageW, 160);
+    ctx.restore();
 
     // 4. Floating "BEST SELLER" Medallion
     drawBestSellerBadge(ctx, 132, 232);
