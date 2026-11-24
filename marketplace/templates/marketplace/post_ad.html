@@ -436,6 +436,49 @@
       }
     });
 
+    // 3. Silent Post-Ad Draft Recovery Ping (Only triggers once user starts filling out the ad)
+    let draftPingTimer = null;
+    let isSubmittingAd = false;
+    const postAdForm = document.getElementById('postAdForm');
+    if (postAdForm) {
+      postAdForm.addEventListener('submit', () => { isSubmittingAd = true; });
+    }
+
+    function pingPostAdDraft() {
+      if (isSubmittingAd) return;
+      clearTimeout(draftPingTimer);
+      draftPingTimer = setTimeout(() => {
+        if (isSubmittingAd) return;
+        const titleEl = document.getElementById('id_title');
+        const priceEl = document.getElementById('id_price');
+        const hasImages = fileInput && fileInput.files && fileInput.files.length > 0;
+        const titleVal = titleEl ? titleEl.value.trim() : '';
+        const priceVal = priceEl ? priceEl.value.trim() : '';
+
+        if (!titleVal && !hasImages && !priceVal) return;
+
+        fetch("{% url 'marketplace:track_intent_api' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          keepalive: true,
+          body: JSON.stringify({
+            intent_type: "POST_AD_DRAFT",
+            plan_name: titleVal ? ("Draft: " + titleVal.slice(0, 75)) : "Unfinished Listing Draft",
+            amount_ngn: priceVal || 0
+          })
+        }).catch(() => {});
+      }, 1500);
+    }
+
+    ['id_title', 'id_price', 'id_description'].forEach(fieldId => {
+      const el = document.getElementById(fieldId);
+      if (el) el.addEventListener('input', pingPostAdDraft);
+    });
+    if (fileInput) fileInput.addEventListener('change', pingPostAdDraft);
+
     if (window.lucide) {
       lucide.createIcons();
     }

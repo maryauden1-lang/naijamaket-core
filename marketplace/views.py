@@ -55,12 +55,12 @@ def is_bot_request(request):
 def apply_jiji_ranking(queryset):
     """
     Enterprise Jiji-Style Marketplace Ranking Engine:
-1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
-2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
+    1. Real-Time Expiry: Only listings with active, unexpired boosts receive VIP rank.
+    2. Strict Tier Hierarchy: TOP_DEAL (1000) > URGENT (600) > FEATURED (300) > Standard (0),
        so a lower tier never outranks a higher-paying tier.
-3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
+    3. Fair 3-Hour Auto-Rotation: Active boosted ads in the same tier rotate every 3 hours
        so every paying customer gets fair #1 top-slot visibility without cron jobs.
-4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
+    4. Quality Tie-Breakers: NIN trust, ad freshness, and buyer engagement break ties cleanly.
     """
     now = timezone.now()
     day_1 = now - timedelta(days=1)
@@ -391,6 +391,13 @@ def dashboard_view(request):
     pending_count = user_listings.filter(status='pending').count()
     sold_count = user_listings.filter(status='sold').count()
     total_views = sum(item.views_count for item in user_listings)
+
+    # Standalone fail-silent growth checks (Boost Expiry & Zero-Views Rescue)
+    try:
+        from .growth_engine import run_seller_growth_checks
+        run_seller_growth_checks(request.user)
+    except Exception:
+        pass
 
     return render(request, 'marketplace/dashboard.html', {
         'user_listings': user_listings,
@@ -807,6 +814,13 @@ def post_ad_view(request):
                     is_cover=(idx == 0)
                 )
 
+            # Clear any open POST_AD_DRAFT lead once listing is submitted
+            try:
+                from .intent_tracker import mark_intent_converted
+                mark_intent_converted(request.user, intent_type="POST_AD_DRAFT", listing=listing)
+            except Exception:
+                pass
+
             messages.info(
                 request,
                 "Your ad has been submitted successfully and is currently under review. "
@@ -1047,6 +1061,13 @@ def profile_view(request):
             profile.verification_submitted_at = timezone.now()
             profile.verification_feedback = None
             profile.save()
+
+            # Clear any open KYC_SUBMIT lead once documents are submitted
+            try:
+                from .intent_tracker import mark_intent_converted
+                mark_intent_converted(request.user, intent_type="KYC_SUBMIT")
+            except Exception:
+                pass
 
             messages.info(request, "Your KYC documents and biometric selfie have been submitted for review!")
             return redirect('marketplace:profile')

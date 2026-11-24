@@ -1,0 +1,164 @@
+<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal -->
+<div id="nsFlyerModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-purple-100 space-y-4">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+          <i data-lucide="share-2" class="w-4 h-4"></i>
+        </span>
+        <div>
+          <h3 class="text-sm font-black text-slate-900">WhatsApp Status Flyer</h3>
+          <p class="text-[11px] text-slate-500">Save &amp; post to your Status to get buyers</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeFlyerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
+    </div>
+
+    <!-- Live Flyer Preview -->
+    <div class="bg-slate-100 rounded-2xl p-2 flex items-center justify-center border border-slate-200">
+      <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[340px] object-contain rounded-xl shadow-sm">
+    </div>
+
+    <canvas id="nsFlyerCanvas" width="1080" height="1350" class="hidden"></canvas>
+
+    <div class="grid grid-cols-2 gap-2.5">
+      <a id="nsDownloadFlyerBtn" download="naijasale-promo.png" href="#" class="py-3 px-4 rounded-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        <span>Save Flyer</span>
+      </a>
+
+      <a id="nsShareWaBtn" target="_blank" href="#" class="py-3 px-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+        <i data-lucide="message-circle" class="w-4 h-4"></i>
+        <span>Share Link</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function closeFlyerModal() {
+    document.getElementById('nsFlyerModal').classList.add('hidden');
+  }
+
+  function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const words = String(text || '').split(' ');
+    let line = '';
+    let lineCount = 0;
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && n > 0) {
+        ctx.fillText(line.trim(), x, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+        lineCount++;
+        if (lineCount >= maxLines - 1) break;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line.trim(), x, y);
+  }
+
+  function openWhatsAppFlyer(btn) {
+    const title = btn.dataset.title || 'Item For Sale';
+    const price = btn.dataset.price || '';
+    const location = btn.dataset.location || 'Nigeria';
+    const imgUrl = btn.dataset.img || '';
+    const adUrl = btn.dataset.url || window.location.origin;
+
+    const modal = document.getElementById('nsFlyerModal');
+    const canvas = document.getElementById('nsFlyerCanvas');
+    const previewImg = document.getElementById('nsFlyerPreviewImg');
+    const downloadBtn = document.getElementById('nsDownloadFlyerBtn');
+    const shareWaBtn = document.getElementById('nsShareWaBtn');
+    const ctx = canvas.getContext('2d');
+
+    // Configure WhatsApp text share link
+    const waText = encodeURIComponent(`🔥 ${title} — ₦${price}\n📍 ${location}\n\nView full photos & chat with me on NaijaSale:\n${adUrl}`);
+    shareWaBtn.href = `https://wa.me/?text=${waText}`;
+    downloadBtn.download = `NaijaSale-${title.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+
+    function renderCard(loadedImg) {
+      // 1. Purple Gradient Background
+      const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1350);
+      bgGrad.addColorStop(0, '#2D1B5A');
+      bgGrad.addColorStop(0.55, '#5B21B6');
+      bgGrad.addColorStop(1, '#7C3AED');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1080, 1350);
+
+      // 2. Top Brand Header
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('NaijaSale.com', 70, 95);
+
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = '800 26px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('AVAILABLE FOR SALE', 740, 92);
+
+      // 3. White Product Card Container
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.roundRect(60, 140, 960, 1030, 44);
+      ctx.fill();
+
+      // 4. Product Image Area
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(90, 170, 900, 640, 32);
+      ctx.clip();
+      ctx.fillStyle = '#F1F5F9';
+      ctx.fillRect(90, 170, 900, 640);
+
+      if (loadedImg) {
+        const scale = Math.max(900 / loadedImg.width, 640 / loadedImg.height);
+        const w = loadedImg.width * scale;
+        const h = loadedImg.height * scale;
+        ctx.drawImage(loadedImg, 90 + (900 - w) / 2, 170 + (640 - h) / 2, w, h);
+      }
+      ctx.restore();
+
+      // 5. Price Pill Badge
+      ctx.fillStyle = '#6D28D9';
+      ctx.beginPath();
+      ctx.roundRect(90, 845, 440, 86, 43);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('₦' + price, 128, 903);
+
+      // 6. Item Title
+      ctx.fillStyle = '#0F172A';
+      ctx.font = '800 44px "Plus Jakarta Sans", sans-serif';
+      wrapCanvasText(ctx, title, 95, 995, 880, 56, 2);
+
+      // 7. Location Strip
+      ctx.fillStyle = '#475569';
+      ctx.font = '700 30px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('📍 ' + location, 95, 1125);
+
+      // 8. Bottom Call-to-Action Footer
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
+      ctx.fillText('Search on NaijaSale.com or DM me to buy now!', 145, 1255);
+
+      const finalDataUrl = canvas.toDataURL('image/png');
+      previewImg.src = finalDataUrl;
+      downloadBtn.href = finalDataUrl;
+      modal.classList.remove('hidden');
+    }
+
+    if (imgUrl) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => renderCard(img);
+      img.onerror = () => renderCard(null);
+      img.src = imgUrl;
+    } else {
+      renderCard(null);
+    }
+  }
+</script>
