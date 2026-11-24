@@ -348,6 +348,26 @@
   <script>
     lucide.createIcons();
 
+    let walletPingTimer = null;
+    function pingWalletIntent(amtVal) {
+      clearTimeout(walletPingTimer);
+      walletPingTimer = setTimeout(() => {
+        fetch("{% url 'marketplace:track_intent_api' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+          },
+          keepalive: true,
+          body: JSON.stringify({
+            intent_type: "WALLET_TOPUP",
+            plan_name: "Paystack Wallet Top-Up",
+            amount_ngn: amtVal || 0
+          })
+        }).catch(() => {});
+      }, 900);
+    }
+
     function selectPresetAmount(btn, val) {
       document.getElementById('ns-topup-amount').value = val;
       document.querySelectorAll('.ns-preset-btn').forEach(b => {
@@ -356,7 +376,14 @@
       });
       btn.classList.remove('border-slate-200', 'bg-white', 'text-slate-900');
       btn.classList.add('border-purple-600', 'bg-purple-50', 'text-purple-700');
+      pingWalletIntent(val);
     }
+
+    const topupInput = document.getElementById('ns-topup-amount');
+    if (topupInput) {
+      topupInput.addEventListener('input', () => pingWalletIntent(topupInput.value));
+    }
+    setTimeout(() => pingWalletIntent(topupInput ? topupInput.value : 0), 1500);
   </script>
 </body>
 </html>

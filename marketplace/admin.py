@@ -48,7 +48,9 @@ from .models import (
     PaymentTransaction,
     SystemNotification,
     PromoBanner,
+    AbandonedIntent,
 )
+from .support_sync import push_staff_support_message
 
 
 # ==============================================================================
@@ -680,6 +682,129 @@ class PromoBannerAdmin(admin.ModelAdmin):
             f"{ctr:.2f}",
         )
     ctr_badge.short_description = "CTR"
+
+
+# ==============================================================================
+# ABANDONED TOP-UP & AD BOOST RECOVERY QUEUE (1-CLICK WHATSAPP & IN-APP CHAT)
+# ==============================================================================
+
+@admin.register(AbandonedIntent)
+class AbandonedIntentAdmin(admin.ModelAdmin):
+    list_display = (
+        "user_info",
+        "intent_type",
+        "target_details",
+        "formatted_amount",
+        "status_badge",
+        "updated_at",
+        "recovery_actions",
+    )
+    list_filter = ("status", "intent_type", "updated_at")
+    search_fields = ("user__username", "user__first_name", "user__seller_profile__phone_number", "listing__title", "plan_name")
+    readonly_fields = ("user", "intent_type", "listing", "plan_name", "amount_ngn", "notes", "contacted_by", "created_at", "updated_at")
+
+    def user_info(self, obj):
+        profile = getattr(obj.user, "seller_profile", None)
+        phone = profile.phone_number if profile else "No phone"
+        name = obj.user.get_full_name() or obj.user.username
+        return format_html('<strong>{}</strong><br><span style="color:#64748B;font-size:11px;">{}</span>', name, phone)
+    user_info.short_description = "Seller"
+
+    def target_details(self, obj):
+        if obj.listing:
+            return format_html('{}<br><span style="color:#6D28D9;font-size:11px;font-weight:700;">{}</span>', obj.listing.title[:45], obj.plan_name or "Boost")
+        return obj.plan_name or obj.notes or "Wallet Funding"
+    target_details.short_description = "What They Tried To Do"
+
+    def formatted_amount(self, obj):
+        if obj.amount_ngn and obj.amount_ngn > 0:
+            return format_html('<strong>₦{}</strong>', f"{obj.amount_ngn:,.0f}")
+        return "—"
+    formatted_amount.short_description = "Amount"
+
+    def status_badge(self, obj):
+        colors = {
+            "ABANDONED": ("#FEF3C7", "#92400E", "● STOPPED / ABANDONED"),
+            "CONTACTED": ("#E0E7FF", "#3730A3", "● STAFF FOLLOWED UP"),
+            "CONVERTED": ("#DCFCE7", "#166534", "● PAID / COMPLETED"),
+            "DISMISSED": ("#F1F5F9", "#475569", "● DISMISSED"),
+        }
+        bg, fg, label = colors.get(obj.status, ("#F1F5F9", "#475569", obj.status))
+        return format_html(
+            '<span style="padding:3px 9px;font-size:10.5px;font-weight:800;border-radius:9999px;background:{};color:{};">{}</span>',
+            bg, fg, label
+        )
+    status_badge.short_description = "Status"
+
+    def recovery_actions(self, obj):
+        if obj.status == "CONVERTED":
+            return mark_safe('<span style="color:#16A34A;font-weight:700;font-size:11px;">✓ Converted</span>')
+
+        wa_url = obj.whatsapp_recovery_url
+        wa_btn = ""
+        if wa_url:
+            wa_btn = format_html(
+                '<a href="{}" target="_blank" style="display:inline-block;background:#16A34A;color:#fff;font-weight:700;font-size:11px;padding:5px 10px;border-radius:8px;text-decoration:none;margin-right:5px;">WhatsApp</a>',
+                wa_url
+            )
+
+        chat_url = f"/portal-management-99/marketplace/abandonedintent/{obj.id}/push-chat/"
+        chat_btn = format_html(
+            '<a href="{}" style="display:inline-block;background:#6D28D9;color:#fff;font-weight:700;font-size:11px;padding:5px 10px;border-radius:8px;text-decoration:none;">In-App Chat</a>',
+            chat_url
+        )
+        return mark_safe(wa_btn + chat_btn)
+    recovery_actions.short_description = "1-Click Follow-Up"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path('<int:intent_id>/push-chat/', self.admin_site.admin_view(self.push_in_app_chat_view), name='abandoned_intent_push_chat'),
+        ]
+        return custom + urls
+
+    def push_in_app_chat_view(self, request, intent_id):
+        if not (request.user.is_staff or request.user.is_superuser):
+            messages.error(request, "Unauthorized")
+            return redirect("admin:index")
+
+        intent = AbandonedIntent.objects.filter(id=intent_id).select_related("user", "listing").first()
+        if not intent:
+            messages.error(request, "Lead not found.")
+            return redirect("/portal-management-99/marketplace/abandonedintent/")
+
+        name = intent.user.first_name or intent.user.username
+        if intent.intent_type == "AD_BOOST":
+            item = intent.listing.title if intent.listing else "your ad"
+            action_desc = f"boost '{item}' ({intent.plan_name or 'VIP placement'})"
+        elif intent.intent_type == "WALLET_TOPUP":
+            amt = f"₦{intent.amount_ngn:,.0f}" if intent.amount_ngn else "your NaijaSale Wallet"
+            action_desc = f"top up {amt} into your NaijaSale Wallet"
+        else:
+            action_desc = "complete your action on NaijaSale"
+
+        followup_text = (
+            f"Hi {name}! 👋 We noticed you were trying to {action_desc} earlier but stopped before finishing. "
+            f"Did you experience any payment or network issue? Reply right here and our team will help you!"
+        )
+
+        # Drop into the user's Live Support Chat thread (stored in cache by support_sync.py)
+        push_staff_support_message(intent.user, followup_text)
+
+        # Also send an in-app SystemNotification bell alert
+        SystemNotification.objects.create(
+            recipient=intent.user,
+            title="Need help finishing your NaijaSale boost/top-up?",
+            message=followup_text,
+            link="/wallet/" if intent.intent_type == "WALLET_TOPUP" else "/dashboard/",
+        )
+
+        intent.status = "CONTACTED"
+        intent.contacted_by = request.user
+        intent.save(update_fields=["status", "contacted_by", "updated_at"])
+
+        messages.success(request, f"✅ Sent helpful follow-up to {name} via Live Chat & Notification Bell!")
+        return redirect("/portal-management-99/marketplace/abandonedintent/")
 
 
 # ==============================================================================

@@ -16,11 +16,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from .models import Listing, PromotionPlan, PaymentTransaction
+from .intent_tracker import record_user_intent, mark_intent_converted
 
 
 def _activate_listing_boost(transaction):
     """Helper to activate boost status and extend expiry cleanly."""
     if transaction.status == "SUCCESSFUL":
+        if transaction.user:
+            mark_intent_converted(transaction.user, intent_type="AD_BOOST", listing=transaction.listing)
         return
 
     listing = transaction.listing
@@ -41,6 +44,10 @@ def _activate_listing_boost(transaction):
 
     transaction.status = "SUCCESSFUL"
     transaction.save(update_fields=["status"])
+
+    # Automatically mark any open AD_BOOST lead as CONVERTED
+    if transaction.user:
+        mark_intent_converted(transaction.user, intent_type="AD_BOOST", listing=listing)
 
 
 def _paystack_headers(secret_key):
@@ -76,6 +83,16 @@ def promote_listing_view(request, listing_id):
             gateway=gateway,
             status="PENDING",
             customer_email=customer_email,
+        )
+
+        # Record checkout intent in case user drops off inside Paystack/Flutterwave modal
+        record_user_intent(
+            user=request.user,
+            intent_type="AD_BOOST",
+            listing=listing,
+            plan_name=f"{plan.name} ({plan.duration_days} Days)",
+            amount_ngn=plan.price_ngn,
+            notes=f"Ref {unique_ref}",
         )
 
         callback_url = request.build_absolute_uri('/payment/callback/')

@@ -26,6 +26,50 @@ def _save_threads(threads):
     cache.set(SUPPORT_CACHE_KEY, threads, timeout=SUPPORT_TTL_SECONDS)
 
 
+def push_staff_support_message(user, text, sender_name="Naijasale Support"):
+    """
+    Allows staff or Django Admin recovery tools to drop an outbound message
+    directly into a registered user's Live Support Chat drawer.
+    """
+    if not user or not getattr(user, "id", None) or not text:
+        return False
+
+    now_ts = time.time()
+    display_name = (
+        user.get_full_name().strip()
+        or user.first_name
+        or user.username
+        or f"User #{user.id}"
+    )
+    thread_id = f"user_{user.id}"
+    threads = _get_threads()
+
+    if thread_id not in threads:
+        threads[thread_id] = {
+            "thread_id": thread_id,
+            "name": display_name,
+            "subtitle": user.email or "Registered Member",
+            "is_registered": True,
+            "updated_at": now_ts,
+            "unread_by_staff": 0,
+            "unread_by_user": 0,
+            "messages": [],
+        }
+
+    threads[thread_id]["messages"].append({
+        "sender": "staff",
+        "sender_name": sender_name,
+        "text": str(text).strip()[:1000],
+        "time": timezone.localtime().strftime("%I:%M %p"),
+        "ts": now_ts,
+    })
+    threads[thread_id]["messages"] = threads[thread_id]["messages"][-60:]
+    threads[thread_id]["updated_at"] = now_ts
+    threads[thread_id]["unread_by_user"] = threads[thread_id].get("unread_by_user", 0) + 1
+    _save_threads(threads)
+    return True
+
+
 def _get_visitor_identity(request):
     if request.user.is_authenticated:
         display_name = (

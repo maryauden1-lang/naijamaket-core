@@ -352,8 +352,30 @@
       }
     }
 
+    function pingBoostIntent() {
+      const selectedPlan = document.querySelector('.plan-radio:checked');
+      if (!selectedPlan) return;
+      fetch("{% url 'marketplace:track_intent_api' %}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token }}"
+        },
+        keepalive: true,
+        body: JSON.stringify({
+          intent_type: "AD_BOOST",
+          listing_id: "{{ listing.id }}",
+          plan_name: selectedPlan.dataset.name + " (" + selectedPlan.dataset.days + " Days)",
+          amount_ngn: selectedPlan.dataset.price.replace(/,/g, "")
+        })
+      }).catch(() => {});
+    }
+
     document.querySelectorAll('.plan-radio').forEach(radio => {
-      radio.addEventListener('change', updateCheckoutUI);
+      radio.addEventListener('change', () => {
+        updateCheckoutUI();
+        pingBoostIntent();
+      });
     });
 
     document.getElementById('boostForm').addEventListener('submit', function() {
@@ -365,6 +387,7 @@
     });
 
     updateCheckoutUI();
+    setTimeout(pingBoostIntent, 1500);
   </script>
 </body>
 </html>

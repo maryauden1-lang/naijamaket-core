@@ -19,6 +19,7 @@ from django.views.decorators.http import require_POST
 
 from .models import Listing, PromotionPlan, SystemNotification
 from .models_wallet import UserWallet, WalletTransaction
+from .intent_tracker import record_user_intent, mark_intent_converted
 
 MIN_TOPUP_NGN = Decimal("500.00")
 MAX_TOPUP_NGN = Decimal("2000000.00")
@@ -56,6 +57,7 @@ def _credit_wallet_atomically(reference, verified_amount_ngn, gateway_ref=""):
             return False, "Transaction reference not found."
 
         if tx.status == "SUCCESSFUL":
+            mark_intent_converted(tx.user, intent_type="WALLET_TOPUP")
             return True, "Already credited."
 
         # Strict amount check (prevents underpayment tampering)
@@ -97,6 +99,9 @@ def _credit_wallet_atomically(reference, verified_amount_ngn, gateway_ref=""):
             message=f"₦{tx.amount:,.2f} has been credited to your Naijasale Wallet. New balance: ₦{after:,.2f}.",
             link="/wallet/",
         )
+
+        # Automatically clear any open WALLET_TOPUP lead for this user
+        mark_intent_converted(tx.user, intent_type="WALLET_TOPUP")
         return True, "Wallet credited successfully."
 
 
@@ -188,6 +193,15 @@ def wallet_topup_init_view(request):
         ip_address=_get_client_ip(request),
     )
 
+    # Record checkout intent in case user drops off inside Paystack modal
+    record_user_intent(
+        user=request.user,
+        intent_type="WALLET_TOPUP",
+        plan_name="Paystack Wallet Top-Up",
+        amount_ngn=amount_ngn,
+        notes=f"Ref {unique_ref}",
+    )
+
     paystack_key = getattr(settings, "PAYSTACK_SECRET_KEY", "").strip()
     if not paystack_key or "placeholder" in paystack_key:
         _credit_wallet_atomically(unique_ref, amount_ngn, gateway_ref="SANDBOX-TEST")
@@ -245,6 +259,7 @@ def wallet_topup_callback_view(request):
         return redirect("marketplace:wallet_dashboard")
 
     if tx.status == "SUCCESSFUL":
+        mark_intent_converted(request.user, intent_type="WALLET_TOPUP")
         messages.success(request, f"₦{tx.amount:,.2f} top-up confirmed!")
         return redirect("marketplace:wallet_dashboard")
 
@@ -319,6 +334,14 @@ def wallet_boost_ad_view(request):
             return redirect("marketplace:wallet_dashboard")
 
         if wallet.balance < cost:
+            record_user_intent(
+                user=request.user,
+                intent_type="AD_BOOST",
+                listing=listing,
+                plan_name=f"{plan.name} ({plan.duration_days} Days)",
+                amount_ngn=cost,
+                notes="Stopped due to insufficient wallet balance",
+            )
             messages.error(
                 request,
                 f"Insufficient wallet balance (₦{wallet.balance:,.2f}). Top up at least ₦{(cost - wallet.balance):,.2f} more.",
@@ -366,6 +389,9 @@ def wallet_boost_ad_view(request):
             message=f"'{listing.title}' is now boosted ({plan.name}) for {plan.duration_days} days. Wallet balance: ₦{after:,.2f}.",
             link=f"/item/{listing.slug}/",
         )
+
+        # Clear any open AD_BOOST lead for this user/listing
+        mark_intent_converted(request.user, intent_type="AD_BOOST", listing=listing)
 
     messages.success(
         request,

@@ -854,3 +854,88 @@ def ensure_seller_profile_exists(sender, instance, created, **kwargs):
 # 13. NAIJASALE WALLET & DOUBLE-ENTRY LEDGER (STANDALONE MODULE)
 # ==========================================
 from .models_wallet import UserWallet, WalletTransaction  # noqa: E402, F401
+
+
+# ==========================================
+# 14. ABANDONED CHECKOUT & LEAD RECOVERY ENGINE
+# ==========================================
+class AbandonedIntent(models.Model):
+    INTENT_CHOICES = (
+        ("WALLET_TOPUP", "Wallet Top-Up"),
+        ("AD_BOOST", "Ad Boost / Promotion"),
+        ("POST_AD_DRAFT", "Post Ad Draft"),
+        ("KYC_SUBMIT", "KYC Verification"),
+    )
+
+    STATUS_CHOICES = (
+        ("ABANDONED", "Abandoned / Incomplete"),
+        ("CONTACTED", "Staff Followed Up"),
+        ("CONVERTED", "Completed / Paid"),
+        ("DISMISSED", "Dismissed"),
+    )
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="abandoned_intents",
+        db_index=True,
+    )
+    intent_type = models.CharField(max_length=25, choices=INTENT_CHOICES, db_index=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ABANDONED", db_index=True)
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="abandoned_intents",
+    )
+    plan_name = models.CharField(max_length=120, blank=True)
+    amount_ngn = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    notes = models.CharField(max_length=255, blank=True)
+    contacted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="followed_up_intents",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["status", "-updated_at"]),
+            models.Index(fields=["user", "intent_type", "status"]),
+        ]
+        verbose_name = "Abandoned Action / Hot Lead"
+        verbose_name_plural = "Abandoned Actions & Hot Leads"
+
+    @property
+    def whatsapp_recovery_url(self):
+        from urllib.parse import quote
+        profile = getattr(self.user, "seller_profile", None)
+        phone = profile.clean_whatsapp_number if profile else ""
+        if not phone:
+            return ""
+        name = self.user.first_name or self.user.username
+        if self.intent_type == "AD_BOOST":
+            item = self.listing.title if self.listing else "your ad"
+            action_desc = f"boost '{item}' ({self.plan_name or 'VIP placement'})"
+        elif self.intent_type == "WALLET_TOPUP":
+            amt = f"₦{self.amount_ngn:,.0f}" if self.amount_ngn else "your NaijaSale Wallet"
+            action_desc = f"fund {amt} into your NaijaSale Wallet"
+        elif self.intent_type == "KYC_SUBMIT":
+            action_desc = "complete your Verified Seller Badge"
+        else:
+            action_desc = "finish posting your listing on NaijaSale"
+
+        msg = (
+            f"Hi {name}, this is NaijaSale Support. We noticed you were trying to {action_desc} "
+            f"earlier but didn't finish. Did you run into any network or payment issue? "
+            f"Reply here and we'll help you sort it out right away!"
+        )
+        return f"https://wa.me/{phone}?text={quote(msg)}"
+
+    def __str__(self):
+        return f"{self.user.username} — {self.get_intent_type_display()} ({self.status})"
