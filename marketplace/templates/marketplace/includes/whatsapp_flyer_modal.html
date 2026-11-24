@@ -1,6 +1,6 @@
-<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal -->
+<!-- Standalone 1-Click WhatsApp Status Flyer Generator Modal (iPhone & Android Ready) -->
 <div id="nsFlyerModal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4">
-  <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-purple-100 space-y-4">
+  <div class="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-purple-100 space-y-3.5">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
@@ -8,24 +8,28 @@
         </span>
         <div>
           <h3 class="text-sm font-black text-slate-900">WhatsApp Status Flyer</h3>
-          <p class="text-[11px] text-slate-500">Save &amp; post to your Status to get buyers</p>
+          <p class="text-[11px] text-slate-500">Save photo or post straight to Status</p>
         </div>
       </div>
       <button type="button" onclick="closeFlyerModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs flex items-center justify-center cursor-pointer">✕</button>
     </div>
 
     <!-- Live Flyer Preview -->
-    <div class="bg-slate-100 rounded-2xl p-2 flex items-center justify-center border border-slate-200">
-      <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[340px] object-contain rounded-xl shadow-sm">
+    <div class="bg-slate-100 rounded-2xl p-2 flex items-center justify-center border border-slate-200 min-h-[220px]">
+      <img id="nsFlyerPreviewImg" src="" alt="Promo Flyer Preview" class="w-full max-h-[330px] object-contain rounded-xl shadow-sm">
     </div>
+
+    <p class="text-[10.5px] text-center text-slate-500 font-medium">
+      Tip on iPhone: Tap <strong>Save / Share Image</strong> (or press &amp; hold the flyer above → <strong>Save to Photos</strong>).
+    </p>
 
     <canvas id="nsFlyerCanvas" width="1080" height="1350" class="hidden"></canvas>
 
     <div class="grid grid-cols-2 gap-2.5">
-      <a id="nsDownloadFlyerBtn" download="naijasale-promo.png" href="#" class="py-3 px-4 rounded-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+      <button type="button" id="nsDownloadFlyerBtn" onclick="saveOrShareFlyerImage()" class="py-3 px-4 rounded-full bg-purple-700 hover:bg-purple-800 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
         <i data-lucide="download" class="w-4 h-4"></i>
-        <span>Save Flyer</span>
-      </a>
+        <span>Save / Share Flyer</span>
+      </button>
 
       <a id="nsShareWaBtn" target="_blank" href="#" class="py-3 px-4 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm">
         <i data-lucide="message-circle" class="w-4 h-4"></i>
@@ -36,8 +40,41 @@
 </div>
 
 <script>
+  let currentFlyerBlob = null;
+  let currentFlyerFilename = 'naijasale-promo.png';
+  let currentFlyerTitle = 'NaijaSale Listing';
+
   function closeFlyerModal() {
     document.getElementById('nsFlyerModal').classList.add('hidden');
+  }
+
+  async function saveOrShareFlyerImage() {
+    if (!currentFlyerBlob) return;
+
+    // 1. Mobile Native Share Sheet (iPhone Safari & Android Chrome)
+    try {
+      const file = new File([currentFlyerBlob], currentFlyerFilename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: currentFlyerTitle,
+          text: 'Check out my listing on NaijaSale.com!'
+        });
+        return;
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+
+    // 2. Desktop / Fallback Blob Download
+    const blobUrl = URL.createObjectURL(currentFlyerBlob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = currentFlyerFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
   }
 
   function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
@@ -68,17 +105,27 @@
     const imgUrl = btn.dataset.img || '';
     const adUrl = btn.dataset.url || window.location.origin;
 
+    currentFlyerTitle = title;
+    currentFlyerFilename = `NaijaSale-${title.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+
     const modal = document.getElementById('nsFlyerModal');
     const canvas = document.getElementById('nsFlyerCanvas');
     const previewImg = document.getElementById('nsFlyerPreviewImg');
-    const downloadBtn = document.getElementById('nsDownloadFlyerBtn');
     const shareWaBtn = document.getElementById('nsShareWaBtn');
     const ctx = canvas.getContext('2d');
 
-    // Configure WhatsApp text share link
     const waText = encodeURIComponent(`🔥 ${title} — ₦${price}\n📍 ${location}\n\nView full photos & chat with me on NaijaSale:\n${adUrl}`);
     shareWaBtn.href = `https://wa.me/?text=${waText}`;
-    downloadBtn.download = `NaijaSale-${title.slice(0, 20).replace(/[^a-zA-Z0-9]/g, '-')}.png`;
+
+    function drawRoundedBox(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
 
     function renderCard(loadedImg) {
       // 1. Purple Gradient Background
@@ -91,69 +138,74 @@
 
       // 2. Top Brand Header
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '900 44px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.fillText('NaijaSale.com', 70, 95);
 
       ctx.fillStyle = '#FDE68A';
-      ctx.font = '800 26px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 26px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.fillText('AVAILABLE FOR SALE', 740, 92);
 
       // 3. White Product Card Container
       ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.roundRect(60, 140, 960, 1030, 44);
+      drawRoundedBox(60, 140, 960, 1030, 44);
       ctx.fill();
 
       // 4. Product Image Area
       ctx.save();
-      ctx.beginPath();
-      ctx.roundRect(90, 170, 900, 640, 32);
+      drawRoundedBox(90, 170, 900, 640, 32);
       ctx.clip();
       ctx.fillStyle = '#F1F5F9';
       ctx.fillRect(90, 170, 900, 640);
 
-      if (loadedImg) {
+      if (loadedImg && loadedImg.width > 0) {
         const scale = Math.max(900 / loadedImg.width, 640 / loadedImg.height);
         const w = loadedImg.width * scale;
         const h = loadedImg.height * scale;
         ctx.drawImage(loadedImg, 90 + (900 - w) / 2, 170 + (640 - h) / 2, w, h);
+      } else {
+        ctx.fillStyle = '#6D28D9';
+        ctx.font = '800 36px "Plus Jakarta Sans", -apple-system, sans-serif';
+        ctx.fillText('Verified Listing on NaijaSale.com', 240, 500);
       }
       ctx.restore();
 
       // 5. Price Pill Badge
       ctx.fillStyle = '#6D28D9';
-      ctx.beginPath();
-      ctx.roundRect(90, 845, 440, 86, 43);
+      drawRoundedBox(90, 845, 460, 86, 43);
       ctx.fill();
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '900 44px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.fillText('₦' + price, 128, 903);
 
       // 6. Item Title
       ctx.fillStyle = '#0F172A';
-      ctx.font = '800 44px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 44px "Plus Jakarta Sans", -apple-system, sans-serif';
       wrapCanvasText(ctx, title, 95, 995, 880, 56, 2);
 
       // 7. Location Strip
       ctx.fillStyle = '#475569';
-      ctx.font = '700 30px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '700 30px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.fillText('📍 ' + location, 95, 1125);
 
       // 8. Bottom Call-to-Action Footer
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '800 32px "Plus Jakarta Sans", -apple-system, sans-serif';
       ctx.fillText('Search on NaijaSale.com or DM me to buy now!', 145, 1255);
 
-      const finalDataUrl = canvas.toDataURL('image/png');
-      previewImg.src = finalDataUrl;
-      downloadBtn.href = finalDataUrl;
-      modal.classList.remove('hidden');
+      canvas.toBlob((blob) => {
+        currentFlyerBlob = blob;
+        if (blob) {
+          previewImg.src = URL.createObjectURL(blob);
+        } else {
+          previewImg.src = canvas.toDataURL('image/png');
+        }
+        modal.classList.remove('hidden');
+      }, 'image/png');
     }
 
     if (imgUrl) {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
       img.onload = () => renderCard(img);
       img.onerror = () => renderCard(null);
       img.src = imgUrl;
